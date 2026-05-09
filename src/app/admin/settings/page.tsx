@@ -46,7 +46,7 @@ export default function SettingsPage() {
             </div>
             <div className="space-y-2">
               <Label htmlFor="contactEmail">Contact Email</Label>
-              <Input id="contactEmail" type="email" defaultValue="hello@Hembox.io.com" />
+              <Input id="contactEmail" type="email" defaultValue="hello@Hembox.io" />
             </div>
           </CardContent>
         </Card>

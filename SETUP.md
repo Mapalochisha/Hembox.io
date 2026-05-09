@@ -116,7 +116,7 @@ begin
     new.raw_user_meta_data->>'full_name',
     new.raw_user_meta_data->>'avatar_url',
     case 
-      when new.email = 'admin@Hembox.io.com' then 'admin'
+      when new.email = 'admin@Hembox.io' then 'admin'
       else 'user'
     end
   );

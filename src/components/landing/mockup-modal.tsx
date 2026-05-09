@@ -100,7 +100,7 @@ export function MockupModal() {
                   <Label className="text-[13px] font-medium text-gray-700">Website or idea</Label>
                   <Input
                     type="text"
-                    placeholder="Hembox.io.com or describe it"
+                    placeholder="Hembox.io or describe it"
                     value={website}
                     onChange={(e) => setWebsite(e.target.value)}
                     className="mt-1.5"
