@@ -11,7 +11,7 @@
 ## 1. Install Dependencies
 
 ```bash
-cd pixelforge
+cd Hembox.io
 npm install
 # or
 yarn install
@@ -116,7 +116,7 @@ begin
     new.raw_user_meta_data->>'full_name',
     new.raw_user_meta_data->>'avatar_url',
     case 
-      when new.email = 'admin@pixelforge.com' then 'admin'
+      when new.email = 'admin@Hembox.io.com' then 'admin'
       else 'user'
     end
   );
@@ -187,7 +187,7 @@ update public.profiles set role = 'admin' where email = 'your-email@example.com'
 ## Project Structure
 
 ```
-pixelforge/
+Hembox.io/
 ├── src/
 │   ├── app/
 │   │   ├── (auth)/          # Auth pages (login, register)

@@ -8,7 +8,7 @@ cloudinary.config({
 
 export { cloudinary }
 
-export const uploadImage = async (file: string, folder: string = 'pixelforge') => {
+export const uploadImage = async (file: string, folder: string = 'Hembox.io') => {
   try {
     const result = await cloudinary.uploader.upload(file, {
       folder,

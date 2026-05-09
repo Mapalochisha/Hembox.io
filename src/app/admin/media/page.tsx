@@ -20,7 +20,7 @@ export default function MediaPage() {
     try {
       const formData = new FormData()
       formData.append("file", file)
-      formData.append("folder", "pixelforge/projects")
+      formData.append("folder", "Hembox.io/projects")
 
       const response = await fetch("/api/upload", {
         method: "POST",
