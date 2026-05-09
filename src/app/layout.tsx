@@ -11,7 +11,7 @@ const inter = Inter({
 });
 
 export const metadata: Metadata = {
-  title: "Pixel Forge — Your website shouldn't be boring",
+  title: "Hembox.io — Your website shouldn't be boring",
   description: "We build fast, beautiful sites that actually convert. No templates. No bloat. Just results.",
 };
 

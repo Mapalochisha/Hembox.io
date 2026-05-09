@@ -28,7 +28,7 @@ export function Navbar() {
                 <path d="M4 4h7v7H4zM13 4h7v4h-7zM4 13h4v7H4zM13 11h7v9h-7z" fill="white" />
               </svg>
             </div>
-            <span className="text-[19px] font-[800] tracking-tight">Pixel Forge</span>
+            <span className="text-[19px] font-[800] tracking-tight">Hembox.io</span>
           </Link>
 
           <nav className="hidden md:flex items-center gap-8">

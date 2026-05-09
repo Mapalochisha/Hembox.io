@@ -42,7 +42,7 @@ export default function SettingsPage() {
           <CardContent className="space-y-4">
             <div className="space-y-2">
               <Label htmlFor="agencyName">Agency Name</Label>
-              <Input id="agencyName" defaultValue="Pixel Forge" />
+              <Input id="agencyName" defaultValue="Hembox.io" />
             </div>
             <div className="space-y-2">
               <Label htmlFor="contactEmail">Contact Email</Label>

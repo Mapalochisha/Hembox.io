@@ -13,10 +13,10 @@ export default function RegisterPage() {
                 <path d="M4 4h7v7H4zM13 4h7v4h-7zM4 13h4v7H4zM13 11h7v9h-7z" fill="white" />
               </svg>
             </div>
-            <span className="text-[19px] font-[800] tracking-tight">Pixel Forge</span>
+            <span className="text-[19px] font-[800] tracking-tight">Hembox.io</span>
           </Link>
           <h1 className="text-2xl font-bold tracking-tight">Create account</h1>
-          <p className="text-gray-600 mt-1">Get started with Pixel Forge</p>
+          <p className="text-gray-600 mt-1">Get started with Hembox.io</p>
         </div>
 
         <div className="bg-white rounded-2xl border border-gray-100 shadow-xl shadow-navy/5 p-8 space-y-6">
