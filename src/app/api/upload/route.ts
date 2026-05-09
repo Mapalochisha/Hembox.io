@@ -31,8 +31,4 @@ export async function POST(request: Request) {
       { status: 500 }
     )
   }
-}ge || "Upload failed" },
-      { status: 500 }
-    )
-  }
 }
