@@ -1,5 +1,8 @@
+"use client"
+
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, LineChart, Line } from "recharts"
+import { useEffect, useState } from "react"
 
 const revenueData = [
   { month: "Jan", revenue: 12000 },
@@ -20,6 +23,27 @@ const clientData = [
 ]
 
 export default function AnalyticsPage() {
+  const [isMounted, setIsMounted] = useState(false)
+
+  useEffect(() => {
+    setIsMounted(true)
+  }, [])
+
+  if (!isMounted) {
+    return (
+      <div className="space-y-8">
+        <div>
+          <h1 className="text-3xl font-bold tracking-tight">Analytics</h1>
+          <p className="text-gray-600 mt-1">Track your business performance</p>
+        </div>
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <Card><CardHeader><CardTitle>Revenue Overview</CardTitle></CardHeader><CardContent><div className="h-[300px] w-full bg-gray-50 animate-pulse rounded-lg" /></CardContent></Card>
+          <Card><CardHeader><CardTitle>Client Growth</CardTitle></CardHeader><CardContent><div className="h-[300px] w-full bg-gray-50 animate-pulse rounded-lg" /></CardContent></Card>
+        </div>
+      </div>
+    )
+  }
+
   return (
     <div className="space-y-8">
       <div>
