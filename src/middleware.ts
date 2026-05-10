@@ -36,15 +36,15 @@ export async function middleware(request: NextRequest) {
       return NextResponse.redirect(new URL('/login', request.url))
     }
 
-    const { data: profile } = await supabase
+    const { data: profile, error } = await supabase
       .from('profiles')
       .select('role')
       .eq('id', user.id)
-      .single()
+      .maybeSingle()
 
-    console.log("Middleware DEBUG - User ID:", user.id, "Role fetched:", profile?.role);
+    console.log("Middleware DEBUG - User ID:", user.id, "Role fetched:", profile?.role, "Error:", error);
 
-    if (profile?.role !== 'admin') {
+    if (error || profile?.role !== 'admin') {
       return NextResponse.redirect(new URL('/', request.url))
     }
   }
