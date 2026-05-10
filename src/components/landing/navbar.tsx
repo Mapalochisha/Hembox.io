@@ -32,9 +32,9 @@ export function Navbar() {
           </Link>
 
           <nav className="hidden md:flex items-center gap-8">
+            <a href="#services" className="text-[14.5px] font-medium text-gray-600 hover:text-navy transition">Services</a>
             <a href="#work" className="text-[14.5px] font-medium text-gray-600 hover:text-navy transition">Work</a>
-            <a href="#about" className="text-[14.5px] font-medium text-gray-600 hover:text-navy transition">About</a>
-            <a href="#pricing" className="text-[14.5px] font-medium text-gray-600 hover:text-navy transition">Pricing</a>
+            <a href="#about" className="text-[14.5px] font-medium text-gray-600 hover:text-navy transition">Process</a>
             <a href="#contact" className="text-[14.5px] font-medium text-gray-600 hover:text-navy transition">Contact</a>
           </nav>
 
@@ -104,9 +104,9 @@ export function Navbar() {
       {mobileMenuOpen && (
         <div className="md:hidden border-t border-black/5 bg-white">
           <div className="px-6 py-4 flex flex-col gap-3">
+            <a href="#services" className="py-2 text-[15px] font-medium">Services</a>
             <a href="#work" className="py-2 text-[15px] font-medium">Work</a>
-            <a href="#about" className="py-2 text-[15px] font-medium">About</a>
-            <a href="#pricing" className="py-2 text-[15px] font-medium">Pricing</a>
+            <a href="#about" className="py-2 text-[15px] font-medium">Process</a>
             <a href="#contact" className="py-2 text-[15px] font-medium">Contact</a>
             {!user && (
               <>
