@@ -31,7 +31,6 @@ export async function middleware(request: NextRequest) {
     data: { user },
   } = await supabase.auth.getUser()
 
-  // Protect admin routes
   if (request.nextUrl.pathname.startsWith('/admin')) {
     if (!user) {
       return NextResponse.redirect(new URL('/login', request.url))
@@ -42,6 +41,8 @@ export async function middleware(request: NextRequest) {
       .select('role')
       .eq('id', user.id)
       .single()
+
+    console.log("Middleware DEBUG - User ID:", user.id, "Role fetched:", profile?.role);
 
     if (profile?.role !== 'admin') {
       return NextResponse.redirect(new URL('/', request.url))
