@@ -32,23 +32,17 @@ export async function middleware(request: NextRequest) {
     data: { user },
   } = await supabase.auth.getUser()
 
-  console.log(`[Middleware] Path: ${pathname} | User: ${user?.id || 'none'}`);
-
   // Protect admin routes
   if (pathname.startsWith('/admin')) {
     if (!user) {
-      console.log(`[Middleware] No user found for ${pathname}, redirecting to /login`);
       return NextResponse.redirect(new URL('/login', request.url))
     }
 
     // Use the RPC function to bypass RLS issues in middleware
-    const { data: role, error } = await supabase
+    const { data: role } = await supabase
       .rpc('get_user_role', { user_id: user.id })
 
-    console.log(`[Middleware] Admin Check | Role: ${role} | Error: ${JSON.stringify(error)}`);
-
     if (role !== 'admin') {
-      console.log(`[Middleware] Access denied for ${pathname}, redirecting to / | Role found: ${role}`);
       return NextResponse.redirect(new URL('/', request.url))
     }
   }

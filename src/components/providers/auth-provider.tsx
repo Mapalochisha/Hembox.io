@@ -29,32 +29,27 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       const { data: { user: authUser } } = await supabase.auth.getUser()
 
       if (authUser) {
-        const { data: profile } = await supabase
-          .from('profiles')
-          .select('*')
-          .eq('id', authUser.id)
-          .maybeSingle()
+        // Fetch profile and role separately/robustly
+        const [profileResponse, roleResponse] = await Promise.all([
+          supabase.from('profiles').select('*').eq('id', authUser.id).maybeSingle(),
+          supabase.rpc('get_user_role', { user_id: authUser.id })
+        ])
 
-        if (profile) {
-          setState({
-            user: profile as User,
-            isLoading: false,
-            isAdmin: profile.role === 'admin',
-          })
-          document.cookie = `user_role=${profile.role}; path=/; max-age=${60 * 60 * 24 * 7}; SameSite=Lax`
-        } else {
-          // Fallback to auth user data if profile is missing
-          setState({
-            user: {
-              id: authUser.id,
-              email: authUser.email!,
-              full_name: authUser.user_metadata?.full_name || 'User',
-              role: 'user',
-            } as User,
-            isLoading: false,
-            isAdmin: false,
-          })
-        }
+        const profile = profileResponse.data
+        const role = roleResponse.data || profile?.role || 'user'
+
+        setState({
+          user: (profile || {
+            id: authUser.id,
+            email: authUser.email!,
+            full_name: authUser.user_metadata?.full_name || 'User',
+            role: role,
+          }) as User,
+          isLoading: false,
+          isAdmin: role === 'admin',
+        })
+
+        document.cookie = `user_role=${role}; path=/; max-age=${60 * 60 * 24 * 7}; SameSite=Lax`
       } else {
         setState({ user: null, isLoading: false, isAdmin: false })
         document.cookie = 'user_role=; path=/; max-age=0; SameSite=Lax'
