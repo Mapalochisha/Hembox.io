@@ -41,16 +41,14 @@ export async function middleware(request: NextRequest) {
       return NextResponse.redirect(new URL('/login', request.url))
     }
 
-    const { data: profile, error } = await supabase
-      .from('profiles')
-      .select('role')
-      .eq('id', user.id)
-      .maybeSingle()
+    // Use the RPC function to bypass RLS issues in middleware
+    const { data: role, error } = await supabase
+      .rpc('get_user_role', { user_id: user.id })
 
-    console.log(`[Middleware] Admin Check | Role: ${profile?.role} | Error: ${JSON.stringify(error)}`);
+    console.log(`[Middleware] Admin Check | Role: ${role} | Error: ${JSON.stringify(error)}`);
 
-    if (profile?.role !== 'admin') {
-      console.log(`[Middleware] Access denied for ${pathname}, redirecting to /`);
+    if (role !== 'admin') {
+      console.log(`[Middleware] Access denied for ${pathname}, redirecting to / | Role found: ${role}`);
       return NextResponse.redirect(new URL('/', request.url))
     }
   }
