@@ -27,13 +27,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const refreshUser = async () => {
     try {
       const { data: { session } } = await supabase.auth.getSession()
+      console.log("[Auth] Session found:", !!session, session?.user?.email);
 
       if (session?.user) {
-        const { data: profile } = await supabase
+        const { data: profile, error } = await supabase
           .from('profiles')
           .select('*')
           .eq('id', session.user.id)
           .single()
+        
+        console.log("[Auth] Profile fetch:", !!profile, "Role:", profile?.role, "Error:", error);
 
         if (profile) {
           setState({
@@ -44,12 +47,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
           // Set admin cookie for middleware
           document.cookie = `user_role=${profile.role}; path=/; max-age=${60 * 60 * 24 * 7}`
+        } else {
+          // Fallback if profile is missing but session exists
+          console.warn("[Auth] Session exists but profile is missing or blocked by RLS");
+          setState({ user: null, isLoading: false, isAdmin: false })
         }
       } else {
         setState({ user: null, isLoading: false, isAdmin: false })
         document.cookie = 'user_role=; path=/; max-age=0'
       }
     } catch (error) {
+      console.error("[Auth] Refresh user error:", error);
       setState({ user: null, isLoading: false, isAdmin: false })
     }
   }
