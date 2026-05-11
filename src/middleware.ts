@@ -1,8 +1,9 @@
 import { NextResponse } from 'next/server'
 import type { NextRequest } from 'next/server'
 import { createServerClient, type CookieOptions } from '@supabase/ssr'
-
 export async function middleware(request: NextRequest) {
+  const pathname = request.nextUrl.pathname;
+
   let response = NextResponse.next({
     request: {
       headers: request.headers,
@@ -31,8 +32,12 @@ export async function middleware(request: NextRequest) {
     data: { user },
   } = await supabase.auth.getUser()
 
-  if (request.nextUrl.pathname.startsWith('/admin')) {
+  console.log(`[Middleware] Path: ${pathname} | User: ${user?.id || 'none'}`);
+
+  // Protect admin routes
+  if (pathname.startsWith('/admin')) {
     if (!user) {
+      console.log(`[Middleware] No user found for ${pathname}, redirecting to /login`);
       return NextResponse.redirect(new URL('/login', request.url))
     }
 
@@ -42,9 +47,10 @@ export async function middleware(request: NextRequest) {
       .eq('id', user.id)
       .maybeSingle()
 
-    console.log("Middleware DEBUG - User ID:", user.id, "Role fetched:", profile?.role, "Error:", error);
+    console.log(`[Middleware] Admin Check | Role: ${profile?.role} | Error: ${JSON.stringify(error)}`);
 
-    if (error || profile?.role !== 'admin') {
+    if (profile?.role !== 'admin') {
+      console.log(`[Middleware] Access denied for ${pathname}, redirecting to /`);
       return NextResponse.redirect(new URL('/', request.url))
     }
   }
