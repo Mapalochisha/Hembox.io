@@ -1,16 +1,12 @@
 "use client"
 
 import { Sidebar } from "@/components/admin/sidebar"
-import { useAuth } from "@/components/providers/auth-provider"
-import { useRouter } from "next/navigation"
-import { useEffect } from "react"
 import { useAdmin } from "@/hooks/use-admin"
+import { SidebarProvider, useSidebar } from "@/components/admin/sidebar-provider"
+import { cn } from "@/lib/utils"
 
-export default function AdminLayout({
-  children,
-}: {
-  children: React.ReactNode
-}) {
+function AdminLayoutContent({ children }: { children: React.ReactNode }) {
+  const { isCollapsed } = useSidebar()
   const { isAdmin, isLoading } = useAdmin()
 
   if (isLoading) {
@@ -26,15 +22,20 @@ export default function AdminLayout({
   return (
     <div className="min-h-screen bg-gray-50 flex">
       <Sidebar />
-      <main className="flex-1 transition-all duration-300 ml-[80px] lg:ml-[280px]">
+      <main 
+        className={cn(
+          "flex-1 transition-all duration-300",
+          isCollapsed ? "ml-[80px]" : "ml-[280px]"
+        )}
+      >
         <header className="h-[72px] bg-white border-b border-black/5 px-8 flex items-center justify-between sticky top-0 z-40">
-          <h2 className="text-[14px] font-semibold text-gray-500 uppercase tracking-wider">Admin Area</h2>
+          <h2 className="text-[13px] font-bold text-gray-400 uppercase tracking-[0.15em]">Management Console</h2>
           <div className="flex items-center gap-4">
             <div className="text-right hidden sm:block">
               <p className="text-[14px] font-bold text-navy">Admin User</p>
-              <p className="text-[12px] text-gray-500">Global Admin</p>
+              <p className="text-[12px] text-teal font-semibold">Active Session</p>
             </div>
-            <div className="w-10 h-10 rounded-xl bg-navy text-white flex items-center justify-center font-bold">
+            <div className="w-10 h-10 rounded-xl bg-navy text-white flex items-center justify-center font-bold shadow-lg shadow-navy/10 border border-white/10">
               A
             </div>
           </div>
@@ -44,5 +45,17 @@ export default function AdminLayout({
         </div>
       </main>
     </div>
+  )
+}
+
+export default function AdminLayout({
+  children,
+}: {
+  children: React.ReactNode
+}) {
+  return (
+    <SidebarProvider>
+      <AdminLayoutContent>{children}</AdminLayoutContent>
+    </SidebarProvider>
   )
 }
