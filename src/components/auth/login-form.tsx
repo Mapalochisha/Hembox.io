@@ -44,11 +44,10 @@ export function LoginForm() {
         .single()
 
       if (profile?.role === "admin") {
-        router.push("/admin/dashboard")
+        window.location.href = "/admin/dashboard"
       } else {
-        router.push("/")
+        window.location.href = "/"
       }
-      router.refresh()
     } catch (error: any) {
       toast({
         title: "Error",

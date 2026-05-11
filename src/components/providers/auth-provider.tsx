@@ -26,17 +26,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const refreshUser = async () => {
     try {
-      const { data: { session } } = await supabase.auth.getSession()
-      console.log("[Auth] Session found:", !!session, session?.user?.email);
+      const { data: { user: authUser } } = await supabase.auth.getUser()
 
-      if (session?.user) {
-        const { data: profile, error } = await supabase
+      if (authUser) {
+        const { data: profile } = await supabase
           .from('profiles')
           .select('*')
-          .eq('id', session.user.id)
-          .single()
-        
-        console.log("[Auth] Profile fetch:", !!profile, "Role:", profile?.role, "Error:", error);
+          .eq('id', authUser.id)
+          .maybeSingle()
 
         if (profile) {
           setState({
@@ -44,20 +41,25 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             isLoading: false,
             isAdmin: profile.role === 'admin',
           })
-
-          // Set admin cookie for middleware
-          document.cookie = `user_role=${profile.role}; path=/; max-age=${60 * 60 * 24 * 7}`
+          document.cookie = `user_role=${profile.role}; path=/; max-age=${60 * 60 * 24 * 7}; SameSite=Lax`
         } else {
-          // Fallback if profile is missing but session exists
-          console.warn("[Auth] Session exists but profile is missing or blocked by RLS");
-          setState({ user: null, isLoading: false, isAdmin: false })
+          // Fallback to auth user data if profile is missing
+          setState({
+            user: {
+              id: authUser.id,
+              email: authUser.email!,
+              full_name: authUser.user_metadata?.full_name || 'User',
+              role: 'user',
+            } as User,
+            isLoading: false,
+            isAdmin: false,
+          })
         }
       } else {
         setState({ user: null, isLoading: false, isAdmin: false })
-        document.cookie = 'user_role=; path=/; max-age=0'
+        document.cookie = 'user_role=; path=/; max-age=0; SameSite=Lax'
       }
     } catch (error) {
-      console.error("[Auth] Refresh user error:", error);
       setState({ user: null, isLoading: false, isAdmin: false })
     }
   }
