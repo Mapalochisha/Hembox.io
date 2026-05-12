@@ -24,28 +24,18 @@ function AdminLayoutContent({ children }: { children: React.ReactNode }) {
     <div className="min-h-screen bg-gray-50 flex overflow-x-hidden">
       <Sidebar />
       
-      {/* Mobile Overlay */}
-      {!isCollapsed && (
-        <div 
-          className="fixed inset-0 bg-navy/40 backdrop-blur-sm z-40 lg:hidden transition-all duration-300" 
-          onClick={toggleSidebar}
-        />
-      )}
+      {/* Mobile Overlay - Only show if sidebar is expanded on mobile and we want it to cover */}
+      {/* However, user said they want it "on the side", so we'll skip overlay for now and just push */}
 
       <main 
         className={cn(
           "flex-1 transition-all duration-300 min-w-0 w-full",
-          isCollapsed ? "ml-0 lg:ml-[80px]" : "ml-0 lg:ml-[280px]"
+          isCollapsed ? "ml-[80px]" : "ml-[280px]"
         )}
       >
         <header className="h-[72px] bg-white border-b border-black/5 px-4 lg:px-8 flex items-center justify-between sticky top-0 z-40">
           <div className="flex items-center gap-3 lg:gap-4">
-            <button 
-              onClick={toggleSidebar}
-              className="lg:hidden h-10 w-10 rounded-xl bg-gray-50 flex items-center justify-center text-navy border border-black/5 hover:bg-gray-100 transition-colors"
-            >
-              <Menu className="w-5 h-5" />
-            </button>
+            {/* The sidebar toggle is now inside the sidebar itself at the top, but we can keep a simple menu button if needed */}
             <h2 className="text-[11px] lg:text-[13px] font-bold text-gray-400 uppercase tracking-[0.15em] truncate">Management Console</h2>
           </div>
           
