@@ -12,6 +12,7 @@ import { Save, Phone, FileText, Info, ShieldCheck, HelpCircle, Loader2 } from "l
 export default function SettingsPage() {
   const [isLoading, setIsLoading] = useState(true)
   const [isSaving, setIsSaving] = useState(false)
+  const [settingsId, setSettingsId] = useState<string | null>(null)
   const [settings, setSettings] = useState({
     agency_name: "",
     contact_email: "",
@@ -37,6 +38,7 @@ export default function SettingsPage() {
 
       if (error) throw error
       if (data) {
+        setSettingsId(data.id)
         setSettings({
           agency_name: data.agency_name || "",
           contact_email: data.contact_email || "",
@@ -60,6 +62,7 @@ export default function SettingsPage() {
 
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault()
+    if (!settingsId) return
     setIsSaving(true)
 
     try {
@@ -69,7 +72,7 @@ export default function SettingsPage() {
           ...settings,
           updated_at: new Date().toISOString()
         })
-        .eq('agency_name', 'Hembox.io') // Update by known name or use ID if preferred
+        .eq('id', settingsId)
 
       if (error) throw error
 
