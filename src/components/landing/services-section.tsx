@@ -2,15 +2,20 @@
 
 import { useState, useEffect } from "react"
 import { createClient } from "@/lib/supabase/client"
-import { Globe, Search, Palette, ShoppingCart, Megaphone, LifeBuoy } from "lucide-react"
+import { 
+  Globe, Search, Palette, ShoppingCart, Megaphone, LifeBuoy, 
+  Code, Smartphone, Rocket, Shield, Zap, Layout, 
+  Cpu, Heart, Layers, MessageSquare, Database, Cloud, 
+  Lock, BarChart, Target, PenTool, MousePointer2, Camera,
+  GraduationCap, School
+} from "lucide-react"
 
 const ICON_MAP: Record<string, any> = {
-  Globe,
-  Search,
-  Palette,
-  ShoppingCart,
-  Megaphone,
-  LifeBuoy,
+  Globe, Search, Palette, ShoppingCart, Megaphone, LifeBuoy, 
+  Code, Smartphone, Rocket, Shield, Zap, Layout, 
+  Cpu, Heart, Layers, MessageSquare, Database, Cloud, 
+  Lock, BarChart, Target, PenTool, MousePointer2, Camera,
+  GraduationCap, School
 }
 
 interface Service {

@@ -12,7 +12,7 @@ import {
   Globe, Search, Palette, ShoppingCart, Megaphone, LifeBuoy, Plus, Loader2, 
   Trash2, Eye, EyeOff, X, Code, Smartphone, Rocket, Shield, Zap, Layout, 
   Cpu, Heart, Layers, MessageSquare, Database, Cloud, Lock, BarChart, 
-  Target, PenTool, MousePointer2, Camera
+  Target, PenTool, MousePointer2, Camera, GraduationCap, School
 } from "lucide-react"
 
 const ICON_LIST = [
@@ -39,7 +39,9 @@ const ICON_LIST = [
   { name: "Target", icon: Target },
   { name: "PenTool", icon: PenTool },
   { name: "MousePointer2", icon: MousePointer2 },
-  { name: "Camera", icon: Camera }
+  { name: "Camera", icon: Camera },
+  { name: "GraduationCap", icon: GraduationCap },
+  { name: "School", icon: School }
 ]
 
 const ICON_MAP: Record<string, any> = ICON_LIST.reduce((acc, curr) => ({ ...acc, [curr.name]: curr.icon }), {})
