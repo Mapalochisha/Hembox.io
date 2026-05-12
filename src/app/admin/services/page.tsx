@@ -12,7 +12,7 @@ import {
   Globe, Search, Palette, ShoppingCart, Megaphone, LifeBuoy, Plus, Loader2, 
   Trash2, Eye, EyeOff, X, Code, Smartphone, Rocket, Shield, Zap, Layout, 
   Cpu, Heart, Layers, MessageSquare, Database, Cloud, Lock, BarChart, 
-  Target, PenTool, MousePointer2, Camera, GraduationCap, School
+  Target, PenTool, MousePointer2, Camera, GraduationCap, School, Pencil
 } from "lucide-react"
 
 const ICON_LIST = [
@@ -52,15 +52,17 @@ interface Service {
   description: string
   icon_name: string
   status: 'active' | 'inactive'
+  sort_order: number
 }
 
 export default function AdminServicesPage() {
   const [services, setServices] = useState<Service[]>([])
   const [isLoading, setIsLoading] = useState(true)
-  const [isAdding, setIsAdding] = useState(false)
-  const [showAddForm, setShowAddForm] = useState(false)
+  const [isSaving, setIsSaving] = useState(false)
+  const [showForm, setShowForm] = useState(false)
+  const [editingId, setEditingId] = useState<string | null>(null)
   
-  const [newService, setNewService] = useState({
+  const [formData, setFormData] = useState({
     title: "",
     description: "",
     icon_name: "Globe"
@@ -93,33 +95,61 @@ export default function AdminServicesPage() {
     }
   }
 
-  const handleAddService = async (e: React.FormEvent) => {
+  const handleEdit = (service: Service) => {
+    setEditingId(service.id)
+    setFormData({
+      title: service.title,
+      description: service.description,
+      icon_name: service.icon_name,
+    })
+    setShowForm(true)
+    window.scrollTo({ top: 0, behavior: 'smooth' })
+  }
+
+  const handleSave = async (e: React.FormEvent) => {
     e.preventDefault()
-    setIsAdding(true)
+    setIsSaving(true)
 
     try {
-      const { data, error } = await supabase
-        .from('services')
-        .insert([{
-          ...newService,
-          status: 'active',
-          sort_order: services.length
-        }])
-        .select()
+      if (editingId) {
+        // Update
+        const { data, error } = await supabase
+          .from('services')
+          .update(formData)
+          .eq('id', editingId)
+          .select()
 
-      if (error) throw error
+        if (error) throw error
+        if (data) {
+          setServices(services.map(s => s.id === editingId ? data[0] : s))
+          toast({ title: "Service updated successfully", variant: "success" })
+        }
+      } else {
+        // Create
+        const { data, error } = await supabase
+          .from('services')
+          .insert([{ ...formData, status: 'active', sort_order: services.length }])
+          .select()
 
-      if (data) {
-        setServices([...services, data[0]])
-        setShowAddForm(false)
-        setNewService({ title: "", description: "", icon_name: "Globe" })
-        toast({ title: "Service added", variant: "success" })
+        if (error) throw error
+        if (data) {
+          setServices([...services, data[0]])
+          toast({ title: "Service added successfully", variant: "success" })
+        }
       }
+      
+      handleCloseForm()
     } catch (error: any) {
       toast({ title: "Error", description: error.message, variant: "destructive" })
     } finally {
-      setIsAdding(false)
+      setIsSaving(false)
     }
+  }
+
+  const handleCloseForm = () => {
+    setShowForm(false)
+    setEditingId(null)
+    setFormData({ title: "", description: "", icon_name: "Globe" })
   }
 
   const toggleStatus = async (id: string, currentStatus: string) => {
@@ -139,7 +169,7 @@ export default function AdminServicesPage() {
   }
 
   const deleteService = async (id: string) => {
-    if (!confirm("Are you sure?")) return
+    if (!confirm("Are you sure? This service will be removed from your homepage.")) return
     try {
       const { error } = await supabase
         .from('services')
@@ -169,36 +199,38 @@ export default function AdminServicesPage() {
           <h1 className="text-3xl font-bold tracking-tight text-navy">Service Offerings</h1>
           <p className="text-gray-600 mt-1">Manage the services displayed on your homepage</p>
         </div>
-        <Button 
-          onClick={() => setShowAddForm(true)}
-          className="bg-teal text-navy font-bold hover:bg-teal/90 gap-2"
-        >
-          <Plus className="w-4 h-4" />
-          Add Service
-        </Button>
+        {!showForm && (
+          <Button 
+            onClick={() => setShowForm(true)}
+            className="bg-teal text-navy font-bold hover:bg-teal/90 gap-2"
+          >
+            <Plus className="w-4 h-4" />
+            Add Service
+          </Button>
+        )}
       </div>
 
-      {showAddForm && (
+      {showForm && (
         <Card className="border-teal/30 bg-white relative overflow-hidden rounded-[24px] shadow-xl shadow-teal/5">
           <button 
-            onClick={() => setShowAddForm(false)}
+            onClick={handleCloseForm}
             className="absolute top-4 right-4 text-gray-400 hover:text-navy z-10"
           >
             <X className="w-5 h-5" />
           </button>
           <CardHeader>
-            <CardTitle>Add New Service</CardTitle>
+            <CardTitle className="text-navy">{editingId ? "Edit Service" : "Add New Service"}</CardTitle>
           </CardHeader>
           <CardContent>
-            <form onSubmit={handleAddService} className="space-y-8">
+            <form onSubmit={handleSave} className="space-y-8">
               <div className="grid sm:grid-cols-2 gap-8">
                 <div className="space-y-6">
                   <div className="space-y-2">
                     <Label className="text-[13px] font-bold uppercase tracking-wider text-gray-500">Service Title</Label>
                     <Input 
                       required
-                      value={newService.title}
-                      onChange={(e) => setNewService({...newService, title: e.target.value})}
+                      value={formData.title}
+                      onChange={(e) => setFormData({...formData, title: e.target.value})}
                       placeholder="e.g. Web Development"
                       className="h-12 rounded-xl"
                     />
@@ -207,9 +239,9 @@ export default function AdminServicesPage() {
                     <Label className="text-[13px] font-bold uppercase tracking-wider text-gray-500">Description</Label>
                     <textarea 
                       required
-                      className="w-full min-h-[120px] rounded-xl border border-input bg-background px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-teal/50"
-                      value={newService.description}
-                      onChange={(e) => setNewService({...newService, description: e.target.value})}
+                      className="w-full min-h-[120px] rounded-xl border border-input bg-background px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-teal/50 transition"
+                      value={formData.description}
+                      onChange={(e) => setFormData({...formData, description: e.target.value})}
                       placeholder="What does this service include?"
                     />
                   </div>
@@ -222,10 +254,10 @@ export default function AdminServicesPage() {
                       <button
                         key={item.name}
                         type="button"
-                        onClick={() => setNewService({...newService, icon_name: item.name})}
+                        onClick={() => setFormData({...formData, icon_name: item.name})}
                         className={cn(
                           "aspect-square rounded-xl flex items-center justify-center transition-all",
-                          newService.icon_name === item.name 
+                          formData.icon_name === item.name 
                             ? "bg-teal text-navy scale-110 shadow-lg shadow-teal/20" 
                             : "bg-white text-gray-400 hover:bg-white hover:text-navy border border-black/[0.03]"
                         )}
@@ -237,10 +269,10 @@ export default function AdminServicesPage() {
                 </div>
               </div>
               <div className="flex justify-end gap-3 pt-4">
-                <Button variant="ghost" type="button" onClick={() => setShowAddForm(false)}>Cancel</Button>
-                <Button type="submit" disabled={isAdding} className="bg-navy h-12 px-8 rounded-xl font-bold">
-                  {isAdding ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <Plus className="w-4 h-4 mr-2" />}
-                  Create Service
+                <Button variant="ghost" type="button" onClick={handleCloseForm} className="rounded-xl h-12 px-6">Cancel</Button>
+                <Button type="submit" disabled={isSaving} className="bg-navy h-12 px-10 rounded-xl font-bold">
+                  {isSaving ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <Plus className="w-4 h-4 mr-2" />}
+                  {editingId ? "Update Service" : "Create Service"}
                 </Button>
               </div>
             </form>
@@ -251,7 +283,7 @@ export default function AdminServicesPage() {
       {services.length === 0 ? (
         <Card className="p-12 text-center border-dashed rounded-[24px]">
           <p className="text-gray-500 mb-4">No services found. Add your first service to get started.</p>
-          <Button variant="outline" onClick={() => setShowAddForm(true)}>Add Service</Button>
+          <Button variant="outline" onClick={() => setShowForm(true)}>Add Service</Button>
         </Card>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -276,7 +308,10 @@ export default function AdminServicesPage() {
                   <CardTitle className="text-[18px] mb-2 group-hover:text-teal transition-colors">{service.title}</CardTitle>
                   <p className="text-[14px] text-gray-500 line-clamp-2 mb-6 h-10">{service.description}</p>
                   <div className="flex gap-2">
-                    <Button variant="outline" size="sm" className="flex-1 rounded-lg">Edit</Button>
+                    <Button variant="outline" size="sm" className="flex-1 rounded-lg font-bold" onClick={() => handleEdit(service)}>
+                      <Pencil className="w-3.5 h-3.5 mr-2" />
+                      Edit
+                    </Button>
                     <Button 
                       variant="ghost" 
                       size="sm" 
