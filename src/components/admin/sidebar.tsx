@@ -42,7 +42,8 @@ export function Sidebar() {
     <aside 
       className={cn(
         "fixed left-0 top-0 h-screen bg-navy transition-all duration-300 z-50 flex flex-col border-r border-white/5",
-        isCollapsed ? "w-[80px]" : "w-[280px]"
+        isCollapsed ? "w-0 lg:w-[80px]" : "w-[280px]",
+        isCollapsed ? "-translate-x-full lg:translate-x-0" : "translate-x-0"
       )}
     >
       {/* Logo & Toggle Area */}

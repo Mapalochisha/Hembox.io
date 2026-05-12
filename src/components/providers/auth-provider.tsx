@@ -55,7 +55,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         document.cookie = 'user_role=; path=/; max-age=0; SameSite=Lax'
       }
     } catch (error) {
+      console.error("[Auth] Error refreshing user:", error)
       setState({ user: null, isLoading: false, isAdmin: false })
+    } finally {
+      // Final safety check to ensure spinner stops
+      setState(prev => ({ ...prev, isLoading: false }))
     }
   }
 
