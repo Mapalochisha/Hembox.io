@@ -1,35 +1,35 @@
 "use client"
 
+import { useState, useEffect } from "react"
+import { createClient } from "@/lib/supabase/client"
 import { ArrowUpRight } from "lucide-react"
 
-const projects = [
-  {
-    title: "EcoStore E-commerce",
-    category: "Web Development",
-    image: "https://images.unsplash.com/photo-1460925895917-afdab827c52f?auto=format&fit=crop&q=80&w=800",
-    color: "bg-teal/20",
-  },
-  {
-    title: "Luxe Real Estate",
-    category: "UI/UX Design",
-    image: "https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?auto=format&fit=crop&q=80&w=800",
-    color: "bg-coral/20",
-  },
-  {
-    title: "HealthTrack App",
-    category: "Mobile Solutions",
-    image: "https://images.unsplash.com/photo-1504868584819-f8e90526ef49?auto=format&fit=crop&q=80&w=800",
-    color: "bg-navy/20",
-  },
-  {
-    title: "Modern Portfolio",
-    category: "Branding",
-    image: "https://images.unsplash.com/photo-1522542550221-31fd19575a2d?auto=format&fit=crop&q=80&w=800",
-    color: "bg-teal/20",
-  },
-]
+interface PortfolioItem {
+  id: string
+  title: string
+  category: string
+  image_url: string
+}
 
 export function PortfolioSection() {
+  const [projects, setProjects] = useState<PortfolioItem[]>([])
+  const supabase = createClient()
+
+  useEffect(() => {
+    const fetchPortfolio = async () => {
+      const { data } = await supabase
+        .from('portfolio_items')
+        .select('*')
+        .order('sort_order', { ascending: true })
+      
+      if (data) setProjects(data)
+    }
+
+    fetchPortfolio()
+  }, [])
+
+  if (projects.length === 0) return null
+
   return (
     <section id="work" className="py-24 relative overflow-hidden">
       <div className="max-w-[1200px] mx-auto px-6 lg:px-8">
@@ -47,10 +47,10 @@ export function PortfolioSection() {
 
         <div className="grid sm:grid-cols-2 gap-8">
           {projects.map((project, index) => (
-            <div key={index} className="group cursor-pointer">
-              <div className={`relative aspect-[4/3] rounded-[32px] overflow-hidden ${project.color} mb-6`}>
+            <div key={project.id} className="group cursor-pointer">
+              <div className={`relative aspect-[4/3] rounded-[32px] overflow-hidden bg-gray-100 mb-6`}>
                 <img 
-                  src={project.image} 
+                  src={project.image_url} 
                   alt={project.title}
                   className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
                 />

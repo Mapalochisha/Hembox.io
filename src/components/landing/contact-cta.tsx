@@ -2,9 +2,12 @@
 
 import { Button } from "@/components/ui/button"
 import { openMockupModal } from "@/components/landing/mockup-modal"
-import { ArrowRight, Mail, Phone, MapPin } from "lucide-react"
+import { useAgency } from "@/components/providers/agency-provider"
+import { ArrowRight, Mail, Phone } from "lucide-react"
 
 export function ContactCTA() {
+  const { agency_name, contact_email, phone_number } = useAgency()
+
   return (
     <section id="contact" className="py-24 relative overflow-hidden">
       <div className="absolute inset-0 grid-bg opacity-40 -z-10" />
@@ -21,7 +24,7 @@ export function ContactCTA() {
                 your <span className="text-teal">digital identity?</span>
               </h3>
               <p className="text-gray-400 text-[18px] leading-relaxed mb-10">
-                Join 300+ founders who trusted Hembox.io to build their 
+                Join 300+ founders who trusted {agency_name} to build their 
                 online presence. Your free mockup is just one click away.
               </p>
               
@@ -32,7 +35,7 @@ export function ContactCTA() {
                   </div>
                   <div>
                     <p className="text-[12px] text-gray-500 font-bold uppercase tracking-wider">Email Us</p>
-                    <p className="text-white font-medium">hello@hembox.io</p>
+                    <p className="text-white font-medium">{contact_email}</p>
                   </div>
                 </div>
                 <div className="flex items-center gap-4 group">
@@ -41,7 +44,7 @@ export function ContactCTA() {
                   </div>
                   <div>
                     <p className="text-[12px] text-gray-500 font-bold uppercase tracking-wider">Call Us</p>
-                    <p className="text-white font-medium">+1 (555) 000-0000</p>
+                    <p className="text-white font-medium">{phone_number}</p>
                   </div>
                 </div>
               </div>

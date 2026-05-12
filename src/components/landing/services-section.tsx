@@ -1,47 +1,47 @@
 "use client"
 
+import { useState, useEffect } from "react"
+import { createClient } from "@/lib/supabase/client"
 import { Globe, Search, Palette, ShoppingCart, Megaphone, LifeBuoy } from "lucide-react"
 
-const services = [
-  {
-    title: "Web Design & Development",
-    description: "Modern, responsive websites built with the latest technologies. Mobile-first and conversion-focused.",
-    icon: Globe,
-    color: "bg-teal/10 text-teal",
-  },
-  {
-    title: "SEO Optimization",
-    description: "Drive organic traffic and rank higher on Google. We optimize your visibility for real business growth.",
-    icon: Search,
-    color: "bg-coral/10 text-coral",
-  },
-  {
-    title: "Brand Identity",
-    description: "Logos, visual systems, and brand guidelines that make your business unforgettable and unique.",
-    icon: Palette,
-    color: "bg-navy/10 text-navy",
-  },
-  {
-    title: "E-commerce Solutions",
-    description: "Scalable online stores that sell. From inventory management to seamless checkout experiences.",
-    icon: ShoppingCart,
-    color: "bg-teal/10 text-teal",
-  },
-  {
-    title: "Google & Meta Ads",
-    description: "Targeted advertising campaigns that maximize your ROI. You pay for customers, not just clicks.",
-    icon: Megaphone,
-    color: "bg-coral/10 text-coral",
-  },
-  {
-    title: "Technical Support",
-    description: "12 months of free support with every project. We're here to keep your business running smoothly.",
-    icon: LifeBuoy,
-    color: "bg-navy/10 text-navy",
-  },
-]
+const ICON_MAP: Record<string, any> = {
+  Globe,
+  Search,
+  Palette,
+  ShoppingCart,
+  Megaphone,
+  LifeBuoy,
+}
+
+interface Service {
+  id: string
+  title: string
+  description: string
+  icon_name: string
+}
 
 export function ServicesSection() {
+  const [services, setServices] = useState<Service[]>([])
+  const supabase = createClient()
+
+  useEffect(() => {
+    const fetchServices = async () => {
+      const { data } = await supabase
+        .from('services')
+        .select('*')
+        .eq('status', 'active')
+        .order('sort_order', { ascending: true })
+      
+      if (data) setServices(data)
+    }
+
+    fetchServices()
+  }, [])
+
+  // If no services in DB, don't show section or show skeleton? 
+  // For now, let's just return null if empty to keep it clean.
+  if (services.length === 0) return null
+
   return (
     <section id="services" className="py-24 relative overflow-hidden">
       <div className="max-w-[1200px] mx-auto px-6 lg:px-8">
@@ -57,20 +57,23 @@ export function ServicesSection() {
         </div>
 
         <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
-          {services.map((service, index) => (
-            <div 
-              key={index}
-              className="group p-8 rounded-[32px] bg-white border border-black/5 hover:border-teal/20 hover:shadow-xl hover:shadow-teal/5 transition-all duration-300"
-            >
-              <div className={`w-14 h-14 rounded-2xl ${service.color} grid place-items-center mb-6 group-hover:scale-110 transition-transform`}>
-                <service.icon className="w-7 h-7" />
+          {services.map((service, index) => {
+            const Icon = ICON_MAP[service.icon_name] || Globe
+            return (
+              <div 
+                key={service.id}
+                className="group p-8 rounded-[32px] bg-white border border-black/5 hover:border-teal/20 hover:shadow-xl hover:shadow-teal/5 transition-all duration-300"
+              >
+                <div className="w-14 h-14 rounded-2xl bg-teal/10 text-teal grid place-items-center mb-6 group-hover:scale-110 transition-transform">
+                  <Icon className="w-7 h-7" />
+                </div>
+                <h4 className="text-[20px] font-bold text-navy mb-3">{service.title}</h4>
+                <p className="text-gray-600 leading-relaxed text-[15px]">
+                  {service.description}
+                </p>
               </div>
-              <h4 className="text-[20px] font-bold text-navy mb-3">{service.title}</h4>
-              <p className="text-gray-600 leading-relaxed text-[15px]">
-                {service.description}
-              </p>
-            </div>
-          ))}
+            )
+          })}
         </div>
       </div>
     </section>

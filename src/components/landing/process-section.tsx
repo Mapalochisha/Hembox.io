@@ -1,5 +1,7 @@
 "use client"
 
+import { useAgency } from "@/components/providers/agency-provider"
+
 const steps = [
   {
     number: "01",
@@ -24,6 +26,8 @@ const steps = [
 ]
 
 export function ProcessSection() {
+  const { about_us_content } = useAgency()
+
   return (
     <section id="about" className="py-24 bg-navy text-white overflow-hidden">
       <div className="max-w-[1200px] mx-auto px-6 lg:px-8">
@@ -35,8 +39,7 @@ export function ProcessSection() {
               <span className="text-teal">vision to life.</span>
             </h3>
             <p className="text-gray-400 text-[18px] leading-relaxed mb-8">
-              We've refined our workflow over hundreds of projects to ensure a 
-              smooth, transparent, and results-driven experience for every client.
+              {about_us_content || "We've refined our workflow over hundreds of projects to ensure a smooth, transparent, and results-driven experience for every client."}
             </p>
             <div className="flex flex-wrap gap-8">
               <div>
