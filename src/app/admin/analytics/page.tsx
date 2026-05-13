@@ -160,7 +160,7 @@ export default function AnalyticsPage() {
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <Card className="rounded-[32px] border-black/5 shadow-sm overflow-hidden">
+        <Card className="rounded-[32px] border-black/5 shadow-sm overflow-hidden will-change-transform">
           <CardHeader className="p-8 pb-0">
             <CardTitle className="text-xl font-bold text-navy">Revenue Growth (Last 6 Months)</CardTitle>
           </CardHeader>
@@ -176,13 +176,13 @@ export default function AnalyticsPage() {
                   itemStyle={{ color: "#2DD4BF" }}
                   formatter={(value: number) => [`K${value.toLocaleString()}`, "Revenue"]}
                 />
-                <Bar dataKey="revenue" fill="#2DD4BF" radius={[6, 6, 0, 0]} />
+                <Bar dataKey="revenue" fill="#2DD4BF" radius={[6, 6, 0, 0]} isAnimationActive={false} />
               </BarChart>
             </ResponsiveContainer>
           </CardContent>
         </Card>
 
-        <Card className="rounded-[32px] border-black/5 shadow-sm overflow-hidden">
+        <Card className="rounded-[32px] border-black/5 shadow-sm overflow-hidden will-change-transform">
           <CardHeader className="p-8 pb-0">
             <CardTitle className="text-xl font-bold text-navy">New Projects Frequency</CardTitle>
           </CardHeader>
@@ -203,6 +203,7 @@ export default function AnalyticsPage() {
                   strokeWidth={4} 
                   dot={{ fill: "#FF5A5F", r: 6, strokeWidth: 2, stroke: "#fff" }} 
                   activeDot={{ r: 8 }}
+                  isAnimationActive={false}
                 />
               </LineChart>
             </ResponsiveContainer>
