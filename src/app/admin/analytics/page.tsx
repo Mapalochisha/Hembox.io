@@ -56,6 +56,7 @@ export default function AnalyticsPage() {
         const monthNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"]
         const last6Months = Array.from({ length: 6 }, (_, i) => {
           const d = new Date()
+          d.setDate(1) // Set day to 1st to avoid month overflow issues (e.g., March 31 -> Feb 28)
           d.setMonth(d.getMonth() - (5 - i))
           return {
             month: monthNames[d.getMonth()],
@@ -168,7 +169,7 @@ export default function AnalyticsPage() {
               <BarChart data={data}>
                 <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f0f0f0" />
                 <XAxis dataKey="month" axisLine={false} tickLine={false} tick={{ fill: '#94a3b8', fontSize: 12 }} dy={10} />
-                <YAxis axisLine={false} tickLine={false} tick={{ fill: '#94a3b8', fontSize: 12 }} tickFormatter={(v) => `K${v}`} />
+                <YAxis axisLine={false} tickLine={false} tick={{ fill: '#94a3b8', fontSize: 12 }} tickFormatter={(v) => `K${v >= 1000 ? (v / 1000).toFixed(0) + 'k' : v}`} />
                 <Tooltip 
                   cursor={{ fill: '#f8fafc' }}
                   contentStyle={{ backgroundColor: "#0F172A", borderRadius: "12px", border: "none", color: "#fff" }}

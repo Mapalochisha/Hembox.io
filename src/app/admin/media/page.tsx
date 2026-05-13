@@ -93,7 +93,7 @@ export default function MediaPage() {
             <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
               {images.map((url, index) => (
                 <div key={index} className="relative group aspect-square rounded-xl overflow-hidden border border-gray-200">
-                  <img src={url} alt={`Upload K{index + 1}`} className="w-full h-full object-cover" />
+                  <img src={url} alt={`Upload ${index + 1}`} className="w-full h-full object-cover" />
                   <div className="absolute inset-0 bg-navy/60 opacity-0 group-hover:opacity-100 transition flex items-center justify-center gap-2">
                     <Button variant="ghost" size="sm" className="text-white hover:bg-white/20">
                       <Image className="w-4 h-4" />

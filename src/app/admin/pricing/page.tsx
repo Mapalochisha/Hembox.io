@@ -351,7 +351,7 @@ export default function AdminPricingPage() {
               )}
               <CardHeader className="pb-2">
                 <div className="flex items-center justify-between mb-1">
-                  <span className={`text-[11px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full K{
+                  <span className={`text-[11px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full ${
                     pkg.status === 'active' ? 'bg-teal/10 text-teal' : 'bg-gray-100 text-gray-400'
                   }`}>
                     {pkg.status}
