@@ -138,8 +138,7 @@ export default function PricingPage() {
               </div>
               <Button 
                 onClick={openMockupModal}
-                variant="outline" 
-                className="h-16 px-10 rounded-2xl border-white/10 hover:bg-white/5 text-white text-lg font-bold"
+                className="h-16 px-10 rounded-2xl bg-white text-navy hover:bg-teal hover:text-navy text-lg font-bold transition-all"
               >
                 Contact for Custom Quote
               </Button>
