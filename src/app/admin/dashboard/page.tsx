@@ -76,7 +76,7 @@ export default async function AdminDashboardPage() {
             <DollarSign className="w-4 h-4 text-coral" />
           </CardHeader>
           <CardContent>
-            <div className="text-3xl font-bold">$48.2k</div>
+            <div className="text-3xl font-bold">K48.2k</div>
             <p className="text-xs text-gray-500 mt-1">+23% from last month</p>
           </CardContent>
         </Card>

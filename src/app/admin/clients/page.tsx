@@ -15,7 +15,7 @@ async function getClients(search?: string) {
     .order("created_at", { ascending: false })
 
   if (search) {
-    query = query.or(`company_name.ilike.%${search}%,profiles.full_name.ilike.%${search}%`)
+    query = query.or(`company_name.ilike.%K{search}%,profiles.full_name.ilike.%K{search}%`)
   }
 
   const { data, error } = await query
@@ -97,12 +97,12 @@ export default async function ClientsPage({
                     <td className="py-4 px-4">
                       <div className="flex gap-2">
                         {client.profiles?.email && (
-                          <a href={`mailto:${client.profiles.email}`} className="text-gray-400 hover:text-navy transition">
+                          <a href={`mailto:K{client.profiles.email}`} className="text-gray-400 hover:text-navy transition">
                             <Mail className="w-4 h-4" />
                           </a>
                         )}
                         {client.profiles?.phone && (
-                          <a href={`tel:${client.profiles.phone}`} className="text-gray-400 hover:text-navy transition">
+                          <a href={`tel:K{client.profiles.phone}`} className="text-gray-400 hover:text-navy transition">
                             <Phone className="w-4 h-4" />
                           </a>
                         )}
@@ -120,7 +120,7 @@ export default async function ClientsPage({
                     </td>
                     <td className="py-4 px-4 text-sm text-gray-600">{client.industry || "—"}</td>
                     <td className="py-4 px-4 text-right">
-                      <Link href={`/admin/clients/${client.id}`}>
+                      <Link href={`/admin/clients/K{client.id}`}>
                         <Button variant="ghost" size="sm">
                           <MoreHorizontal className="w-4 h-4" />
                         </Button>

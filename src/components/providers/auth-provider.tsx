@@ -49,7 +49,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           isAdmin: role === 'admin',
         })
 
-        document.cookie = `user_role=${role}; path=/; max-age=${60 * 60 * 24 * 7}; SameSite=Lax`
+        document.cookie = `user_role=K{role}; path=/; max-age=K{60 * 60 * 24 * 7}; SameSite=Lax`
       } else {
         setState({ user: null, isLoading: false, isAdmin: false })
         document.cookie = 'user_role=; path=/; max-age=0; SameSite=Lax'
