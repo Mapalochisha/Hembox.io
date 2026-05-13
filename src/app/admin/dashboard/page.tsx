@@ -20,7 +20,7 @@ async function getStats() {
     supabase.from("clients").select("*, profiles(full_name, email)").order("created_at", { ascending: false }).limit(5),
   ])
 
-  const totalRevenue = revenueData?.reduce((acc, p) => acc + (Number(p.budget) || 0), 0) || 0
+  const totalRevenue = (revenueData as any[])?.reduce((acc, p) => acc + (Number(p.budget) || 0), 0) || 0
 
   return {
     totalClients: totalClients || 0,
