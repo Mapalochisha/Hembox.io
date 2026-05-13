@@ -34,10 +34,10 @@ export function Navbar() {
           </Link>
 
           <nav className="hidden md:flex items-center gap-8">
-            <a href="#services" className="text-[14.5px] font-medium text-gray-600 hover:text-navy transition">Services</a>
-            <a href="#work" className="text-[14.5px] font-medium text-gray-600 hover:text-navy transition">Work</a>
-            <a href="#about" className="text-[14.5px] font-medium text-gray-600 hover:text-navy transition">Process</a>
-            <a href="#contact" className="text-[14.5px] font-medium text-gray-600 hover:text-navy transition">Contact</a>
+            <a href="/#services" className="text-[14.5px] font-medium text-gray-600 hover:text-navy transition">Services</a>
+            <a href="/#work" className="text-[14.5px] font-medium text-gray-600 hover:text-navy transition">Work</a>
+            <Link href="/pricing" className="text-[14.5px] font-medium text-gray-600 hover:text-navy transition">Pricing</Link>
+            <a href="/#contact" className="text-[14.5px] font-medium text-gray-600 hover:text-navy transition">Contact</a>
           </nav>
 
           <div className="flex items-center gap-2 sm:gap-3">
@@ -106,10 +106,10 @@ export function Navbar() {
       {mobileMenuOpen && (
         <div className="md:hidden border-t border-black/5 bg-white">
           <div className="px-6 py-4 flex flex-col gap-3">
-            <a href="#services" className="py-2 text-[15px] font-medium">Services</a>
-            <a href="#work" className="py-2 text-[15px] font-medium">Work</a>
-            <a href="#about" className="py-2 text-[15px] font-medium">Process</a>
-            <a href="#contact" className="py-2 text-[15px] font-medium">Contact</a>
+            <a href="/#services" className="py-2 text-[15px] font-medium" onClick={() => setMobileMenuOpen(false)}>Services</a>
+            <a href="/#work" className="py-2 text-[15px] font-medium" onClick={() => setMobileMenuOpen(false)}>Work</a>
+            <Link href="/pricing" className="py-2 text-[15px] font-medium" onClick={() => setMobileMenuOpen(false)}>Pricing</Link>
+            <a href="/#contact" className="py-2 text-[15px] font-medium" onClick={() => setMobileMenuOpen(false)}>Contact</a>
             {!user && (
               <>
                 <Link href="/login" className="py-2 text-[15px] font-medium text-teal">Sign in</Link>

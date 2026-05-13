@@ -17,7 +17,8 @@ import {
   ChevronRight,
   LogOut,
   PanelLeftClose,
-  PanelLeftOpen
+  PanelLeftOpen,
+  DollarSign
 } from "lucide-react"
 import { useAuth } from "@/components/providers/auth-provider"
 import { useSidebar } from "./sidebar-provider"
@@ -29,6 +30,7 @@ const menuItems = [
   { icon: FolderKanban, label: "Projects", href: "/admin/projects" },
   { icon: Briefcase, label: "Services", href: "/admin/services" },
   { icon: Star, label: "Portfolio", href: "/admin/portfolio" },
+  { icon: DollarSign, label: "Pricing", href: "/admin/pricing" },
   { icon: Image, label: "Media", href: "/admin/media" },
   { icon: MessageSquare, label: "Messages", href: "/admin/messages" },
 ]
