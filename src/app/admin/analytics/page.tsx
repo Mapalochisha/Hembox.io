@@ -168,12 +168,12 @@ export default function AnalyticsPage() {
               <BarChart data={data}>
                 <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f0f0f0" />
                 <XAxis dataKey="month" axisLine={false} tickLine={false} tick={{ fill: '#94a3b8', fontSize: 12 }} dy={10} />
-                <YAxis axisLine={false} tickLine={false} tick={{ fill: '#94a3b8', fontSize: 12 }} tickFormatter={(v) => `$${v}`} />
+                <YAxis axisLine={false} tickLine={false} tick={{ fill: '#94a3b8', fontSize: 12 }} tickFormatter={(v) => `K${v}`} />
                 <Tooltip 
                   cursor={{ fill: '#f8fafc' }}
                   contentStyle={{ backgroundColor: "#0F172A", borderRadius: "12px", border: "none", color: "#fff" }}
                   itemStyle={{ color: "#2DD4BF" }}
-                  formatter={(value: number) => [`$${value.toLocaleString()}`, "Revenue"]}
+                  formatter={(value: number) => [`K${value.toLocaleString()}`, "Revenue"]}
                 />
                 <Bar dataKey="revenue" fill="#2DD4BF" radius={[6, 6, 0, 0]} />
               </BarChart>
