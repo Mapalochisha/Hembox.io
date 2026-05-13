@@ -351,7 +351,7 @@ export default function AdminPricingPage() {
               )}
               <CardHeader className="pb-2">
                 <div className="flex items-center justify-between mb-1">
-                  <span className={`text-[11px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full ${
+                  <span className={`text-[11px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full K{
                     pkg.status === 'active' ? 'bg-teal/10 text-teal' : 'bg-gray-100 text-gray-400'
                   }`}>
                     {pkg.status}
@@ -378,7 +378,7 @@ export default function AdminPricingPage() {
                 </div>
                 <CardTitle className="text-2xl font-black text-navy">{pkg.name}</CardTitle>
                 <div className="flex items-baseline gap-1 mt-2">
-                  <span className="text-3xl font-black text-navy">${pkg.price_amount.toLocaleString()}</span>
+                  <span className="text-3xl font-black text-navy">K{pkg.price_amount.toLocaleString()}</span>
                   <span className="text-[14px] text-gray-500 font-medium">{pkg.price_suffix}</span>
                 </div>
               </CardHeader>

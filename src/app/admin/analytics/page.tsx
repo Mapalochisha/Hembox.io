@@ -109,7 +109,7 @@ export default function AnalyticsPage() {
               </div>
               <div>
                 <p className="text-sm font-medium text-gray-500 uppercase tracking-wider">Total Revenue</p>
-                <h3 className="text-2xl font-black text-navy">${stats.totalRevenue.toLocaleString()}</h3>
+                <h3 className="text-2xl font-black text-navy">K{stats.totalRevenue.toLocaleString()}</h3>
               </div>
             </div>
           </CardContent>
@@ -123,7 +123,7 @@ export default function AnalyticsPage() {
               </div>
               <div>
                 <p className="text-sm font-medium text-gray-500 uppercase tracking-wider">Avg Budget</p>
-                <h3 className="text-2xl font-black text-navy">${Math.round(stats.avgBudget).toLocaleString()}</h3>
+                <h3 className="text-2xl font-black text-navy">K{Math.round(stats.avgBudget).toLocaleString()}</h3>
               </div>
             </div>
           </CardContent>

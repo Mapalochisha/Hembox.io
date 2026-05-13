@@ -298,7 +298,7 @@ export default function AdminServicesPage() {
                   <div className="w-10 h-10 rounded-lg bg-teal/10 flex items-center justify-center">
                     <Icon className="w-5 h-5 text-teal" />
                   </div>
-                  <span className={`text-[11px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full ${
+                  <span className={`text-[11px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full K{
                     service.status === 'active' ? 'bg-teal/10 text-teal' : 'bg-gray-100 text-gray-400'
                   }`}>
                     {service.status}
