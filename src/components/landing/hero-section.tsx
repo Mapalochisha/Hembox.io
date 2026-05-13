@@ -22,7 +22,7 @@ export function HeroSection() {
           const dy = (e.clientY - cy) / rect.height
           const rotX = 6 - dy * 4
           const rotY = -10 + dx * 6
-          laptopRef.current!.style.transform = `perspective(2000px) rotateX(K{rotX}deg) rotateY(K{rotY}deg) rotateZ(1deg)`
+          laptopRef.current!.style.transform = `perspective(2000px) rotateX(${rotX}deg) rotateY(${rotY}deg) rotateZ(1deg)`
           ticking = false
         })
         ticking = true

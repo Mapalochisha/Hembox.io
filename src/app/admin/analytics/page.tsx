@@ -109,7 +109,7 @@ export default function AnalyticsPage() {
               </div>
               <div>
                 <p className="text-sm font-medium text-gray-500 uppercase tracking-wider">Total Revenue</p>
-                <h3 className="text-2xl font-black text-navy">K{stats.totalRevenue.toLocaleString()}</h3>
+                <h3 className="text-2xl font-black text-navy">${stats.totalRevenue.toLocaleString()}</h3>
               </div>
             </div>
           </CardContent>
@@ -123,7 +123,7 @@ export default function AnalyticsPage() {
               </div>
               <div>
                 <p className="text-sm font-medium text-gray-500 uppercase tracking-wider">Avg Budget</p>
-                <h3 className="text-2xl font-black text-navy">K{Math.round(stats.avgBudget).toLocaleString()}</h3>
+                <h3 className="text-2xl font-black text-navy">${Math.round(stats.avgBudget).toLocaleString()}</h3>
               </div>
             </div>
           </CardContent>
@@ -168,12 +168,12 @@ export default function AnalyticsPage() {
               <BarChart data={data}>
                 <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f0f0f0" />
                 <XAxis dataKey="month" axisLine={false} tickLine={false} tick={{ fill: '#94a3b8', fontSize: 12 }} dy={10} />
-                <YAxis axisLine={false} tickLine={false} tick={{ fill: '#94a3b8', fontSize: 12 }} tickFormatter={(v) => `KK{v}`} />
+                <YAxis axisLine={false} tickLine={false} tick={{ fill: '#94a3b8', fontSize: 12 }} tickFormatter={(v) => `$${v}`} />
                 <Tooltip 
                   cursor={{ fill: '#f8fafc' }}
                   contentStyle={{ backgroundColor: "#0F172A", borderRadius: "12px", border: "none", color: "#fff" }}
                   itemStyle={{ color: "#2DD4BF" }}
-                  formatter={(value: number) => [`KK{value.toLocaleString()}`, "Revenue"]}
+                  formatter={(value: number) => [`$${value.toLocaleString()}`, "Revenue"]}
                 />
                 <Bar dataKey="revenue" fill="#2DD4BF" radius={[6, 6, 0, 0]} />
               </BarChart>

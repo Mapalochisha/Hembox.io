@@ -91,7 +91,7 @@ export default function PricingPage() {
                     <CardTitle className="text-2xl font-black text-navy">{pkg.name}</CardTitle>
                     <p className="text-gray-500 text-[15px] mt-2 leading-relaxed">{pkg.description}</p>
                     <div className="mt-6 flex items-baseline gap-1">
-                      <span className="text-4xl font-black text-navy">K{pkg.price_amount.toLocaleString()}</span>
+                      <span className="text-4xl font-black text-navy">${pkg.price_amount.toLocaleString()}</span>
                       <span className="text-gray-500 font-medium">{pkg.price_suffix}</span>
                     </div>
                   </CardHeader>
