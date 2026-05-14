@@ -44,24 +44,24 @@ export function ContactCTA() {
               </p>
               
               <div className="space-y-5">
-                <div className="flex items-center gap-4 group">
-                  <div className="w-11 h-11 sm:w-12 sm:h-12 rounded-2xl bg-white/5 border border-white/10 grid place-items-center group-hover:bg-teal/20 transition shrink-0">
+                <a href={`mailto:${contact_email}`} className="flex items-center gap-4 group w-fit">
+                  <div className="w-11 h-11 sm:w-12 sm:h-12 rounded-2xl bg-white/5 border border-white/10 grid place-items-center group-hover:bg-teal/20 group-hover:border-teal/30 transition shrink-0">
                     <Mail className="w-5 h-5 text-teal" />
                   </div>
                   <div className="min-w-0 flex-1">
                     <p className="text-[11px] sm:text-[12px] text-gray-500 font-bold uppercase tracking-wider">Email Us</p>
                     <p className="text-white font-medium text-[15px] sm:text-[16px] truncate">{contact_email}</p>
                   </div>
-                </div>
-                <div className="flex items-center gap-4 group">
-                  <div className="w-11 h-11 sm:w-12 sm:h-12 rounded-2xl bg-white/5 border border-white/10 grid place-items-center group-hover:bg-teal/20 transition shrink-0">
+                </a>
+                <a href={`tel:${phone_number}`} className="flex items-center gap-4 group w-fit">
+                  <div className="w-11 h-11 sm:w-12 sm:h-12 rounded-2xl bg-white/5 border border-white/10 grid place-items-center group-hover:bg-teal/20 group-hover:border-teal/30 transition shrink-0">
                     <Phone className="w-5 h-5 text-teal" />
                   </div>
                   <div className="min-w-0 flex-1">
                     <p className="text-[11px] sm:text-[12px] text-gray-500 font-bold uppercase tracking-wider">Call Us</p>
                     <p className="text-white font-medium text-[15px] sm:text-[16px] truncate">{phone_number}</p>
                   </div>
-                </div>
+                </a>
               </div>
 
               {socialLinks.length > 0 && (
