@@ -7,7 +7,10 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { useToast } from "@/hooks/use-toast"
 import { createClient } from "@/lib/supabase/client"
-import { Save, Phone, FileText, Info, ShieldCheck, HelpCircle, Loader2, ArrowUpRight } from "lucide-react"
+import { 
+  Save, Phone, FileText, Info, ShieldCheck, HelpCircle, Loader2, 
+  ArrowUpRight, Instagram, Facebook, Twitter, Linkedin, Share2
+} from "lucide-react"
 
 export default function SettingsPage() {
   const [isLoading, setIsLoading] = useState(true)
@@ -19,7 +22,11 @@ export default function SettingsPage() {
     phone_number: "",
     about_us_content: "",
     terms_conditions: "",
-    privacy_policy: ""
+    privacy_policy: "",
+    instagram_url: "",
+    facebook_url: "",
+    twitter_url: "",
+    linkedin_url: ""
   })
   
   const { toast } = useToast()
@@ -45,7 +52,11 @@ export default function SettingsPage() {
           phone_number: data.phone_number || "",
           about_us_content: data.about_us_content || "",
           terms_conditions: data.terms_conditions || "",
-          privacy_policy: data.privacy_policy || ""
+          privacy_policy: data.privacy_policy || "",
+          instagram_url: data.instagram_url || "",
+          facebook_url: data.facebook_url || "",
+          twitter_url: data.twitter_url || "",
+          linkedin_url: data.linkedin_url || ""
         })
       }
     } catch (error: any) {
@@ -148,6 +159,68 @@ export default function SettingsPage() {
                   value={settings.phone_number} 
                   onChange={(e) => setSettings({...settings, phone_number: e.target.value})}
                   className="pl-10 rounded-xl" 
+                />
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Social Media Links */}
+        <Card className="rounded-[24px] border-black/5 shadow-sm">
+          <CardHeader className="border-b border-black/5">
+            <CardTitle className="text-lg flex items-center gap-2">
+              <Share2 className="w-5 h-5 text-teal" />
+              Social Media Links
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="p-6 space-y-6">
+            <div className="grid sm:grid-cols-2 gap-6">
+              <div className="space-y-2">
+                <Label htmlFor="instagram" className="text-[13px] font-bold uppercase tracking-wider text-gray-500 flex items-center gap-2">
+                  <Instagram className="w-4 h-4" /> Instagram URL
+                </Label>
+                <Input 
+                  id="instagram" 
+                  placeholder="https://instagram.com/yourbrand"
+                  value={settings.instagram_url} 
+                  onChange={(e) => setSettings({...settings, instagram_url: e.target.value})}
+                  className="rounded-xl" 
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="facebook" className="text-[13px] font-bold uppercase tracking-wider text-gray-500 flex items-center gap-2">
+                  <Facebook className="w-4 h-4" /> Facebook URL
+                </Label>
+                <Input 
+                  id="facebook" 
+                  placeholder="https://facebook.com/yourbrand"
+                  value={settings.facebook_url} 
+                  onChange={(e) => setSettings({...settings, facebook_url: e.target.value})}
+                  className="rounded-xl" 
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="twitter" className="text-[13px] font-bold uppercase tracking-wider text-gray-500 flex items-center gap-2">
+                  <Twitter className="w-4 h-4" /> Twitter / X URL
+                </Label>
+                <Input 
+                  id="twitter" 
+                  placeholder="https://twitter.com/yourbrand"
+                  value={settings.twitter_url} 
+                  onChange={(e) => setSettings({...settings, twitter_url: e.target.value})}
+                  className="rounded-xl" 
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="linkedin" className="text-[13px] font-bold uppercase tracking-wider text-gray-500 flex items-center gap-2">
+                  <Linkedin className="w-4 h-4" /> LinkedIn URL
+                </Label>
+                <Input 
+                  id="linkedin" 
+                  placeholder="https://linkedin.com/company/yourbrand"
+                  value={settings.linkedin_url} 
+                  onChange={(e) => setSettings({...settings, linkedin_url: e.target.value})}
+                  className="rounded-xl" 
                 />
               </div>
             </div>

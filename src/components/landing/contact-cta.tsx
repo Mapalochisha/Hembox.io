@@ -3,10 +3,25 @@
 import { Button } from "@/components/ui/button"
 import { openMockupModal } from "@/components/landing/mockup-modal"
 import { useAgency } from "@/components/providers/agency-provider"
-import { ArrowRight, Mail, Phone } from "lucide-react"
+import { ArrowRight, Mail, Phone, Instagram, Facebook, Twitter, Linkedin } from "lucide-react"
 
 export function ContactCTA() {
-  const { agency_name, contact_email, phone_number } = useAgency()
+  const { 
+    agency_name, 
+    contact_email, 
+    phone_number,
+    instagram_url,
+    facebook_url,
+    twitter_url,
+    linkedin_url
+  } = useAgency()
+
+  const socialLinks = [
+    { icon: Instagram, href: instagram_url, label: "Instagram" },
+    { icon: Facebook, href: facebook_url, label: "Facebook" },
+    { icon: Twitter, href: twitter_url, label: "Twitter" },
+    { icon: Linkedin, href: linkedin_url, label: "LinkedIn" },
+  ].filter(link => link.href)
 
   return (
     <section id="contact" className="py-24 relative overflow-hidden">
@@ -48,6 +63,26 @@ export function ContactCTA() {
                   </div>
                 </div>
               </div>
+
+              {socialLinks.length > 0 && (
+                <div className="mt-12 pt-8 border-t border-white/5">
+                  <p className="text-[11px] text-gray-500 font-bold uppercase tracking-[0.2em] mb-4">Follow Us</p>
+                  <div className="flex gap-4">
+                    {socialLinks.map((social, i) => (
+                      <a 
+                        key={i}
+                        href={social.href} 
+                        target="_blank" 
+                        rel="noopener noreferrer"
+                        className="w-11 h-11 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center text-gray-400 hover:text-teal hover:bg-teal/10 hover:border-teal/30 transition-all"
+                        title={social.label}
+                      >
+                        <social.icon className="w-5 h-5" />
+                      </a>
+                    ))}
+                  </div>
+                </div>
+              )}
             </div>
 
             <div className="bg-white/5 backdrop-blur-md rounded-[28px] sm:rounded-[32px] p-6 sm:p-8 border border-white/10 w-full">

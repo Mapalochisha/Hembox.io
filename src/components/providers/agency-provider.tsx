@@ -10,6 +10,10 @@ export interface AgencySettings {
   about_us_content: string
   terms_conditions: string
   privacy_policy: string
+  instagram_url?: string
+  facebook_url?: string
+  twitter_url?: string
+  linkedin_url?: string
 }
 
 const AgencyContext = createContext<AgencySettings>({
@@ -19,6 +23,10 @@ const AgencyContext = createContext<AgencySettings>({
   about_us_content: "We build fast, beautiful sites that actually convert. No templates. No bloat. Just results.",
   terms_conditions: "",
   privacy_policy: "",
+  instagram_url: "",
+  facebook_url: "",
+  twitter_url: "",
+  linkedin_url: "",
 })
 
 export function AgencyProvider({ children }: { children: React.ReactNode }) {
@@ -40,6 +48,10 @@ export function AgencyProvider({ children }: { children: React.ReactNode }) {
           about_us_content: data.about_us_content,
           terms_conditions: data.terms_conditions,
           privacy_policy: data.privacy_policy,
+          instagram_url: data.instagram_url || "",
+          facebook_url: data.facebook_url || "",
+          twitter_url: data.twitter_url || "",
+          linkedin_url: data.linkedin_url || "",
         })
       }
     }
@@ -55,6 +67,10 @@ export function AgencyProvider({ children }: { children: React.ReactNode }) {
       about_us_content: "We build fast, beautiful sites that actually convert. No templates. No bloat. Just results.",
       terms_conditions: "",
       privacy_policy: "",
+      instagram_url: "",
+      facebook_url: "",
+      twitter_url: "",
+      linkedin_url: "",
     }}>
       {children}
     </AgencyContext.Provider>
