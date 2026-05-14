@@ -17,6 +17,7 @@ interface PortfolioItem {
   image_url: string
   project_url: string
   description: string
+  images: string[]
   is_featured: boolean
   sort_order: number
 }
