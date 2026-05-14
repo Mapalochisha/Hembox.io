@@ -3,16 +3,21 @@
 import { useState, useEffect } from "react"
 import { createClient } from "@/lib/supabase/client"
 import { ArrowUpRight } from "lucide-react"
+import { ProjectModal } from "./project-modal"
 
 interface PortfolioItem {
   id: string
   title: string
   category: string
   image_url: string
+  project_url?: string
+  description?: string
+  images?: string[]
 }
 
 export function PortfolioSection() {
   const [projects, setProjects] = useState<PortfolioItem[]>([])
+  const [selectedProject, setSelectedProject] = useState<PortfolioItem | null>(null)
   const supabase = createClient()
 
   useEffect(() => {
@@ -47,7 +52,11 @@ export function PortfolioSection() {
 
         <div className="grid sm:grid-cols-2 gap-8">
           {projects.map((project, index) => (
-            <div key={project.id} className="group cursor-pointer">
+            <div 
+              key={project.id} 
+              className="group cursor-pointer"
+              onClick={() => setSelectedProject(project)}
+            >
               <div className={`relative aspect-[4/3] rounded-[32px] overflow-hidden bg-gray-100 mb-6`}>
                 <img 
                   src={project.image_url} 
@@ -66,6 +75,11 @@ export function PortfolioSection() {
           ))}
         </div>
       </div>
+
+      <ProjectModal 
+        project={selectedProject} 
+        onClose={() => setSelectedProject(null)} 
+      />
     </section>
   )
 }

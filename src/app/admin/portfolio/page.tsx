@@ -34,6 +34,7 @@ export default function AdminPortfolioPage() {
     image_url: "",
     project_url: "",
     description: "",
+    images: [] as string[]
   })
 
   const { toast } = useToast()
@@ -71,6 +72,7 @@ export default function AdminPortfolioPage() {
       image_url: item.image_url,
       project_url: item.project_url || "",
       description: item.description || "",
+      images: item.images || []
     })
     setShowForm(true)
     window.scrollTo({ top: 0, behavior: 'smooth' })
@@ -123,7 +125,14 @@ export default function AdminPortfolioPage() {
   const handleCloseForm = () => {
     setShowForm(false)
     setEditingId(null)
-    setFormData({ title: "", category: "Web Development", image_url: "", project_url: "", description: "" })
+    setFormData({ 
+      title: "", 
+      category: "Web Development", 
+      image_url: "", 
+      project_url: "", 
+      description: "",
+      images: []
+    })
   }
 
   const deleteItem = async (id: string) => {
@@ -204,12 +213,40 @@ export default function AdminPortfolioPage() {
                 </div>
               </div>
               <div className="space-y-6">
-                <Label className="text-[13px] font-bold uppercase tracking-wider text-gray-500">Cover Image</Label>
-                <ImageUpload 
-                  value={formData.image_url} 
-                  onChange={url => setFormData({...formData, image_url: url})} 
-                  onRemove={() => setFormData({...formData, image_url: ""})} 
-                />
+                <div>
+                  <Label className="text-[13px] font-bold uppercase tracking-wider text-gray-500 mb-3 block">Cover Image</Label>
+                  <ImageUpload 
+                    value={formData.image_url} 
+                    onChange={url => setFormData({...formData, image_url: url})} 
+                    onRemove={() => setFormData({...formData, image_url: ""})} 
+                  />
+                </div>
+
+                <div>
+                  <Label className="text-[13px] font-bold uppercase tracking-wider text-gray-500 mb-3 block">Additional Screenshots</Label>
+                  <div className="grid grid-cols-2 gap-4">
+                    {formData.images.map((url, i) => (
+                      <div key={i} className="relative aspect-video rounded-xl overflow-hidden border border-black/5 group">
+                        <img src={url} alt={`Screenshot ${i+1}`} className="w-full h-full object-cover" />
+                        <button 
+                          type="button"
+                          onClick={() => setFormData({...formData, images: formData.images.filter((_, idx) => idx !== i)})}
+                          className="absolute top-2 right-2 w-7 h-7 rounded-full bg-navy/80 text-white flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
+                        >
+                          <X className="w-4 h-4" />
+                        </button>
+                      </div>
+                    ))}
+                    <div className="aspect-video">
+                      <ImageUpload 
+                        value="" 
+                        onChange={url => setFormData({...formData, images: [...formData.images, url]})} 
+                        onRemove={() => {}} 
+                      />
+                    </div>
+                  </div>
+                </div>
+
                 <div className="flex gap-3 justify-end pt-4">
                   <Button variant="ghost" type="button" onClick={handleCloseForm} className="rounded-xl h-12 px-6">Cancel</Button>
                   <Button type="submit" disabled={isSaving} className="bg-navy h-12 px-10 rounded-xl font-bold text-white shadow-lg shadow-navy/10">
