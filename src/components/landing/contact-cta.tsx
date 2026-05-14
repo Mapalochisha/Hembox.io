@@ -3,18 +3,24 @@
 import { Button } from "@/components/ui/button"
 import { openMockupModal } from "@/components/landing/mockup-modal"
 import { useAgency } from "@/components/providers/agency-provider"
-import { ArrowRight, Mail, Phone, Instagram, Facebook, Twitter, Linkedin } from "lucide-react"
+import { ArrowRight, Mail, Phone, Instagram, Facebook, Twitter, Linkedin, MessageCircle } from "lucide-react"
 
 export function ContactCTA() {
   const { 
     agency_name, 
     contact_email, 
     phone_number,
+    whatsapp_number,
+    whatsapp_message,
     instagram_url,
     facebook_url,
     twitter_url,
     linkedin_url
   } = useAgency()
+
+  const whatsappUrl = whatsapp_number 
+    ? `https://wa.me/${whatsapp_number.replace(/\D/g, '')}?text=${encodeURIComponent(whatsapp_message || "Hi, I'm interested in your services!")}`
+    : null
 
   const socialLinks = [
     { icon: Instagram, href: instagram_url, label: "Instagram" },
@@ -53,15 +59,30 @@ export function ContactCTA() {
                     <p className="text-white font-medium text-[15px] sm:text-[16px] truncate">{contact_email}</p>
                   </div>
                 </a>
-                <a href={`tel:${phone_number}`} className="flex items-center gap-4 group w-fit">
-                  <div className="w-11 h-11 sm:w-12 sm:h-12 rounded-2xl bg-white/5 border border-white/10 grid place-items-center group-hover:bg-teal/20 group-hover:border-teal/30 transition shrink-0">
-                    <Phone className="w-5 h-5 text-teal" />
-                  </div>
-                  <div className="min-w-0 flex-1">
-                    <p className="text-[11px] sm:text-[12px] text-gray-500 font-bold uppercase tracking-wider">Call Us</p>
-                    <p className="text-white font-medium text-[15px] sm:text-[16px] truncate">{phone_number}</p>
-                  </div>
-                </a>
+                
+                <div className="flex flex-wrap gap-x-8 gap-y-5">
+                  <a href={`tel:${phone_number}`} className="flex items-center gap-4 group w-fit">
+                    <div className="w-11 h-11 sm:w-12 sm:h-12 rounded-2xl bg-white/5 border border-white/10 grid place-items-center group-hover:bg-teal/20 group-hover:border-teal/30 transition shrink-0">
+                      <Phone className="w-5 h-5 text-teal" />
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <p className="text-[11px] sm:text-[12px] text-gray-500 font-bold uppercase tracking-wider">Call Us</p>
+                      <p className="text-white font-medium text-[15px] sm:text-[16px] truncate">{phone_number}</p>
+                    </div>
+                  </a>
+
+                  {whatsappUrl && (
+                    <a href={whatsappUrl} target="_blank" rel="noopener noreferrer" className="flex items-center gap-4 group w-fit">
+                      <div className="w-11 h-11 sm:w-12 sm:h-12 rounded-2xl bg-white/5 border border-white/10 grid place-items-center group-hover:bg-[#25D366]/20 group-hover:border-[#25D366]/30 transition shrink-0">
+                        <MessageCircle className="w-5 h-5 text-[#25D366]" />
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <p className="text-[11px] sm:text-[12px] text-gray-500 font-bold uppercase tracking-wider">WhatsApp</p>
+                        <p className="text-white font-medium text-[15px] sm:text-[16px] truncate">Chat with us</p>
+                      </div>
+                    </a>
+                  )}
+                </div>
               </div>
 
               {socialLinks.length > 0 && (

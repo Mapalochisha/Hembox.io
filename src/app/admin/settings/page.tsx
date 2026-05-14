@@ -9,7 +9,7 @@ import { useToast } from "@/hooks/use-toast"
 import { createClient } from "@/lib/supabase/client"
 import { 
   Save, Phone, FileText, Info, ShieldCheck, HelpCircle, Loader2, 
-  ArrowUpRight, Instagram, Facebook, Twitter, Linkedin, Share2
+  ArrowUpRight, Instagram, Facebook, Twitter, Linkedin, Share2, MessageCircle
 } from "lucide-react"
 
 export default function SettingsPage() {
@@ -26,7 +26,9 @@ export default function SettingsPage() {
     instagram_url: "",
     facebook_url: "",
     twitter_url: "",
-    linkedin_url: ""
+    linkedin_url: "",
+    whatsapp_number: "",
+    whatsapp_message: ""
   })
   
   const { toast } = useToast()
@@ -56,7 +58,9 @@ export default function SettingsPage() {
           instagram_url: data.instagram_url || "",
           facebook_url: data.facebook_url || "",
           twitter_url: data.twitter_url || "",
-          linkedin_url: data.linkedin_url || ""
+          linkedin_url: data.linkedin_url || "",
+          whatsapp_number: data.whatsapp_number || "",
+          whatsapp_message: data.whatsapp_message || ""
         })
       }
     } catch (error: any) {
@@ -161,10 +165,33 @@ export default function SettingsPage() {
                   className="pl-10 rounded-xl" 
                 />
               </div>
-            </div>
-          </CardContent>
-        </Card>
-
+              </div>
+              <div className="space-y-2">
+              <Label htmlFor="whatsappNumber" className="text-[13px] font-bold uppercase tracking-wider text-gray-500 flex items-center gap-2">
+                <MessageCircle className="w-4 h-4 text-teal" /> WhatsApp Number
+              </Label>
+              <Input 
+                id="whatsappNumber" 
+                type="tel" 
+                placeholder="e.g. 26097..."
+                value={settings.whatsapp_number} 
+                onChange={(e) => setSettings({...settings, whatsapp_number: e.target.value})}
+                className="rounded-xl" 
+              />
+              </div>
+              </div>
+              <div className="space-y-2">
+              <Label htmlFor="whatsappMessage" className="text-[13px] font-bold uppercase tracking-wider text-gray-500">Default WhatsApp Message</Label>
+              <Input 
+              id="whatsappMessage" 
+              value={settings.whatsapp_message} 
+              onChange={(e) => setSettings({...settings, whatsapp_message: e.target.value})}
+              placeholder="Hi, I'm interested in your services!"
+              className="rounded-xl" 
+              />
+              </div>
+              </CardContent>
+              </Card>
         {/* Social Media Links */}
         <Card className="rounded-[24px] border-black/5 shadow-sm">
           <CardHeader className="border-b border-black/5">
