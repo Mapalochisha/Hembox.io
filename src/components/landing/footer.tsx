@@ -20,6 +20,7 @@ export function Footer() {
           </div>
           <p className="text-gray-500 text-sm">© {year} {agency_name}. All rights reserved.</p>
           <div className="flex gap-8">
+            <a href="/about" className="text-sm text-gray-500 hover:text-navy transition">About</a>
             <a href="/privacy" className="text-sm text-gray-500 hover:text-navy transition">Privacy</a>
             <a href="/terms" className="text-sm text-gray-500 hover:text-navy transition">Terms</a>
           </div>

@@ -7,7 +7,7 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { useToast } from "@/hooks/use-toast"
 import { createClient } from "@/lib/supabase/client"
-import { Save, Phone, FileText, Info, ShieldCheck, HelpCircle, Loader2 } from "lucide-react"
+import { Save, Phone, FileText, Info, ShieldCheck, HelpCircle, Loader2, ArrowUpRight } from "lucide-react"
 
 export default function SettingsPage() {
   const [isLoading, setIsLoading] = useState(true)
@@ -164,9 +164,14 @@ export default function SettingsPage() {
           </CardHeader>
           <CardContent className="p-6 space-y-8">
             <div className="space-y-3">
-              <Label htmlFor="aboutUs" className="text-[13px] font-bold uppercase tracking-wider text-gray-500 flex items-center gap-2">
-                <HelpCircle className="w-4 h-4" /> About Us Content
-              </Label>
+              <div className="flex items-center justify-between">
+                <Label htmlFor="aboutUs" className="text-[13px] font-bold uppercase tracking-wider text-gray-500 flex items-center gap-2">
+                  <HelpCircle className="w-4 h-4" /> About Us Content
+                </Label>
+                <a href="/about" target="_blank" className="text-[11px] font-bold text-teal hover:underline flex items-center gap-1">
+                  View Live Page <ArrowUpRight className="w-3 h-3" />
+                </a>
+              </div>
               <textarea 
                 id="aboutUs"
                 rows={4}
@@ -179,9 +184,14 @@ export default function SettingsPage() {
 
             <div className="grid sm:grid-cols-2 gap-8">
               <div className="space-y-3">
-                <Label htmlFor="terms" className="text-[13px] font-bold uppercase tracking-wider text-gray-500 flex items-center gap-2">
-                  <ShieldCheck className="w-4 h-4" /> Terms & Conditions
-                </Label>
+                <div className="flex items-center justify-between">
+                  <Label htmlFor="terms" className="text-[13px] font-bold uppercase tracking-wider text-gray-500 flex items-center gap-2">
+                    <ShieldCheck className="w-4 h-4" /> Terms & Conditions
+                  </Label>
+                  <a href="/terms" target="_blank" className="text-[11px] font-bold text-teal hover:underline flex items-center gap-1">
+                    View <ArrowUpRight className="w-3 h-3" />
+                  </a>
+                </div>
                 <textarea 
                   id="terms"
                   rows={6}
@@ -193,9 +203,14 @@ export default function SettingsPage() {
               </div>
 
               <div className="space-y-3">
-                <Label htmlFor="privacy" className="text-[13px] font-bold uppercase tracking-wider text-gray-500 flex items-center gap-2">
-                  <ShieldCheck className="w-4 h-4" /> Privacy Policy
-                </Label>
+                <div className="flex items-center justify-between">
+                  <Label htmlFor="privacy" className="text-[13px] font-bold uppercase tracking-wider text-gray-500 flex items-center gap-2">
+                    <ShieldCheck className="w-4 h-4" /> Privacy Policy
+                  </Label>
+                  <a href="/privacy" target="_blank" className="text-[11px] font-bold text-teal hover:underline flex items-center gap-1">
+                    View <ArrowUpRight className="w-3 h-3" />
+                  </a>
+                </div>
                 <textarea 
                   id="privacy"
                   rows={6}
