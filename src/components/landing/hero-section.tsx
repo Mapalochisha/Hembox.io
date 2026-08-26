@@ -88,7 +88,7 @@ export function HeroSection() {
               <div className="w-9 h-9 rounded-full bg-navy border-2 border-white grid place-items-center text-[11px] font-bold text-white">AC</div>
               <div className="w-9 h-9 rounded-full bg-teal border-2 border-white grid place-items-center text-[11px] font-bold text-navy">KM</div>
               <div className="w-9 h-9 rounded-full bg-coral border-2 border-white grid place-items-center text-[11px] font-bold text-white">JR</div>
-              <div className="w-9 h-9 rounded-full bg-gray-100 border-2 border-white grid place-items-center text-[11px] font-bold text-gray-600">+2k</div>
+              <div className="w-9 h-9 rounded-full bg-gray-100 border-2 border-white grid place-items-center text-[11px] font-bold text-gray-600">+50</div>
             </div>
             <div>
               <div className="flex gap-0.5">
@@ -98,7 +98,7 @@ export function HeroSection() {
                   </svg>
                 ))}
               </div>
-              <p className="text-[13px] text-gray-600 mt-0.5"><span className="font-semibold text-navy">4.9/5</span> from 300+ founders</p>
+              <p className="text-[13px] text-gray-600 mt-0.5"><span className="font-semibold text-navy">4.9/5</span> from 50+ founders</p>
             </div>
           </div>
         </div>
