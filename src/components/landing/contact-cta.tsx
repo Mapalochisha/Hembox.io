@@ -45,7 +45,7 @@ export function ContactCTA() {
                 your <span className="text-teal text-nowrap">digital identity?</span>
               </h3>
               <p className="text-gray-400 text-[16px] sm:text-[18px] leading-relaxed mb-10 max-w-[500px]">
-                Join 300+ founders who trusted {agency_name} to build their 
+                Join 50+ founders who trusted {agency_name} to build their 
                 online presence. Your free mockup is just one click away.
               </p>
               

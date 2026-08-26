@@ -39,11 +39,11 @@ export function ProcessSection() {
               <span className="text-teal">vision to life.</span>
             </h3>
             <p className="text-gray-400 text-[18px] leading-relaxed mb-8">
-              {about_us_content || "We've refined our workflow over hundreds of projects to ensure a smooth, transparent, and results-driven experience for every client."}
+              {about_us_content || "We've refined our workflow a multitude of projects to ensure a smooth, transparent, and results-driven experience for every client."}
             </p>
             <div className="flex flex-wrap gap-8">
               <div>
-                <p className="text-[32px] font-black text-teal">100+</p>
+                <p className="text-[32px] font-black text-teal">50+</p>
                 <p className="text-[14px] text-gray-400 uppercase tracking-wider font-bold">Projects Done</p>
               </div>
               <div>

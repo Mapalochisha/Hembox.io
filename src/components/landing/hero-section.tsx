@@ -49,11 +49,6 @@ export function HeroSection() {
       <div className="grid lg:grid-cols-[1.05fr_0.95fr] gap-16 lg:gap-12 items-center">
         {/* Left Content */}
         <div className="relative">
-          <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-navy/[0.04] border border-navy/[0.06] mb-6">
-            <span className="flex w-2 h-2 rounded-full bg-teal animate-pulse" />
-            <span className="text-[12px] font-semibold tracking-wide text-navy/80 uppercase">New: Launch in 14 days</span>
-          </div>
-
           <h1 className="text-[44px] leading-[1.05] sm:text-[56px] lg:text-[68px] xl:text-[76px] font-[900] tracking-[-0.02em] text-navy">
             Your website
             <span className="block">shouldn't be</span>

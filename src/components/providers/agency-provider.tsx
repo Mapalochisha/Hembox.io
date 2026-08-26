@@ -20,9 +20,9 @@ export interface AgencySettings {
 
 const AgencyContext = createContext<AgencySettings>({
   agency_name: "Hembox.io",
-  contact_email: "hello@hembox.io",
-  phone_number: "+1 (555) 000-0000",
-  whatsapp_number: "",
+  contact_email: "Mapalochisha@execs.com",
+  phone_number: "+260 969 868508",
+  whatsapp_number: "+260 969 868508",
   whatsapp_message: "Hi, I'm interested in your services!",
   about_us_content: "We build fast, beautiful sites that actually convert. No templates. No bloat. Just results.",
   terms_conditions: "",
@@ -68,9 +68,9 @@ export function AgencyProvider({ children }: { children: React.ReactNode }) {
   return (
     <AgencyContext.Provider value={settings || {
       agency_name: "Hembox.io",
-      contact_email: "hello@hembox.io",
-      phone_number: "+1 (555) 000-0000",
-      whatsapp_number: "",
+      contact_email: "Mapalochisha@execs.com",
+      phone_number: "+260 969 868508",
+      whatsapp_number: "+260 969 868508",
       whatsapp_message: "Hi, I'm interested in your services!",
       about_us_content: "We build fast, beautiful sites that actually convert. No templates. No bloat. Just results.",
       terms_conditions: "",
