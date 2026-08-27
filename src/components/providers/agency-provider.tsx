@@ -18,7 +18,7 @@ export interface AgencySettings {
   linkedin_url?: string
 }
 
-const AgencyContext = createContext<AgencySettings>({
+const defaultSettings: AgencySettings = {
   agency_name: "Hembox.io",
   contact_email: "Mapalochisha@execs.com",
   phone_number: "+260 969 868508",
@@ -31,19 +31,22 @@ const AgencyContext = createContext<AgencySettings>({
   facebook_url: "",
   twitter_url: "",
   linkedin_url: "",
-})
+}
+
+const AgencyContext = createContext<AgencySettings>(defaultSettings)
 
 export function AgencyProvider({ children }: { children: React.ReactNode }) {
-  const [settings, setSettings] = useState<AgencySettings | null>(null)
-  const supabase = createClient()
+  const [settings, setSettings] = useState<AgencySettings>(defaultSettings)
 
   useEffect(() => {
+    const supabase = createClient()
+
     const fetchSettings = async () => {
       const { data } = await supabase
         .from('agency_settings')
         .select('*')
         .single()
-      
+
       if (data) {
         setSettings({
           agency_name: data.agency_name,
@@ -66,20 +69,7 @@ export function AgencyProvider({ children }: { children: React.ReactNode }) {
   }, [])
 
   return (
-    <AgencyContext.Provider value={settings || {
-      agency_name: "Hembox.io",
-      contact_email: "Mapalochisha@execs.com",
-      phone_number: "+260 969 868508",
-      whatsapp_number: "+260 969 868508",
-      whatsapp_message: "Hi, I'm interested in your services!",
-      about_us_content: "We build fast, beautiful sites that actually convert. No templates. No bloat. Just results.",
-      terms_conditions: "",
-      privacy_policy: "",
-      instagram_url: "",
-      facebook_url: "",
-      twitter_url: "",
-      linkedin_url: "",
-    }}>
+    <AgencyContext.Provider value={settings}>
       {children}
     </AgencyContext.Provider>
   )
