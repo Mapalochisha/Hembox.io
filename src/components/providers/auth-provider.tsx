@@ -1,6 +1,6 @@
 'use client'
 
-import { createContext, useContext, useEffect, useState } from 'react'
+import { createContext, useContext, useEffect, useRef, useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { User, AuthState } from '@/types'
 
@@ -21,15 +21,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     isLoading: true,
     isAdmin: false,
   })
-
-  const supabase = createClient()
+  const supabaseRef = useRef<ReturnType<typeof createClient> | null>(null)
 
   const refreshUser = async () => {
+    const supabase = supabaseRef.current
+    if (!supabase) return
+
     try {
       const { data: { user: authUser } } = await supabase.auth.getUser()
 
       if (authUser) {
-        // Fetch profile and role separately/robustly
         const [profileResponse, roleResponse] = await Promise.all([
           supabase.from('profiles').select('*').eq('id', authUser.id).maybeSingle(),
           supabase.rpc('get_user_role', { user_id: authUser.id })
@@ -43,7 +44,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             id: authUser.id,
             email: authUser.email!,
             full_name: authUser.user_metadata?.full_name || 'User',
-            role: role,
+            role,
           }) as User,
           isLoading: false,
           isAdmin: role === 'admin',
@@ -55,22 +56,25 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         document.cookie = 'user_role=; path=/; max-age=0; SameSite=Lax'
       }
     } catch (error) {
-      console.error("[Auth] Error refreshing user:", error)
+      console.error('[Auth] Error refreshing user:', error)
       setState({ user: null, isLoading: false, isAdmin: false })
     } finally {
-      // Final safety check to ensure spinner stops
       setState(prev => ({ ...prev, isLoading: false }))
     }
   }
 
   const signOut = async () => {
-    await supabase.auth.signOut()
+    const supabase = supabaseRef.current
+    if (supabase) await supabase.auth.signOut()
     document.cookie = 'user_role=; path=/; max-age=0'
     setState({ user: null, isLoading: false, isAdmin: false })
     window.location.href = '/'
   }
 
   useEffect(() => {
+    const supabase = createClient()
+    supabaseRef.current = supabase
+
     refreshUser()
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
@@ -79,12 +83,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           refreshUser()
         } else {
           setState({ user: null, isLoading: false, isAdmin: false })
-          document.cookie = 'user_role=; path=/; max-age=0'
+          document.cookie = 'user_role=; path=/; max-age=0; SameSite=Lax'
         }
       }
     )
 
-    return () => subscription.unsubscribe()
+    return () => {
+      subscription.unsubscribe()
+      supabaseRef.current = null
+    }
   }, [])
 
   return (
