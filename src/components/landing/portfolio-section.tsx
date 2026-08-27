@@ -1,18 +1,18 @@
 "use client"
 
 import { useState, useEffect } from "react"
+import Image from "next/image"
+import dynamic from "next/dynamic"
 import { createClient } from "@/lib/supabase/client"
 import { ArrowUpRight } from "lucide-react"
-import { ProjectModal } from "./project-modal"
+
+const ProjectModal = dynamic(() => import("./project-modal").then((mod) => mod.ProjectModal), { ssr: false })
 
 interface PortfolioItem {
   id: string
   title: string
   category: string
   image_url: string
-  project_url?: string
-  description?: string
-  images?: string[]
 }
 
 export function PortfolioSection() {
@@ -23,10 +23,10 @@ export function PortfolioSection() {
   useEffect(() => {
     const fetchPortfolio = async () => {
       const { data } = await supabase
-        .from('portfolio_items')
-        .select('*')
-        .order('sort_order', { ascending: true })
-      
+        .from("portfolio_items")
+        .select("id,title,category,image_url")
+        .order("sort_order", { ascending: true })
+
       if (data) setProjects(data)
     }
 
@@ -52,16 +52,15 @@ export function PortfolioSection() {
 
         <div className="grid sm:grid-cols-2 gap-8">
           {projects.map((project, index) => (
-            <div 
-              key={project.id} 
-              className="group cursor-pointer"
-              onClick={() => setSelectedProject(project)}
-            >
-              <div className={`relative aspect-[4/3] rounded-[32px] overflow-hidden bg-gray-100 mb-6`}>
-                <img 
-                  src={project.image_url} 
+            <div key={project.id} className="group cursor-pointer" onClick={() => setSelectedProject(project)}>
+              <div className="relative aspect-[4/3] rounded-[32px] overflow-hidden bg-gray-100 mb-6">
+                <Image
+                  src={project.image_url}
                   alt={project.title}
-                  className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                  fill
+                  sizes="(max-width: 640px) 100vw, 50vw"
+                  priority={index === 0}
+                  className="object-cover group-hover:scale-105 transition-transform duration-500"
                 />
                 <div className="absolute inset-0 bg-navy/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
                   <div className="w-14 h-14 rounded-full bg-white grid place-items-center translate-y-4 group-hover:translate-y-0 transition-transform">
@@ -76,10 +75,7 @@ export function PortfolioSection() {
         </div>
       </div>
 
-      <ProjectModal 
-        project={selectedProject} 
-        onClose={() => setSelectedProject(null)} 
-      />
+      <ProjectModal project={selectedProject} onClose={() => setSelectedProject(null)} />
     </section>
   )
 }

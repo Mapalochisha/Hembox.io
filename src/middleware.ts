@@ -1,14 +1,16 @@
 import { NextResponse } from 'next/server'
 import type { NextRequest } from 'next/server'
 import { createServerClient, type CookieOptions } from '@supabase/ssr'
-export async function middleware(request: NextRequest) {
-  const pathname = request.nextUrl.pathname;
 
-  let response = NextResponse.next({
-    request: {
-      headers: request.headers,
-    },
-  })
+export async function middleware(request: NextRequest) {
+  const pathname = request.nextUrl.pathname
+
+  // Public routes should not perform Supabase authentication work.
+  if (!pathname.startsWith('/admin')) {
+    return NextResponse.next()
+  }
+
+  let response = NextResponse.next({ request: { headers: request.headers } })
 
   const supabase = createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -28,30 +30,21 @@ export async function middleware(request: NextRequest) {
     }
   )
 
-  const {
-    data: { user },
-  } = await supabase.auth.getUser()
+  const { data: { user } } = await supabase.auth.getUser()
 
-  // Protect admin routes
-  if (pathname.startsWith('/admin')) {
-    if (!user) {
-      return NextResponse.redirect(new URL('/login', request.url))
-    }
+  if (!user) {
+    return NextResponse.redirect(new URL('/login', request.url))
+  }
 
-    // Use the RPC function to bypass RLS issues in middleware
-    const { data: role } = await supabase
-      .rpc('get_user_role', { user_id: user.id })
+  const { data: role } = await supabase.rpc('get_user_role', { user_id: user.id })
 
-    if (role !== 'admin') {
-      return NextResponse.redirect(new URL('/', request.url))
-    }
+  if (role !== 'admin') {
+    return NextResponse.redirect(new URL('/', request.url))
   }
 
   return response
 }
 
 export const config = {
-  matcher: [
-    '/((?!_next/static|_next/image|favicon.ico|.*\.(?:svg|png|jpg|jpeg|gif|webp)$).*)',
-  ],
+  matcher: ['/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)'],
 }
