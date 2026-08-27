@@ -4,10 +4,13 @@ import { Sidebar } from "@/components/admin/sidebar"
 import { useAdmin } from "@/hooks/use-admin"
 import { SidebarProvider, useSidebar } from "@/components/admin/sidebar-provider"
 import { cn } from "@/lib/utils"
-import { Menu } from "lucide-react"
+
+// Admin pages use server-side Supabase service credentials at request time.
+// Keep this route segment dynamic so production builds do not try to prerender it.
+export const dynamic = "force-dynamic"
 
 function AdminLayoutContent({ children }: { children: React.ReactNode }) {
-  const { isCollapsed, toggleSidebar } = useSidebar()
+  const { isCollapsed } = useSidebar()
   const { isAdmin, isLoading } = useAdmin()
 
   if (isLoading) {
@@ -23,11 +26,7 @@ function AdminLayoutContent({ children }: { children: React.ReactNode }) {
   return (
     <div className="min-h-screen bg-gray-50 flex overflow-x-hidden">
       <Sidebar />
-      
-      {/* Mobile Overlay - Only show if sidebar is expanded on mobile and we want it to cover */}
-      {/* However, user said they want it "on the side", so we'll skip overlay for now and just push */}
-
-      <main 
+      <main
         className={cn(
           "flex-1 transition-all duration-300 min-w-0 w-full",
           isCollapsed ? "ml-[80px]" : "ml-[280px]"
@@ -35,10 +34,9 @@ function AdminLayoutContent({ children }: { children: React.ReactNode }) {
       >
         <header className="h-[72px] bg-white border-b border-black/5 px-4 lg:px-8 flex items-center justify-between sticky top-0 z-40">
           <div className="flex items-center gap-3 lg:gap-4">
-            {/* The sidebar toggle is now inside the sidebar itself at the top, but we can keep a simple menu button if needed */}
             <h2 className="text-[11px] lg:text-[13px] font-bold text-gray-400 uppercase tracking-[0.15em] truncate">Management Console</h2>
           </div>
-          
+
           <div className="flex items-center gap-2 lg:gap-4">
             <div className="text-right hidden sm:block">
               <p className="text-[13px] lg:text-[14px] font-bold text-navy">Admin User</p>
@@ -57,11 +55,7 @@ function AdminLayoutContent({ children }: { children: React.ReactNode }) {
   )
 }
 
-export default function AdminLayout({
-  children,
-}: {
-  children: React.ReactNode
-}) {
+export default function AdminLayout({ children }: { children: React.ReactNode }) {
   return (
     <SidebarProvider>
       <AdminLayoutContent>{children}</AdminLayoutContent>
