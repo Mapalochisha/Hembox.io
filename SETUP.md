@@ -1,28 +1,27 @@
-# Pixel Forge - Next.js Setup Guide
+# Hembox.io — Production Setup Guide
 
 ## Prerequisites
 
-- Node.js 18+ 
-- npm or yarn
+- Node.js 22+
+- npm
 - Supabase account
 - Cloudinary account
-- Google Cloud Console account (for OAuth)
+- Google Cloud Console account if Google OAuth is enabled
 
 ## 1. Install Dependencies
 
 ```bash
 cd Hembox.io
-npm install
-# or
-yarn install
+npm ci
 ```
 
 ## 2. Supabase Setup
 
 ### 2.1 Create Project
-1. Go to [supabase.com](https://supabase.com) and create a new project
-2. Copy your Project URL and Anon Key from Project Settings > API
-3. Get your Service Role Key (for admin operations)
+
+1. Create a Supabase project.
+2. Copy the Project URL and anon key from Project Settings → API.
+3. Copy the Service Role Key for server-side operations only.
 
 ### 2.2 Configure Environment Variables
 
@@ -32,215 +31,119 @@ Create `.env.local`:
 NEXT_PUBLIC_SUPABASE_URL=https://your-project.supabase.co
 NEXT_PUBLIC_SUPABASE_ANON_KEY=your-anon-key
 SUPABASE_SERVICE_ROLE_KEY=your-service-role-key
-```
 
-### 2.3 Database Schema
-
-Run this SQL in Supabase SQL Editor:
-
-```sql
--- Enable RLS
-alter table if exists profiles enable row level security;
-alter table if exists clients enable row level security;
-alter table if exists projects enable row level security;
-
--- Profiles table (extends auth.users)
-create table if not exists public.profiles (
-  id uuid references auth.users on delete cascade primary key,
-  email text not null,
-  phone text,
-  full_name text,
-  avatar_url text,
-  role text default 'user' check (role in ('user', 'admin')),
-  created_at timestamptz default now(),
-  updated_at timestamptz default now()
-);
-
--- Clients table
-create table if not exists public.clients (
-  id uuid default gen_random_uuid() primary key,
-  user_id uuid references public.profiles(id) on delete set null,
-  company_name text,
-  industry text,
-  website text,
-  status text default 'pending' check (status in ('active', 'inactive', 'pending')),
-  notes text,
-  created_at timestamptz default now(),
-  updated_at timestamptz default now()
-);
-
--- Projects table
-create table if not exists public.projects (
-  id uuid default gen_random_uuid() primary key,
-  client_id uuid references public.clients(id) on delete cascade not null,
-  name text not null,
-  description text,
-  status text default 'draft' check (status in ('draft', 'in_progress', 'review', 'completed', 'cancelled')),
-  budget numeric,
-  deadline timestamptz,
-  images text[] default '{}',
-  created_at timestamptz default now(),
-  updated_at timestamptz default now()
-);
-
--- RLS Policies
-
--- Profiles: Users can read their own profile, admins can read all
-create policy "Users can view own profile"
-  on profiles for select
-  using (auth.uid() = id or (select role from profiles where id = auth.uid()) = 'admin');
-
-create policy "Users can update own profile"
-  on profiles for update
-  using (auth.uid() = id);
-
--- Clients: Admins have full access
-create policy "Admins have full access to clients"
-  on clients for all
-  using ((select role from profiles where id = auth.uid()) = 'admin');
-
--- Projects: Admins have full access
-create policy "Admins have full access to projects"
-  on projects for all
-  using ((select role from profiles where id = auth.uid()) = 'admin');
-
--- Functions
--- Auto-create profile on signup
-create or replace function public.handle_new_user()
-returns trigger as $$
-begin
-  insert into public.profiles (id, email, full_name, avatar_url, role)
-  values (
-    new.id,
-    new.email,
-    new.raw_user_meta_data->>'full_name',
-    new.raw_user_meta_data->>'avatar_url',
-    case 
-      when new.email = 'admin@Hembox.io' then 'admin'
-      else 'user'
-    end
-  );
-  return new;
-end;
-$$ language plpgsql security definer;
-
--- Trigger for new user
-create or replace trigger on_auth_user_created
-  after insert on auth.users
-  for each row execute procedure public.handle_new_user();
-```
-
-### 2.4 Enable Auth Providers
-
-In Supabase Dashboard > Authentication > Providers:
-
-**Email Auth:**
-- Enable Email provider (default on)
-- Configure email templates if desired
-
-**Phone Auth:**
-- Enable Phone provider
-- Configure Twilio or MessageBird for SMS
-- Set up OTP settings
-
-**Google OAuth:**
-1. Go to [Google Cloud Console](https://console.cloud.google.com/)
-2. Create OAuth 2.0 credentials
-3. Add authorized redirect URI: `https://your-project.supabase.co/auth/v1/callback`
-4. Copy Client ID and Secret to Supabase Google provider settings
-5. Add your site URL to authorized origins
-
-## 3. Cloudinary Setup
-
-1. Create account at [cloudinary.com](https://cloudinary.com)
-2. Get your Cloud Name, API Key, and API Secret from Dashboard
-3. Add to `.env.local`:
-
-```env
 NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME=your-cloud-name
 CLOUDINARY_API_KEY=your-api-key
 CLOUDINARY_API_SECRET=your-api-secret
 ```
 
-## 4. Run the App
+Never expose `SUPABASE_SERVICE_ROLE_KEY`, `CLOUDINARY_API_KEY`, or `CLOUDINARY_API_SECRET` to the browser.
+
+### 2.3 Database Schema
+
+Run your existing base schema/migrations first, then run the current project migrations from the repository as needed:
+
+- `create_inquiries.sql` — lead/inquiry inbox and Realtime configuration.
+- `add_portfolio_details.sql` — portfolio fields.
+- `add_social_links.sql` — social profile settings.
+- `add_whatsapp.sql` — WhatsApp contact settings.
+- `security_hardening.sql` — removes email-based admin escalation and hardens role checks.
+
+Do not use the older `rls_*.sql` or `supabase_rebuild.sql` files as a blanket production reset unless you have reviewed them against your current database. They are historical repair/rebuild scripts.
+
+### 2.4 Admin Role
+
+New accounts are created with the `user` role. Promote an account to admin explicitly from the Supabase SQL Editor:
+
+```sql
+update public.profiles
+set role = 'admin'
+where email = 'your-email@example.com';
+```
+
+Then sign out and sign back in so the new role is reflected in the session.
+
+### 2.5 Lead Inbox
+
+The public website sends quote/mockup/contact requests to `/api/inquiries`. The API validates the request server-side and writes using the Supabase Service Role Key. The admin Messages page reads and updates inquiries through authenticated Supabase access with RLS.
+
+## 3. Auth Providers
+
+In Supabase Dashboard → Authentication → Providers, enable only the providers you intend to use.
+
+**Email/password:** enable Email provider and configure confirmation/reset templates as required.
+
+**Phone OTP:** enable Phone provider and configure a supported SMS provider such as Twilio if phone login is needed.
+
+**Google OAuth:** create OAuth credentials in Google Cloud Console and configure the Supabase callback URL and allowed site URL in Supabase.
+
+## 4. Cloudinary
+
+The application uses Cloudinary for admin media uploads. The upload API is admin-only and accepts JPEG, PNG, WebP, and GIF images up to 5 MB.
+
+Do not make the Cloudinary API secret or upload endpoint credentials available to client-side code.
+
+## 5. Run the App
 
 ```bash
 npm run dev
-# or
-yarn dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000)
+Open `http://localhost:3000`.
 
-## 5. Admin Setup
+## 6. Production Checks
 
-1. Sign up with your email
-2. Run in Supabase SQL Editor:
+Before launch, verify:
 
-```sql
-update public.profiles set role = 'admin' where email = 'your-email@example.com';
-```
-
-3. Log out and log back in
-4. Access admin at `/admin/dashboard`
+1. `npm run lint`
+2. `npx tsc --noEmit`
+3. `npm run build`
+4. Public inquiry submission creates an entry in `inquiries`.
+5. A non-admin cannot access `/admin/*` or `/api/admin/*`.
+6. A non-admin cannot upload through `/api/upload`.
+7. Admin inquiry updates work and appear in Realtime.
+8. Privacy Policy and Terms content are populated in Agency Settings.
+9. Contact email, phone, WhatsApp, and social URLs are production values.
 
 ## Project Structure
 
-```
+```text
 Hembox.io/
 ├── src/
 │   ├── app/
-│   │   ├── (auth)/          # Auth pages (login, register)
-│   │   ├── (public)/        # Public pages (landing)
-│   │   ├── admin/           # Admin dashboard
-│   │   ├── api/             # API routes
-│   │   ├── auth/callback/   # OAuth callback
-│   │   ├── layout.tsx       # Root layout
-│   │   └── globals.css      # Global styles
+│   │   ├── (auth)/          # Login and registration
+│   │   ├── (public)/        # Public pages
+│   │   ├── admin/            # Admin dashboard
+│   │   ├── api/              # Server API routes
+│   │   └── auth/callback/    # OAuth callback
 │   ├── components/
-│   │   ├── ui/              # Reusable UI components
-│   │   ├── auth/            # Auth forms
-│   │   ├── landing/         # Landing page sections
-│   │   ├── admin/           # Admin components
-│   │   └── providers/       # Context providers
-│   ├── hooks/               # Custom hooks
-│   ├── lib/
-│   │   ├── supabase/        # Supabase clients
-│   │   ├── cloudinary.ts    # Cloudinary config
-│   │   ├── utils.ts         # Utilities
-│   │   └── database.types.ts # DB types
-│   └── types/               # TypeScript types
-├── .env.local               # Environment variables
+│   │   ├── auth/
+│   │   ├── landing/
+│   │   ├── admin/
+│   │   └── providers/
+│   ├── hooks/
+│   └── lib/
+│       ├── supabase/
+│       ├── cloudinary.ts
+│       └── database.types.ts
+├── .env.example
+├── .github/workflows/ci.yml
 ├── next.config.js
-├── tailwind.config.ts
 └── package.json
 ```
 
-## Features
-
-- **Authentication:** Email/password, Phone OTP, Google OAuth
-- **Admin Dashboard:** Client management, project tracking, analytics
-- **Database:** Supabase PostgreSQL with RLS policies
-- **Media:** Cloudinary image uploads
-- **Styling:** Tailwind CSS with custom design system
-- **Animations:** Framer Motion + CSS animations
-- **Type Safety:** Full TypeScript support
-
 ## Deployment
 
-### Vercel (Recommended)
+### Vercel
 
-```bash
-npm i -g vercel
-vercel
-```
-
-Add environment variables in Vercel Dashboard > Settings > Environment Variables.
+Add all production environment variables in the Vercel project settings. Keep server-only secrets out of `NEXT_PUBLIC_*` variables.
 
 ## Security Notes
 
-1. Never commit `.env.local` to git
-2. Use Row Level Security (RLS) policies
-3. Service Role Key should only be used server-side
-4. Enable HTTPS in production
-5. Set up proper CORS policies in Supabase
+1. Never commit `.env.local` or production secrets.
+2. Keep RLS enabled on all tables containing private data.
+3. Use the Service Role Key only in server-side code.
+4. Keep admin authorization checks on API routes; middleware alone is not sufficient.
+5. Restrict file uploads by authenticated role, type, and size.
+6. Review Supabase Auth redirect URLs before production.
+7. Run dependency/security updates regularly and review `npm audit` output.
