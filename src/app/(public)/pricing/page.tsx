@@ -132,7 +132,7 @@ export default function PricingPage() {
               <div className="max-w-xl text-center md:text-left">
                 <h3 className="text-3xl font-black mb-4 tracking-tight">Need a custom solution?</h3>
                 <p className="text-gray-400 text-lg">
-                  If none of our standard packages fit your needs, we'd love to 
+                  If none of our standard packages fit your needs, we&apos;d love to 
                   discuss a completely custom project tailored for you.
                 </p>
               </div>
