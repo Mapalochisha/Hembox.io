@@ -48,7 +48,7 @@ export default function MessagesPage() {
   const [filter, setFilter] = useState<"all" | InquiryStatus>("all")
   const [isLoading, setIsLoading] = useState(true)
   const [isUpdating, setIsUpdating] = useState<string | null>(null)
-  const supabase = createClient()
+  const [supabase] = useState(() => createClient())
 
   const fetchInquiries = useCallback(async () => {
     setIsLoading(true)
