@@ -166,7 +166,7 @@ export default function AdminPortfolioPage() {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-bold tracking-tight text-navy">Portfolio</h1>
-          <p className="text-gray-600 mt-1">Manage the projects we've done</p>
+          <p className="text-gray-600 mt-1">Manage the projects we&apos;ve done</p>
         </div>
         {!showForm && (
           <Button 
