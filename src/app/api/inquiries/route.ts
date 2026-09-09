@@ -42,29 +42,31 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Please provide a valid email and request details." }, { status: 400 })
     }
 
-    // Silent success for bots without creating a lead.
     if (parsed.data.honeypot) {
       return NextResponse.json({ success: true })
     }
 
     const supabase = createServiceClient()
+    const inquiry = {
+      type: parsed.data.type,
+      email: parsed.data.email,
+      name: parsed.data.name || null,
+      phone: parsed.data.phone || null,
+      website: parsed.data.website || null,
+      message: parsed.data.message || null,
+      source: parsed.data.source || "website",
+    }
+
     const { data, error } = await supabase
       .from("inquiries")
-      .insert({
-        type: parsed.data.type,
-        email: parsed.data.email,
-        name: parsed.data.name || null,
-        phone: parsed.data.phone || null,
-        website: parsed.data.website || null,
-        message: parsed.data.message || null,
-        source: parsed.data.source || "website",
-      })
+      .insert(inquiry as never)
       .select("id")
       .single()
 
     if (error) throw error
 
-    return NextResponse.json({ success: true, id: data.id }, { status: 201 })
+    const inserted = data as { id: string }
+    return NextResponse.json({ success: true, id: inserted.id }, { status: 201 })
   } catch (error) {
     console.error("Inquiry submission error:", error)
     return NextResponse.json({ error: "Unable to send your request right now. Please try again." }, { status: 500 })
