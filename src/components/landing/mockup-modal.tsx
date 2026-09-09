@@ -4,8 +4,10 @@ import { useState, useCallback, type MouseEvent } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
+import { Textarea } from "@/components/ui/textarea"
 import { useToast } from "@/hooks/use-toast"
-import { X, ArrowRight, Loader2 } from "lucide-react"
+import { useAgency } from "@/components/providers/agency-provider"
+import { X, ArrowRight, Loader2, Mail, Phone, MessageCircle } from "lucide-react"
 
 type InquiryType = "mockup" | "quote" | "pricing" | "contact"
 
@@ -18,12 +20,13 @@ export function openMockupModal(typeOrEvent?: InquiryType | MouseEvent<HTMLButto
 
 export function MockupModal() {
   const [isOpen, setIsOpen] = useState(false)
-  const [email, setEmail] = useState("")
-  const [website, setWebsite] = useState("")
+  const [contact, setContact] = useState("")
+  const [message, setMessage] = useState("")
   const [isLoading, setIsLoading] = useState(false)
   const [inquiryType, setInquiryType] = useState<InquiryType>("mockup")
   const [honeypot, setHoneypot] = useState("")
   const { toast } = useToast()
+  const { contact_email, phone_number, whatsapp_number, whatsapp_message } = useAgency()
 
   openModalFn = useCallback((type: InquiryType = "mockup") => {
     setInquiryType(type)
@@ -32,17 +35,20 @@ export function MockupModal() {
 
   const handleClose = () => {
     setIsOpen(false)
-    setEmail("")
-    setWebsite("")
+    setContact("")
+    setMessage("")
     setHoneypot("")
   }
 
   const isQuote = inquiryType === "quote" || inquiryType === "pricing"
   const title = isQuote ? "Request a custom quote" : "Get your free mockup"
   const description = isQuote
-    ? "Tell us where you want to take your project and we'll get back to you."
-    : "We'll reply in under 2 hours."
+    ? "Tell us what you need and we'll get back to you."
+    : "Tell us about your idea and we'll reply in under 2 hours."
   const buttonLabel = isQuote ? "Request quote" : "Request mockup"
+  const whatsappUrl = whatsapp_number
+    ? `https://wa.me/${whatsapp_number.replace(/\D/g, "")}?text=${encodeURIComponent(whatsapp_message || "Hi, I'm interested in your services!")}`
+    : null
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -54,8 +60,8 @@ export function MockupModal() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           type: inquiryType,
-          email,
-          website,
+          contact,
+          message,
           source: typeof window !== "undefined" ? window.location.pathname : "website",
           honeypot,
         }),
@@ -120,26 +126,26 @@ export function MockupModal() {
 
               <form onSubmit={handleSubmit} className="space-y-3.5">
                 <div>
-                  <Label className="text-[13px] font-medium text-gray-700">Work email</Label>
+                  <Label className="text-[13px] font-medium text-gray-700">Email or WhatsApp number</Label>
                   <Input
-                    type="email"
+                    type="text"
                     required
                     maxLength={254}
-                    placeholder="you@company.com"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
+                    placeholder="you@company.com or +260 97..."
+                    value={contact}
+                    onChange={(e) => setContact(e.target.value)}
                     className="mt-1.5"
                   />
                 </div>
                 <div>
-                  <Label className="text-[13px] font-medium text-gray-700">Website or idea</Label>
-                  <Input
-                    type="text"
-                    maxLength={500}
-                    placeholder="Hembox.io or describe it"
-                    value={website}
-                    onChange={(e) => setWebsite(e.target.value)}
-                    className="mt-1.5"
+                  <Label className="text-[13px] font-medium text-gray-700">Message or idea</Label>
+                  <Textarea
+                    required
+                    maxLength={2000}
+                    placeholder="Tell us what you'd like us to build, improve or design..."
+                    value={message}
+                    onChange={(e) => setMessage(e.target.value)}
+                    className="mt-1.5 min-h-[110px] resize-none"
                   />
                 </div>
                 <input
@@ -167,6 +173,46 @@ export function MockupModal() {
                 </Button>
                 <p className="text-[12px] text-center text-gray-500 pt-1">Free • No spam • Cancel anytime</p>
               </form>
+
+              {(contact_email || phone_number || whatsappUrl) && (
+                <div className="mt-7 pt-6 border-t border-gray-100">
+                  <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-gray-400 text-center mb-4">Or contact us directly</p>
+                  <div className="flex justify-center gap-3">
+                    {contact_email && (
+                      <a
+                        href={`mailto:${contact_email}`}
+                        aria-label="Email Hembox.io"
+                        title="Email us"
+                        className="w-11 h-11 rounded-xl bg-gray-50 border border-gray-200 grid place-items-center text-navy hover:bg-teal/10 hover:border-teal/30 hover:text-teal transition"
+                      >
+                        <Mail className="w-5 h-5" />
+                      </a>
+                    )}
+                    {phone_number && (
+                      <a
+                        href={`tel:${phone_number}`}
+                        aria-label="Call Hembox.io"
+                        title="Call us"
+                        className="w-11 h-11 rounded-xl bg-gray-50 border border-gray-200 grid place-items-center text-navy hover:bg-teal/10 hover:border-teal/30 hover:text-teal transition"
+                      >
+                        <Phone className="w-5 h-5" />
+                      </a>
+                    )}
+                    {whatsappUrl && (
+                      <a
+                        href={whatsappUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        aria-label="Message Hembox.io on WhatsApp"
+                        title="WhatsApp us"
+                        className="w-11 h-11 rounded-xl bg-gray-50 border border-gray-200 grid place-items-center text-[#25D366] hover:bg-[#25D366]/10 hover:border-[#25D366]/30 transition"
+                      >
+                        <MessageCircle className="w-5 h-5" />
+                      </a>
+                    )}
+                  </div>
+                </div>
+              )}
             </div>
           </div>
         </div>
