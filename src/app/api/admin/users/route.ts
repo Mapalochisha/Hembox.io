@@ -1,21 +1,37 @@
+import { createClient } from "@/lib/supabase/server"
 import { createServiceClient } from "@/lib/supabase/service"
 import { NextResponse } from "next/server"
 
 export async function GET() {
   try {
-    const supabase = createServiceClient()
+    const supabase = createClient()
+    const {
+      data: { user },
+    } = await supabase.auth.getUser()
 
-    const { data: users, error } = await supabase
+    if (!user) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+    }
+
+    const { data: role } = await supabase.rpc("get_user_role", { user_id: user.id })
+
+    if (role !== "admin") {
+      return NextResponse.json({ error: "Forbidden" }, { status: 403 })
+    }
+
+    const serviceClient = createServiceClient()
+    const { data: users, error } = await serviceClient
       .from("profiles")
-      .select("*")
+      .select("id, email, phone, full_name, avatar_url, role, created_at, updated_at")
       .order("created_at", { ascending: false })
 
     if (error) throw error
 
     return NextResponse.json({ users })
-  } catch (error: any) {
+  } catch (error) {
+    console.error("Admin users API error:", error)
     return NextResponse.json(
-      { error: error.message },
+      { error: "Unable to load users." },
       { status: 500 }
     )
   }
