@@ -6,9 +6,9 @@ import { useAgency } from "@/components/providers/agency-provider"
 import { ArrowRight, Mail, Phone, Instagram, Facebook, Twitter, Linkedin, MessageCircle } from "lucide-react"
 
 export function ContactCTA() {
-  const { 
-    agency_name, 
-    contact_email, 
+  const {
+    agency_name,
+    contact_email,
     phone_number,
     whatsapp_number,
     whatsapp_message,
@@ -18,7 +18,7 @@ export function ContactCTA() {
     linkedin_url
   } = useAgency()
 
-  const whatsappUrl = whatsapp_number 
+  const whatsappUrl = whatsapp_number
     ? `https://wa.me/${whatsapp_number.replace(/\D/g, '')}?text=${encodeURIComponent(whatsapp_message || "Hi, I'm interested in your services!")}`
     : null
 
@@ -36,7 +36,7 @@ export function ContactCTA() {
         <div className="bg-navy rounded-[32px] sm:rounded-[48px] p-6 sm:p-16 relative overflow-hidden">
           <div className="absolute top-0 right-0 w-[300px] h-[300px] sm:w-[400px] sm:h-[400px] bg-teal/20 blur-[80px] sm:blur-[100px] -z-10" />
           <div className="absolute bottom-0 left-0 w-[200px] h-[200px] sm:w-[300px] sm:h-[300px] bg-coral/10 blur-[60px] sm:blur-[80px] -z-10" />
-          
+
           <div className="grid lg:grid-cols-2 gap-12 lg:gap-16 items-center">
             <div className="text-left">
               <h2 className="text-[13px] font-bold tracking-[0.2em] text-teal uppercase mb-4">Let&apos;s Talk</h2>
@@ -45,31 +45,34 @@ export function ContactCTA() {
                 your <span className="text-teal text-nowrap">digital identity?</span>
               </h3>
               <p className="text-gray-400 text-[16px] sm:text-[18px] leading-relaxed mb-10 max-w-[500px]">
-                Join 50+ founders who trusted {agency_name} to build their 
-                online presence. Your free mockup is just one click away.
+                Tell us what you&apos;re building and we&apos;ll help you turn the idea into a polished digital experience.
               </p>
-              
+
               <div className="space-y-5">
-                <a href={`mailto:${contact_email}`} className="flex items-center gap-4 group w-fit">
-                  <div className="w-11 h-11 sm:w-12 sm:h-12 rounded-2xl bg-white/5 border border-white/10 grid place-items-center group-hover:bg-teal/20 group-hover:border-teal/30 transition shrink-0">
-                    <Mail className="w-5 h-5 text-teal" />
-                  </div>
-                  <div className="min-w-0 flex-1">
-                    <p className="text-[11px] sm:text-[12px] text-gray-500 font-bold uppercase tracking-wider">Email Us</p>
-                    <p className="text-white font-medium text-[15px] sm:text-[16px] truncate">{contact_email}</p>
-                  </div>
-                </a>
-                
-                <div className="flex flex-wrap gap-x-8 gap-y-5">
-                  <a href={`tel:${phone_number}`} className="flex items-center gap-4 group w-fit">
+                {contact_email && (
+                  <a href={`mailto:${contact_email}`} className="flex items-center gap-4 group w-fit">
                     <div className="w-11 h-11 sm:w-12 sm:h-12 rounded-2xl bg-white/5 border border-white/10 grid place-items-center group-hover:bg-teal/20 group-hover:border-teal/30 transition shrink-0">
-                      <Phone className="w-5 h-5 text-teal" />
+                      <Mail className="w-5 h-5 text-teal" />
                     </div>
                     <div className="min-w-0 flex-1">
-                      <p className="text-[11px] sm:text-[12px] text-gray-500 font-bold uppercase tracking-wider">Call Us</p>
-                      <p className="text-white font-medium text-[15px] sm:text-[16px] truncate">{phone_number}</p>
+                      <p className="text-[11px] sm:text-[12px] text-gray-500 font-bold uppercase tracking-wider">Email Us</p>
+                      <p className="text-white font-medium text-[15px] sm:text-[16px] truncate">{contact_email}</p>
                     </div>
                   </a>
+                )}
+
+                <div className="flex flex-wrap gap-x-8 gap-y-5">
+                  {phone_number && (
+                    <a href={`tel:${phone_number}`} className="flex items-center gap-4 group w-fit">
+                      <div className="w-11 h-11 sm:w-12 sm:h-12 rounded-2xl bg-white/5 border border-white/10 grid place-items-center group-hover:bg-teal/20 group-hover:border-teal/30 transition shrink-0">
+                        <Phone className="w-5 h-5 text-teal" />
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <p className="text-[11px] sm:text-[12px] text-gray-500 font-bold uppercase tracking-wider">Call Us</p>
+                        <p className="text-white font-medium text-[15px] sm:text-[16px] truncate">{phone_number}</p>
+                      </div>
+                    </a>
+                  )}
 
                   {whatsappUrl && (
                     <a href={whatsappUrl} target="_blank" rel="noopener noreferrer" className="flex items-center gap-4 group w-fit">
@@ -90,10 +93,10 @@ export function ContactCTA() {
                   <p className="text-[11px] text-gray-500 font-bold uppercase tracking-[0.2em] mb-4">Follow Us</p>
                   <div className="flex gap-4">
                     {socialLinks.map((social, i) => (
-                      <a 
+                      <a
                         key={i}
-                        href={social.href} 
-                        target="_blank" 
+                        href={social.href}
+                        target="_blank"
                         rel="noopener noreferrer"
                         className="w-11 h-11 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center text-gray-400 hover:text-teal hover:bg-teal/10 hover:border-teal/30 transition-all"
                         title={social.label}
@@ -109,17 +112,17 @@ export function ContactCTA() {
             <div className="bg-white/5 backdrop-blur-md rounded-[28px] sm:rounded-[32px] p-6 sm:p-8 border border-white/10 w-full">
               <h4 className="text-[18px] sm:text-[20px] font-bold text-white mb-2">Get a free mockup</h4>
               <p className="text-gray-400 text-[13px] sm:text-[14px] mb-8">We&apos;ll design a custom homepage for your brand in under 24 hours. No strings attached.</p>
-              
-              <Button 
+
+              <Button
                 onClick={openMockupModal}
                 className="w-full h-12 sm:h-14 rounded-xl sm:rounded-2xl bg-teal text-navy font-bold text-[15px] sm:text-[16px] hover:bg-teal/90 transition flex items-center justify-center gap-3"
               >
                 Claim Your Free Mockup
                 <ArrowRight className="w-5 h-5" />
               </Button>
-              
+
               <p className="text-[11px] sm:text-[12px] text-center text-gray-500 mt-6 leading-relaxed">
-                Trusted by startups, e-commerce brands, and professional services worldwide.
+                Built for startups, e-commerce brands, and professional services.
               </p>
             </div>
           </div>
