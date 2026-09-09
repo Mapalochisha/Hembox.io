@@ -7,10 +7,12 @@ import { Label } from "@/components/ui/label"
 import { useToast } from "@/hooks/use-toast"
 import { X, ArrowRight, Loader2 } from "lucide-react"
 
-let openModalFn: (() => void) | null = null
+type InquiryType = "mockup" | "quote" | "pricing" | "contact"
 
-export function openMockupModal() {
-  openModalFn?.()
+let openModalFn: ((type?: InquiryType) => void) | null = null
+
+export function openMockupModal(type: InquiryType = "mockup") {
+  openModalFn?.(type)
 }
 
 export function MockupModal() {
@@ -18,35 +20,65 @@ export function MockupModal() {
   const [email, setEmail] = useState("")
   const [website, setWebsite] = useState("")
   const [isLoading, setIsLoading] = useState(false)
+  const [inquiryType, setInquiryType] = useState<InquiryType>("mockup")
+  const [honeypot, setHoneypot] = useState("")
   const { toast } = useToast()
 
-  openModalFn = useCallback(() => setIsOpen(true), [])
+  openModalFn = useCallback((type: InquiryType = "mockup") => {
+    setInquiryType(type)
+    setIsOpen(true)
+  }, [])
 
   const handleClose = () => {
     setIsOpen(false)
     setEmail("")
     setWebsite("")
+    setHoneypot("")
   }
+
+  const isQuote = inquiryType === "quote" || inquiryType === "pricing"
+  const title = isQuote ? "Request a custom quote" : "Get your free mockup"
+  const description = isQuote
+    ? "Tell us where you want to take your project and we'll get back to you."
+    : "We'll reply in under 2 hours."
+  const buttonLabel = isQuote ? "Request quote" : "Request mockup"
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setIsLoading(true)
 
     try {
-      // In production, send to your API
-      await new Promise((resolve) => setTimeout(resolve, 1500))
+      const response = await fetch("/api/inquiries", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          type: inquiryType,
+          email,
+          website,
+          source: typeof window !== "undefined" ? window.location.pathname : "website",
+          honeypot,
+        }),
+      })
+
+      const result = await response.json().catch(() => ({}))
+
+      if (!response.ok) {
+        throw new Error(result.error || "Unable to send your request")
+      }
 
       toast({
         title: "Request sent!",
-        description: "We'll reply in under 2 hours with your free mockup.",
+        description: isQuote
+          ? "Your custom quote request is now in our inbox."
+          : "We'll reply in under 2 hours with your free mockup.",
         variant: "success",
       })
 
       handleClose()
     } catch (error) {
       toast({
-        title: "Error",
-        description: "Something went wrong. Please try again.",
+        title: "Couldn't send request",
+        description: error instanceof Error ? error.message : "Please try again.",
         variant: "destructive",
       })
     } finally {
@@ -73,12 +105,13 @@ export function MockupModal() {
                       <path d="M4 4h7v7H4zM13 4h7v4h-7zM4 13h4v7H4zM13 11h7v9h-7z" fill="white"/>
                     </svg>
                   </div>
-                  <h3 className="text-[22px] font-bold tracking-tight">Get your free mockup</h3>
-                  <p className="text-[14px] text-gray-600 mt-1">We'll reply in under 2 hours.</p>
+                  <h3 className="text-[22px] font-bold tracking-tight">{title}</h3>
+                  <p className="text-[14px] text-gray-600 mt-1">{description}</p>
                 </div>
                 <button
                   onClick={handleClose}
                   className="w-8 h-8 grid place-items-center rounded-xl hover:bg-gray-100 text-gray-500 transition -mr-1 -mt-1"
+                  aria-label="Close"
                 >
                   <X className="w-[18px] h-[18px]" />
                 </button>
@@ -90,6 +123,7 @@ export function MockupModal() {
                   <Input
                     type="email"
                     required
+                    maxLength={254}
                     placeholder="you@company.com"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
@@ -100,12 +134,22 @@ export function MockupModal() {
                   <Label className="text-[13px] font-medium text-gray-700">Website or idea</Label>
                   <Input
                     type="text"
+                    maxLength={500}
                     placeholder="Hembox.io or describe it"
                     value={website}
                     onChange={(e) => setWebsite(e.target.value)}
                     className="mt-1.5"
                   />
                 </div>
+                <input
+                  type="text"
+                  tabIndex={-1}
+                  autoComplete="off"
+                  value={honeypot}
+                  onChange={(e) => setHoneypot(e.target.value)}
+                  className="absolute -left-[9999px] opacity-0 pointer-events-none"
+                  aria-hidden="true"
+                />
                 <Button
                   type="submit"
                   className="w-full h-11 mt-2 rounded-xl bg-navy text-white font-semibold text-[15px] hover:bg-navy/90 transition flex items-center justify-center gap-2"
@@ -115,7 +159,7 @@ export function MockupModal() {
                     <Loader2 className="h-4 w-4 animate-spin" />
                   ) : (
                     <>
-                      <span>Request mockup</span>
+                      <span>{buttonLabel}</span>
                       <ArrowRight className="w-4 h-4" />
                     </>
                   )}
