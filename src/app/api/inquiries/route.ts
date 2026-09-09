@@ -4,11 +4,9 @@ import { createServiceClient } from "@/lib/supabase/service"
 
 const inquirySchema = z.object({
   type: z.enum(["mockup", "quote", "pricing", "contact"]),
-  email: z.string().trim().email().max(254),
-  website: z.string().trim().max(500).optional().default(""),
-  message: z.string().trim().max(2000).optional().default(""),
+  contact: z.string().trim().min(3).max(254),
+  message: z.string().trim().min(1).max(2000),
   name: z.string().trim().max(120).optional().default(""),
-  phone: z.string().trim().max(40).optional().default(""),
   source: z.string().trim().max(120).optional().default("website"),
   honeypot: z.string().optional().default(""),
 })
@@ -19,6 +17,15 @@ const MAX_ATTEMPTS = 8
 
 function getClientKey(request: Request) {
   return request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() || "unknown"
+}
+
+function isEmail(value: string) {
+  return z.string().email().safeParse(value).success
+}
+
+function isPhone(value: string) {
+  const digits = value.replace(/\D/g, "")
+  return digits.length >= 7 && digits.length <= 15 && /^[+\d\s().-]+$/.test(value)
 }
 
 export async function POST(request: Request) {
@@ -38,22 +45,24 @@ export async function POST(request: Request) {
     const body = await request.json()
     const parsed = inquirySchema.safeParse(body)
 
-    if (!parsed.success) {
-      return NextResponse.json({ error: "Please provide a valid email and request details." }, { status: 400 })
+    if (!parsed.success || (!isEmail(parsed.data.contact) && !isPhone(parsed.data.contact))) {
+      return NextResponse.json({ error: "Please provide a valid email or WhatsApp number and a message." }, { status: 400 })
     }
 
     if (parsed.data.honeypot) {
       return NextResponse.json({ success: true })
     }
 
+    const contactIsEmail = isEmail(parsed.data.contact)
     const supabase = createServiceClient()
     const inquiry = {
       type: parsed.data.type,
-      email: parsed.data.email,
+      contact: parsed.data.contact,
+      email: contactIsEmail ? parsed.data.contact : null,
       name: parsed.data.name || null,
-      phone: parsed.data.phone || null,
-      website: parsed.data.website || null,
-      message: parsed.data.message || null,
+      phone: contactIsEmail ? null : parsed.data.contact,
+      website: null,
+      message: parsed.data.message,
       source: parsed.data.source || "website",
     }
 
