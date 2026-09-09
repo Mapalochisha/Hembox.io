@@ -6,7 +6,7 @@ import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { createClient } from "@/lib/supabase/client"
 import { cn } from "@/lib/utils"
-import { MessageSquare, RefreshCw, Mail, ExternalLink, CheckCircle2, Clock3, Loader2 } from "lucide-react"
+import { MessageSquare, RefreshCw, Mail, Phone, CheckCircle2, Clock3, Loader2 } from "lucide-react"
 
 type InquiryType = "mockup" | "quote" | "pricing" | "contact"
 type InquiryStatus = "new" | "contacted" | "in_progress" | "completed" | "archived"
@@ -14,7 +14,8 @@ type InquiryStatus = "new" | "contacted" | "in_progress" | "completed" | "archiv
 type Inquiry = {
   id: string
   type: InquiryType
-  email: string
+  contact: string | null
+  email: string | null
   name: string | null
   phone: string | null
   website: string | null
@@ -40,6 +41,14 @@ function statusVariant(status: InquiryStatus) {
   if (status === "completed") return "active" as const
   if (status === "archived") return "inactive" as const
   return "secondary" as const
+}
+
+function isEmail(value: string | null) {
+  return !!value && zEmail(value)
+}
+
+function zEmail(value: string) {
+  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value)
 }
 
 export default function MessagesPage() {
@@ -88,6 +97,10 @@ export default function MessagesPage() {
   }
 
   const unreadCount = inquiries.filter((item) => !item.is_read).length
+  const selectedContact = selected?.contact || selected?.email || selected?.phone || ""
+  const selectedIsEmail = isEmail(selectedContact)
+  const selectedIsPhone = !selectedIsEmail && !!selectedContact
+  const whatsappUrl = selectedIsPhone ? `https://wa.me/${selectedContact.replace(/\D/g, "")}` : null
 
   return (
     <div className="space-y-6">
@@ -118,13 +131,16 @@ export default function MessagesPage() {
         <div className="grid lg:grid-cols-[380px_1fr] gap-5 min-h-[600px]">
           <Card className="rounded-[24px] overflow-hidden">
             <div className="divide-y divide-gray-100 max-h-[700px] overflow-y-auto">
-              {filtered.map((item) => (
-                <button key={item.id} onClick={() => { setSelectedId(item.id); markRead(item) }} className={cn("w-full text-left p-4 hover:bg-gray-50 transition relative", selected?.id === item.id && "bg-teal/5")}>
-                  {!item.is_read && <span className="absolute left-0 top-0 bottom-0 w-1 bg-coral" />}
-                  <div className="flex items-start justify-between gap-3"><div className="min-w-0"><p className={cn("text-sm truncate", !item.is_read ? "font-bold text-navy" : "font-medium text-gray-800")}>{item.name || item.email}</p><p className="text-xs text-gray-500 truncate mt-1">{item.email}</p></div><span className="text-[10px] text-gray-400 whitespace-nowrap">{formatDate(item.created_at)}</span></div>
-                  <div className="flex items-center gap-2 mt-3"><Badge variant={statusVariant(item.status)}>{typeLabels[item.type]}</Badge>{!item.is_read && <span className="text-[10px] font-bold text-coral uppercase">New</span>}</div>
-                </button>
-              ))}
+              {filtered.map((item) => {
+                const itemContact = item.contact || item.email || item.phone || "No contact provided"
+                return (
+                  <button key={item.id} onClick={() => { setSelectedId(item.id); markRead(item) }} className={cn("w-full text-left p-4 hover:bg-gray-50 transition relative", selected?.id === item.id && "bg-teal/5")}>
+                    {!item.is_read && <span className="absolute left-0 top-0 bottom-0 w-1 bg-coral" />}
+                    <div className="flex items-start justify-between gap-3"><div className="min-w-0"><p className={cn("text-sm truncate", !item.is_read ? "font-bold text-navy" : "font-medium text-gray-800")}>{item.name || itemContact}</p><p className="text-xs text-gray-500 truncate mt-1">{itemContact}</p></div><span className="text-[10px] text-gray-400 whitespace-nowrap">{formatDate(item.created_at)}</span></div>
+                    <div className="flex items-center gap-2 mt-3"><Badge variant={statusVariant(item.status)}>{typeLabels[item.type]}</Badge>{!item.is_read && <span className="text-[10px] font-bold text-coral uppercase">New</span>}</div>
+                  </button>
+                )
+              })}
             </div>
           </Card>
 
@@ -137,10 +153,23 @@ export default function MessagesPage() {
 
               <div className="p-5 sm:p-7 space-y-6">
                 <div className="grid sm:grid-cols-2 gap-4">
-                  <a href={`mailto:${selected.email}`} className="rounded-2xl border border-gray-100 p-4 hover:border-teal transition group"><div className="flex items-center gap-2 text-xs text-gray-500 mb-2"><Mail className="w-4 h-4 text-teal" />Email</div><p className="text-sm font-semibold text-navy break-all group-hover:text-teal">{selected.email}</p></a>
-                  {selected.website ? <a href={selected.website.startsWith("http") ? selected.website : `https://${selected.website}`} target="_blank" rel="noopener noreferrer" className="rounded-2xl border border-gray-100 p-4 hover:border-teal transition group"><div className="flex items-center gap-2 text-xs text-gray-500 mb-2"><ExternalLink className="w-4 h-4 text-teal" />Website / Idea</div><p className="text-sm font-semibold text-navy break-all group-hover:text-teal">{selected.website}</p></a> : <div className="rounded-2xl border border-gray-100 p-4"><div className="flex items-center gap-2 text-xs text-gray-500 mb-2"><Clock3 className="w-4 h-4 text-teal" />Source</div><p className="text-sm font-semibold text-navy">{selected.source || "Website"}</p></div>}
+                  <a
+                    href={selectedIsEmail ? `mailto:${selectedContact}` : whatsappUrl || `tel:${selectedContact}`}
+                    target={selectedIsEmail || !whatsappUrl ? undefined : "_blank"}
+                    rel={whatsappUrl ? "noopener noreferrer" : undefined}
+                    className="rounded-2xl border border-gray-100 p-4 hover:border-teal transition group"
+                  >
+                    <div className="flex items-center gap-2 text-xs text-gray-500 mb-2">
+                      {selectedIsEmail ? <Mail className="w-4 h-4 text-teal" /> : <Phone className="w-4 h-4 text-teal" />}
+                      {selectedIsEmail ? "Email" : "WhatsApp / Phone"}
+                    </div>
+                    <p className="text-sm font-semibold text-navy break-all group-hover:text-teal">{selectedContact}</p>
+                  </a>
+                  <div className="rounded-2xl border border-gray-100 p-4">
+                    <div className="flex items-center gap-2 text-xs text-gray-500 mb-2"><Clock3 className="w-4 h-4 text-teal" />Source</div>
+                    <p className="text-sm font-semibold text-navy">{selected.source || "Website"}</p>
+                  </div>
                 </div>
-                {selected.phone && <div><p className="text-xs font-bold uppercase tracking-wider text-gray-400 mb-2">Phone</p><p className="text-sm text-gray-700">{selected.phone}</p></div>}
                 {selected.message && <div><p className="text-xs font-bold uppercase tracking-wider text-gray-400 mb-2">Message</p><div className="rounded-2xl bg-gray-50 border border-gray-100 p-4 text-sm text-gray-700 whitespace-pre-wrap leading-relaxed">{selected.message}</div></div>}
                 <div className="flex flex-wrap gap-3 pt-2">{!selected.is_read && <Button onClick={() => markRead(selected)} disabled={isUpdating === selected.id} className="gap-2"><CheckCircle2 className="w-4 h-4" />Mark as read</Button>}<Button variant="outline" onClick={() => updateInquiry(selected.id, { status: "contacted", is_read: true, read_at: selected.read_at || new Date().toISOString() })} disabled={isUpdating === selected.id}>Mark contacted</Button></div>
               </div>
