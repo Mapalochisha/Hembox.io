@@ -4,7 +4,6 @@ import { useState, useCallback, type MouseEvent } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { Textarea } from "@/components/ui/textarea"
 import { useToast } from "@/hooks/use-toast"
 import { useAgency } from "@/components/providers/agency-provider"
 import { X, ArrowRight, Loader2, Mail, Phone, MessageCircle } from "lucide-react"
@@ -139,13 +138,13 @@ export function MockupModal() {
                 </div>
                 <div>
                   <Label className="text-[13px] font-medium text-gray-700">Message or idea</Label>
-                  <Textarea
+                  <textarea
                     required
                     maxLength={2000}
                     placeholder="Tell us what you'd like us to build, improve or design..."
                     value={message}
                     onChange={(e) => setMessage(e.target.value)}
-                    className="mt-1.5 min-h-[110px] resize-none"
+                    className="mt-1.5 min-h-[110px] w-full resize-none rounded-xl border border-gray-200 bg-white px-3 py-2.5 text-sm outline-none transition placeholder:text-gray-400 focus:border-teal focus:ring-2 focus:ring-teal/20"
                   />
                 </div>
                 <input
