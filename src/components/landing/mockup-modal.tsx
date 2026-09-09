@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useCallback } from "react"
+import { useState, useCallback, type MouseEvent } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -11,7 +11,8 @@ type InquiryType = "mockup" | "quote" | "pricing" | "contact"
 
 let openModalFn: ((type?: InquiryType) => void) | null = null
 
-export function openMockupModal(type: InquiryType = "mockup") {
+export function openMockupModal(typeOrEvent?: InquiryType | MouseEvent<HTMLButtonElement>) {
+  const type = typeof typeOrEvent === "string" ? typeOrEvent : "mockup"
   openModalFn?.(type)
 }
 
