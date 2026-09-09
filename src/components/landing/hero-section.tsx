@@ -51,7 +51,7 @@ export function HeroSection() {
         <div className="relative">
           <h1 className="text-[44px] leading-[1.05] sm:text-[56px] lg:text-[68px] xl:text-[76px] font-[900] tracking-[-0.02em] text-navy">
             Your website
-            <span className="block">shouldn't be</span>
+            <span className="block">shouldn&apos;t be</span>
             <span className="relative inline-block">
               boring.
               <svg className="absolute -bottom-2 left-0 w-full h-3 text-coral" viewBox="0 0 200 12" fill="none">
@@ -105,7 +105,6 @@ export function HeroSection() {
 
         {/* Right - Laptop */}
         <div className="relative lg:h-[560px] flex items-center justify-center">
-          {/* Floating elements */}
           <div className="absolute z-30 -top-4 left-12 w-11 h-11 animate-float-1 hidden lg:block">
             <svg viewBox="0 0 44 44" fill="none"><path d="M22 2c8 6 14 14 18 22-6 2-12 1-18-2-6-3-11-8-14 4-4 9-6 14-6z" fill="#2DD4BF" opacity="0.9"/><path d="M8 36c2-3 5-5 8-6" stroke="#0F172A" strokeWidth="2" strokeLinecap="round"/></svg>
           </div>
@@ -123,28 +122,23 @@ export function HeroSection() {
             </div>
           </div>
 
-          {/* Sparkles */}
           <div className="absolute top-1/4 left-1/4 w-1.5 h-1.5 rounded-full bg-teal animate-twinkle" style={{animationDelay: "0.2s"}} />
           <div className="absolute top-1/3 right-1/4 w-1 h-1 rounded-full bg-coral animate-twinkle" style={{animationDelay: "0.8s"}} />
           <div className="absolute bottom-1/3 left-20 w-2 h-2 rounded-full bg-teal/60 animate-twinkle" style={{animationDelay: "1.4s"}} />
 
           <div className="relative w-full max-w-[640px]">
             <div className="relative mx-auto">
-              {/* Screen */}
               <div
                 ref={laptopRef}
                 className="laptop-screen laptop-tilt relative w-full aspect-[16/10] rounded-[18px] bg-navy overflow-visible"
               >
                 <div className="absolute inset-[10px] rounded-[10px] bg-white overflow-hidden">
-                  {/* Browser chrome */}
                   <div className="h-[28px] bg-[#F8FAFC] border-b border-gray-100 flex items-center gap-1.5 px-3">
                     <div className="w-2.5 h-2.5 rounded-full bg-coral" />
                     <div className="w-2.5 h-2.5 rounded-full bg-[#FFB800]" />
                     <div className="w-2.5 h-2.5 rounded-full bg-teal" />
                     <div className="ml-3 h-4 flex-1 max-w-[220px] rounded-md bg-white border border-gray-200" />
                   </div>
-
-                  {/* Fake website content */}
                   <div className="p-4 h-[calc(100%-28px)] bg-gradient-to-b from-white to-gray-50">
                     <div className="flex items-center justify-between mb-4">
                       <div className="h-2.5 w-20 rounded-full bg-navy" />
@@ -179,7 +173,6 @@ export function HeroSection() {
                   </div>
                 </div>
 
-                {/* Rocket */}
                 <div className="animate-launch absolute left-1/2 bottom-[22%] z-20 pointer-events-none">
                   <div className="relative">
                     <div className="absolute -inset-6 bg-teal/30 rounded-full blur-2xl" />
@@ -204,22 +197,14 @@ export function HeroSection() {
                       <rect x="22" y="49" width="8" height="2" rx="1" fill="white" fillOpacity="0.2"/>
                       <g className="animate-flame">
                         <path d="M19 60c0 5 2.2 9 7 14 4.8-5 7-9 7-14 0-3-1.2-5-3-6-1 2-2.5 3-4 6 0-3-1.5-4-3-6-1.8 1-4 3-4 6z" fill="url(#flameGrad)"/>
-                        <path d="M22 62c0 2 1 4 4 6 3-2 4-4 4-6" fill="#FFD6A0" opacity="0.8"/>
+                        <path d="M22 62c0 2 1 4 4 7 3-3 4-5 4-7 0-1.5-.5-2.5-1.5-3.5-3-.5 1-1 1.5-1.5 3-.5-1.5-1-2-1.5-3-1 1-1.5 2-1.5 3z" fill="#FFB800"/>
                       </g>
                     </svg>
-                    <div className="absolute -bottom-1 left-1/2 -translate-x-1/2 flex gap-1">
-                      <span className="w-1 h-1 rounded-full bg-teal animate-ping" style={{animationDuration: "0.8s"}} />
-                      <span className="w-1 h-1 rounded-full bg-coral animate-ping" style={{animationDuration: "1s", animationDelay: "0.2s"}} />
-                      <span className="w-1 h-1 rounded-full bg-teal animate-ping" style={{animationDuration: "0.9s", animationDelay: "0.4s"}} />
-                    </div>
                   </div>
                 </div>
               </div>
-
-              {/* Laptop base */}
-              <div className="laptop-base relative -mt-[2px] mx-auto w-[112%] h-[14px] rounded-b-[18px] left-[-6%]" />
-              <div className="relative mx-auto w-[40%] h-[6px] -mt-[12px] rounded-b-xl bg-navy/80 blur-[1px]" />
-              <div className="absolute -bottom-12 left-1/2 -translate-x-1/2 w-[80%] h-16 bg-navy/15 blur-2xl rounded-full" />
+              <div className="absolute -bottom-5 left-[-5%] right-[-5%] h-5 bg-navy rounded-[50%] shadow-2xl" />
+              <div className="absolute -bottom-8 left-[5%] right-[5%] h-4 bg-gray-200 rounded-[50%] blur-sm" />
             </div>
           </div>
         </div>
