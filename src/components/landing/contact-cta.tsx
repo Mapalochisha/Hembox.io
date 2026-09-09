@@ -39,7 +39,7 @@ export function ContactCTA() {
           
           <div className="grid lg:grid-cols-2 gap-12 lg:gap-16 items-center">
             <div className="text-left">
-              <h2 className="text-[13px] font-bold tracking-[0.2em] text-teal uppercase mb-4">Let's Talk</h2>
+              <h2 className="text-[13px] font-bold tracking-[0.2em] text-teal uppercase mb-4">Let&apos;s Talk</h2>
               <h3 className="text-[32px] sm:text-[48px] font-black text-white tracking-tight leading-[1.1] mb-6">
                 Ready to transform <br className="hidden sm:block" />
                 your <span className="text-teal text-nowrap">digital identity?</span>
@@ -108,7 +108,7 @@ export function ContactCTA() {
 
             <div className="bg-white/5 backdrop-blur-md rounded-[28px] sm:rounded-[32px] p-6 sm:p-8 border border-white/10 w-full">
               <h4 className="text-[18px] sm:text-[20px] font-bold text-white mb-2">Get a free mockup</h4>
-              <p className="text-gray-400 text-[13px] sm:text-[14px] mb-8">We'll design a custom homepage for your brand in under 24 hours. No strings attached.</p>
+              <p className="text-gray-400 text-[13px] sm:text-[14px] mb-8">We&apos;ll design a custom homepage for your brand in under 24 hours. No strings attached.</p>
               
               <Button 
                 onClick={openMockupModal}
