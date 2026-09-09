@@ -2,6 +2,8 @@ import { createClient } from "@/lib/supabase/server"
 import { createServiceClient } from "@/lib/supabase/service"
 import { NextResponse } from "next/server"
 
+export const dynamic = "force-dynamic"
+
 export async function GET() {
   try {
     const supabase = createClient()
@@ -13,7 +15,12 @@ export async function GET() {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }
 
-    const { data: role } = await supabase.rpc("get_user_role", { user_id: user.id })
+    const { data: role, error: roleError } = await supabase.rpc("get_user_role", { user_id: user.id })
+
+    if (roleError) {
+      console.error("Admin users role lookup error:", roleError)
+      return NextResponse.json({ error: "Unable to verify admin access." }, { status: 503 })
+    }
 
     if (role !== "admin") {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 })
