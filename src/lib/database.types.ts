@@ -114,6 +114,56 @@ export interface Database {
           updated_at?: string
         }
       }
+      inquiries: {
+        Row: {
+          id: string
+          type: 'mockup' | 'quote' | 'pricing' | 'contact'
+          email: string
+          name: string | null
+          phone: string | null
+          website: string | null
+          message: string | null
+          source: string | null
+          status: 'new' | 'contacted' | 'in_progress' | 'completed' | 'archived'
+          is_read: boolean
+          read_at: string | null
+          admin_notes: string | null
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          type: 'mockup' | 'quote' | 'pricing' | 'contact'
+          email: string
+          name?: string | null
+          phone?: string | null
+          website?: string | null
+          message?: string | null
+          source?: string | null
+          status?: 'new' | 'contacted' | 'in_progress' | 'completed' | 'archived'
+          is_read?: boolean
+          read_at?: string | null
+          admin_notes?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          type?: 'mockup' | 'quote' | 'pricing' | 'contact'
+          email?: string
+          name?: string | null
+          phone?: string | null
+          website?: string | null
+          message?: string | null
+          source?: string | null
+          status?: 'new' | 'contacted' | 'in_progress' | 'completed' | 'archived'
+          is_read?: boolean
+          read_at?: string | null
+          admin_notes?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+      }
     }
     Views: {
       [_ in never]: never
