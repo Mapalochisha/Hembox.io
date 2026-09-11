@@ -7,6 +7,8 @@ const inquirySchema = z.object({
   contact: z.string().trim().min(3).max(254),
   message: z.string().trim().min(1).max(2000),
   name: z.string().trim().max(120).optional().default(""),
+  product: z.string().trim().max(120).optional(),
+  service: z.string().trim().max(120).optional(),
   source: z.string().trim().max(120).optional().default("website"),
   honeypot: z.string().optional().default(""),
 })
@@ -54,6 +56,14 @@ export async function POST(request: Request) {
     }
 
     const contactIsEmail = isEmail(parsed.data.contact)
+    const contextLines = [
+      parsed.data.product ? `Selected plan: ${parsed.data.product}` : null,
+      parsed.data.service ? `Selected service: ${parsed.data.service}` : null,
+    ].filter(Boolean)
+    const storedMessage = contextLines.length > 0
+      ? `${contextLines.join("\n")}\n\nMessage:\n${parsed.data.message}`
+      : parsed.data.message
+
     const supabase = createServiceClient()
     const inquiry = {
       type: parsed.data.type,
@@ -62,7 +72,7 @@ export async function POST(request: Request) {
       name: parsed.data.name || null,
       phone: contactIsEmail ? null : parsed.data.contact,
       website: null,
-      message: parsed.data.message,
+      message: storedMessage,
       source: parsed.data.source || "website",
     }
 
