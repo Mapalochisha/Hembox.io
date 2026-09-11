@@ -109,7 +109,7 @@ export default function PricingPage() {
                     </div>
 
                     <Button 
-                      onClick={() => openMockupModal("quote")}
+                      onClick={() => openMockupModal("pricing", { product: pkg.name })}
                       className={cn(
                         "w-full h-14 rounded-2xl font-bold text-[16px] transition-all group",
                         pkg.is_popular 
@@ -140,7 +140,7 @@ export default function PricingPage() {
                 onClick={() => openMockupModal("quote")}
                 className="h-16 px-10 rounded-2xl bg-white text-navy hover:bg-teal hover:text-navy text-lg font-bold transition-all"
               >
-                Contact for Custom Quote
+                Request Custom Quote
               </Button>
             </div>
           </div>
