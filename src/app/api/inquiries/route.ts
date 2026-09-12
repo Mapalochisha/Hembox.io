@@ -96,7 +96,7 @@ export async function POST(request: Request) {
         sender_role: "customer",
         sender_id: null,
         body: parsed.data.message,
-      })
+      } as never)
 
     if (messageError) {
       console.warn("Inquiry saved but thread seed was unavailable:", messageError.message)
