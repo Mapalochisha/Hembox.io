@@ -32,6 +32,16 @@ create policy "Admins can send inquiry messages"
     and sender_id = auth.uid()
   );
 
+-- Preserve all existing inquiries as the first customer message in their thread.
+insert into public.inquiry_messages (inquiry_id, sender_role, sender_id, body, created_at)
+select i.id, 'customer', null, i.message, i.created_at
+from public.inquiries i
+where i.message is not null
+  and char_length(trim(i.message)) > 0
+  and not exists (
+    select 1 from public.inquiry_messages m where m.inquiry_id = i.id
+  );
+
 -- Enable realtime for replies. Duplicate publication membership is harmless.
 do $$
 begin
@@ -40,5 +50,4 @@ exception
   when duplicate_object then null;
 end $$;
 
--- Allow authenticated admins to continue using the existing inquiry update policies.
 -- Existing anonymous inquiry submission remains unchanged.
