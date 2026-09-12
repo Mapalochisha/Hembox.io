@@ -85,6 +85,23 @@ export async function POST(request: Request) {
     if (error) throw error
 
     const inserted = data as { id: string }
+
+    // The inquiry remains the source of truth, so a missing messaging migration
+    // must not break the public inquiry form. Once the migration is applied,
+    // every new inquiry is automatically represented as the first message.
+    const { error: messageError } = await supabase
+      .from("inquiry_messages")
+      .insert({
+        inquiry_id: inserted.id,
+        sender_role: "customer",
+        sender_id: null,
+        body: parsed.data.message,
+      } as never)
+
+    if (messageError) {
+      console.warn("Inquiry saved but thread seed was unavailable:", messageError.message)
+    }
+
     return NextResponse.json({ success: true, id: inserted.id }, { status: 201 })
   } catch (error) {
     console.error("Inquiry submission error:", error)
