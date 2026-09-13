@@ -2,6 +2,10 @@ import { NextResponse } from "next/server"
 import { z } from "zod"
 import { createServiceClient } from "@/lib/supabase/service"
 
+// This handler depends on Supabase at request time. Never attempt to
+// prerender/evaluate it as a static route during the Vercel build.
+export const dynamic = "force-dynamic"
+
 const inquirySchema = z.object({
   type: z.enum(["mockup", "quote", "pricing", "contact"]),
   contact: z.string().trim().min(3).max(254),
