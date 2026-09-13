@@ -5,6 +5,11 @@ import { Toaster } from "@/components/ui/toaster";
 import { AuthProvider } from "@/components/providers/auth-provider";
 import { AgencyProvider } from "@/components/providers/agency-provider";
 
+// Supabase is used by the client-side auth provider. Keep the application
+// request-driven so Next.js does not execute that client provider while
+// statically prerendering pages during a Vercel build.
+export const dynamic = "force-dynamic";
+
 const inter = Inter({ 
   subsets: ["latin"],
   display: "swap",
