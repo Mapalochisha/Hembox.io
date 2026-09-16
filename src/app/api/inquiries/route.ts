@@ -2,6 +2,10 @@ import { NextResponse } from "next/server"
 import { z } from "zod"
 import { createServiceClient } from "@/lib/supabase/service"
 
+// This handler depends on Supabase at request time. Never attempt to
+// prerender/evaluate it as a static route during the Vercel build.
+export const dynamic = "force-dynamic"
+
 const inquirySchema = z.object({
   type: z.enum(["mockup", "quote", "pricing", "contact"]),
   contact: z.string().trim().min(3).max(254),
@@ -85,6 +89,23 @@ export async function POST(request: Request) {
     if (error) throw error
 
     const inserted = data as { id: string }
+
+    // The inquiry remains the source of truth, so a missing messaging migration
+    // must not break the public inquiry form. Once the migration is applied,
+    // every new inquiry is automatically represented as the first message.
+    const { error: messageError } = await supabase
+      .from("inquiry_messages")
+      .insert({
+        inquiry_id: inserted.id,
+        sender_role: "customer",
+        sender_id: null,
+        body: parsed.data.message,
+      } as never)
+
+    if (messageError) {
+      console.warn("Inquiry saved but thread seed was unavailable:", messageError.message)
+    }
+
     return NextResponse.json({ success: true, id: inserted.id }, { status: 201 })
   } catch (error) {
     console.error("Inquiry submission error:", error)
