@@ -56,6 +56,7 @@ create table if not exists public.domain_orders (
   provider_metadata jsonb not null default '{}'::jsonb check (jsonb_typeof(provider_metadata) = 'object'),
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now(),
+  check (status not in ('quoted', 'awaiting_payment', 'payment_confirmed', 'registration_pending', 'registered') or (registration_retail_minor is not null and renewal_retail_minor is not null)),
   check (status <> 'registered' or (provider_id is not null and registered_at is not null))
 );
 
@@ -66,6 +67,13 @@ create index if not exists domain_orders_status_created_idx
   on public.domain_orders (status, created_at desc);
 create index if not exists domain_orders_domain_name_idx
   on public.domain_orders (domain_name);
+
+create unique index if not exists domain_orders_provider_order_reference_uidx
+  on public.domain_orders (provider_id, provider_order_reference)
+  where provider_id is not null and provider_order_reference is not null;
+create unique index if not exists domain_orders_provider_domain_reference_uidx
+  on public.domain_orders (provider_id, provider_domain_reference)
+  where provider_id is not null and provider_domain_reference is not null;
 
 create table if not exists public.domain_audit_events (
   id uuid primary key default gen_random_uuid(),
