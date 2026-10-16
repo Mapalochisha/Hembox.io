@@ -245,6 +245,16 @@ A green build proves only the checks that ran. It does not independently prove r
 
 Add a new entry at the top of this section after each substantive implementation or verification session. Never overwrite earlier entries; retain the historical record.
 
+### 2026-10-16 — Architecture decision: continue with current HEMBOX.io stack
+
+- **Decision:** Continue with the existing Next.js + Supabase architecture and custom domain-reselling workflow. FOSSBilling was considered as an incidental discovery but will not be introduced as a dependency at this stage.
+- **Rationale:** Preserve the current implementation and avoid adding a separate system to host, secure, maintain, and integrate without a demonstrated benefit.
+- **Milestone:** M1 remains the next active milestone; this decision does not complete M1.
+- **Changes:** Documentation decision only; no application code or infrastructure changed for this decision.
+- **Tests/CI/Vercel:** No new code checks were triggered by the decision itself. Existing CI/Vercel evidence remains historical and must be rechecked after subsequent code commits.
+- **Blockers:** Registrar not confirmed; payment gateway not selected; no live provider adapter.
+- **Next action:** Verify registrar commercial terms and sandbox requirements, prioritizing no setup fee, no monthly fee, and no mandatory upfront deposit.
+
 ### 2026-10-16 — Plan established
 
 - **Milestone:** M0 recorded complete; M1 is next.
