@@ -121,6 +121,8 @@ create policy "Admins can read domain audit events"
     )
   );
 
+revoke all on function public.set_domain_updated_at() from public, anon, authenticated;
+
 create or replace function public.set_domain_updated_at()
 returns trigger
 language plpgsql
