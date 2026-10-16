@@ -70,7 +70,7 @@ Use `[x]` only after the milestone's acceptance criteria have been met and verif
 
 **Recorded state:** Implemented. Last recorded CI and Vercel checks were green; re-verify after subsequent commits.
 
-### [x] M1 — Registrar selection and commercial verification
+### [ ] M1 — Registrar selection and commercial verification
 
 **Scope**
 - Compare eligible providers, prioritizing the zero-upfront-cost requirement.
@@ -249,9 +249,9 @@ A green build proves only the checks that ran. It does not independently prove r
 - **Commercial review:** Its official reseller page advertises no activation fee, no mandatory deposit/minimum balance, and no monthly fee. Higher pricing tiers can be unlocked by domain volume or optional deposits; do not make those deposits while starting without customers.
 - **API/test review:** The official quick-start documents a separate test environment at `https://dm.test.domainnameapi.com`, no real charges or public registrations in test, API access using a Reseller ID and API key, and live registration requiring funded balance. Test availability may differ from live registry availability.
 - **Documentation:** [Reseller program](https://www.domainnameapi.com/domain-reseller), [API quick start](https://www.domainnameapi.com/knowledge-base/account-management/how-to-start-domain-reselling).
-- **Milestone:** M1 provider decision recorded. Account-specific pricing, account activation, credential access, payment/funding methods from Zambia, and TLD-level prices still need confirmation.
+- **Milestone:** Provider decision recorded; M1 remains in progress. Account-specific pricing, account activation, credential access, payment/funding methods from Zambia, and TLD-level prices still need confirmation.
 - **Changes:** Build-plan documentation only; no application code, provider credentials, production database, or live registration changed.
-- **Next action:** Confirm reseller account/test access, then implement a server-only test-environment adapter with contract tests. Keep live registration and payments disabled.
+- **Next action:** Finish M1 by confirming reseller account/test access and Zambia-specific funding options; then implement a server-only test-environment adapter with contract tests. Keep live registration and payments disabled.
 
 
 Add a new entry at the top of this section after each substantive implementation or verification session. Never overwrite earlier entries; retain the historical record.
@@ -302,4 +302,4 @@ When resuming this project:
 5. Work on `feature/domain-reselling-platform`, keep changes focused, run relevant tests, and update this file with the commit and verification evidence.
 6. Never claim a feature or milestone is complete without evidence, and never enable production payments/registration or apply production migrations without explicit approval.
 
-**Immediate next action: M2 — implement the Domain Name API adapter against its test environment, after confirming account access and obtaining test credentials.**
+**Immediate next action: finish M1 — confirm Domain Name API reseller account activation, test credentials, account-specific pricing, and funding/payment options available from Zambia. Then proceed to M2, the sandbox adapter.**
