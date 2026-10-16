@@ -100,7 +100,7 @@ export default function DomainsPage() {
           contact: contact.trim(),
           name: name.trim(),
           source: "domain-storefront",
-          message: `Domain availability request: ${selectedDomain}\n\nPlease confirm current availability, registration price, renewal price, and next steps before any payment is requested.`,
+          message: `Domain availability request: ${selectedDomain}\n\nPlease check availability with the registrar and confirm registration price, renewal price, and next steps before any payment is requested.`,
         }),
       })
       const result = await response.json()
@@ -134,7 +134,7 @@ export default function DomainsPage() {
               <span className="mt-2 block text-teal">needs a name.</span>
             </h1>
             <p className="mx-auto mt-6 max-w-2xl text-base leading-7 text-slate-600 sm:text-lg sm:leading-8">
-              Find a home for your brand. Tell us the domain you want and we’ll confirm live availability and transparent pricing before you pay.
+              Find a home for your brand. Tell us the domain you want and we’ll check availability and confirm registration and renewal pricing before you commit.
             </p>
           </div>
 
