@@ -121,18 +121,19 @@ create policy "Admins can read domain audit events"
     )
   );
 
-revoke all on function public.set_domain_updated_at() from public, anon, authenticated;
-
 create or replace function public.set_domain_updated_at()
 returns trigger
 language plpgsql
 set search_path = ''
-as $$
+as $
 begin
   new.updated_at = now();
   return new;
 end;
-$$;
+$;
+
+revoke all on function public.set_domain_updated_at() from public, anon, authenticated;
+
 
 drop trigger if exists set_domain_tld_catalog_updated_at on public.domain_tld_catalog;
 create trigger set_domain_tld_catalog_updated_at
