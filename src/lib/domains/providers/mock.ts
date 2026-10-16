@@ -20,7 +20,7 @@ export const mockDomainProvider: DomainProvider = {
   async checkAvailability(domains: string[]): Promise<DomainAvailabilityResult[]> {
     const checkedAt = new Date().toISOString()
 
-    return domains.map((domain) => ({
+    return domains.map((domain): DomainAvailabilityResult => ({
       domain,
       availability: "unknown",
       registrationPrice: null,
