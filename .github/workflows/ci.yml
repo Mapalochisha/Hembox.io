@@ -46,11 +46,65 @@ jobs:
       - name: Type check
         run: npx tsc --noEmit
 
+  database-schema:
+    name: Domain schema integration tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: hembox_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres -d hembox_test"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    env:
+      PGPASSWORD: postgres
+      PGHOST: localhost
+      PGPORT: 5432
+      PGUSER: postgres
+      PGDATABASE: hembox_test
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Bootstrap Supabase-compatible auth roles for isolated schema tests
+        run: |
+          psql -v ON_ERROR_STOP=1 <<'SQL'
+          create role anon nologin;
+          create role authenticated nologin;
+          create role service_role nologin bypassrls;
+          create schema auth;
+          create table auth.users (
+            id uuid primary key default gen_random_uuid()
+          );
+          create table public.profiles (
+            id uuid primary key references auth.users(id) on delete cascade,
+            role text not null default 'user'
+          );
+          create function auth.uid() returns uuid
+          language sql stable
+          as $$ select nullif(current_setting('request.jwt.claim.sub', true), '')::uuid $$;
+          SQL
+
+      - name: Apply domain migration to disposable PostgreSQL
+        run: psql -v ON_ERROR_STOP=1 -f supabase/migrations/20261016093000_domain_reselling_foundation.sql
+
+      - name: Assert domain schema constraints and security policies
+        run: psql -v ON_ERROR_STOP=1 -f supabase/tests/domain_reselling_foundation.test.sql
+
   build:
     name: Production Build
     runs-on: ubuntu-latest
     timeout-minutes: 15
-    needs: quality
+    needs: [quality, database-schema]
 
     env:
       # Build-time placeholders only. Real production secrets stay in GitHub/Vercel secrets.
