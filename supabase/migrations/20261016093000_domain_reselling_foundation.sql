@@ -84,6 +84,16 @@ alter table public.domain_tld_catalog enable row level security;
 alter table public.domain_orders enable row level security;
 alter table public.domain_audit_events enable row level security;
 
+-- Make table privileges explicit instead of relying on project default grants.
+revoke all on public.domain_tld_catalog from anon, authenticated;
+revoke all on public.domain_orders from anon, authenticated;
+revoke all on public.domain_audit_events from anon, authenticated;
+grant select on public.domain_orders to authenticated;
+grant select on public.domain_audit_events to authenticated;
+grant all on public.domain_tld_catalog to service_role;
+grant all on public.domain_orders to service_role;
+grant all on public.domain_audit_events to service_role;
+
 -- Catalog and audit writes are server-only via the service-role client.
 -- Customers can only read orders explicitly linked to their own account.
 drop policy if exists "Customers can read their own domain orders" on public.domain_orders;
