@@ -3,7 +3,7 @@
 -- applied to the production Supabase project.
 
 create table if not exists public.domain_tld_catalog (
-  tld text primary key check (tld ~ '^\.[a-z0-9-]{2,63}$'),
+  tld text primary key check (tld ~ '^[.][a-z0-9]([a-z0-9-]{0,61}[a-z0-9])$'),
   provider_id text not null,
   wholesale_currency text not null check (wholesale_currency ~ '^[A-Z]{3}$'),
   registration_wholesale_minor bigint check (registration_wholesale_minor >= 0),
@@ -26,7 +26,7 @@ create table if not exists public.domain_orders (
   domain_name text not null check (
     length(domain_name) between 3 and 253
     and domain_name = lower(domain_name)
-    and domain_name ~ '^[a-z0-9]([a-z0-9-]{0,61}[a-z0-9])?(\\.[a-z0-9]([a-z0-9-]{0,61}[a-z0-9])?)+
+    and domain_name ~ '^[a-z0-9]([a-z0-9-]{0,61}[a-z0-9])?([.][a-z0-9]([a-z0-9-]{0,61}[a-z0-9])?)+$'
   ),
   status text not null default 'enquiry' check (status in (
     'enquiry',
