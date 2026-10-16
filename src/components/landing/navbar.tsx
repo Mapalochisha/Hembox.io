@@ -37,6 +37,7 @@ export function Navbar() {
             <a href="/#services" className="text-[14.5px] font-medium text-gray-600 hover:text-navy transition">Services</a>
             <a href="/#work" className="text-[14.5px] font-medium text-gray-600 hover:text-navy transition">Work</a>
             <Link href="/pricing" className="text-[14.5px] font-medium text-gray-600 hover:text-navy transition">Pricing</Link>
+            <Link href="/domains" className="text-[14.5px] font-medium text-gray-600 hover:text-navy transition">Domains</Link>
             <a href="/#contact" className="text-[14.5px] font-medium text-gray-600 hover:text-navy transition">Contact</a>
           </nav>
 
@@ -109,6 +110,7 @@ export function Navbar() {
             <a href="/#services" className="py-2 text-[15px] font-medium" onClick={() => setMobileMenuOpen(false)}>Services</a>
             <a href="/#work" className="py-2 text-[15px] font-medium" onClick={() => setMobileMenuOpen(false)}>Work</a>
             <Link href="/pricing" className="py-2 text-[15px] font-medium" onClick={() => setMobileMenuOpen(false)}>Pricing</Link>
+            <Link href="/domains" className="py-2 text-[15px] font-medium" onClick={() => setMobileMenuOpen(false)}>Domains</Link>
             <a href="/#contact" className="py-2 text-[15px] font-medium" onClick={() => setMobileMenuOpen(false)}>Contact</a>
             {!user && (
               <>
