@@ -26,6 +26,6 @@ export function parseDomainSearchRequest(value: unknown) {
 
   return {
     success: true as const,
-    data: { domains: [...new Set(parsed.data.domains)] },
+    data: { domains: parsed.data.domains.filter((domain, index, domains) => domains.indexOf(domain) === index) },
   }
 }
