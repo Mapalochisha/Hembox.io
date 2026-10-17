@@ -27,6 +27,7 @@ export type DomainProviderCapabilities = {
 
 export interface DomainProvider {
   readonly id: string
+  readonly environment: "mock" | "test" | "live"
   readonly capabilities: DomainProviderCapabilities
   checkAvailability(domains: string[]): Promise<DomainAvailabilityResult[]>
 }
