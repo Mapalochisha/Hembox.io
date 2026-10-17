@@ -1,8 +1,8 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useMemo } from "react"
 import Link from "next/link"
-import { createClient } from "@/lib/supabase/client"
+import { createClient, isSupabaseConfigured } from "@/lib/supabase/client"
 import { ArrowRight, Globe, Search, Palette, ShoppingCart, Megaphone, LifeBuoy, Code, Smartphone, Rocket, Shield, Zap, Layout, Cpu, Heart, Layers, MessageSquare, Database, Cloud, Lock, BarChart, Target, PenTool, MousePointer2, Camera, GraduationCap, School } from "lucide-react"
 
 const ICON_MAP: Record<string, any> = { Globe, Search, Palette, ShoppingCart, Megaphone, LifeBuoy, Code, Smartphone, Rocket, Shield, Zap, Layout, Cpu, Heart, Layers, MessageSquare, Database, Cloud, Lock, BarChart, Target, PenTool, MousePointer2, Camera, GraduationCap, School }
@@ -11,15 +11,21 @@ interface Service { id: string; title: string; description: string; icon_name: s
 
 export function ServicesSection() {
   const [services, setServices] = useState<Service[]>([])
-  const supabase = createClient()
+  const supabase = useMemo(() => isSupabaseConfigured() ? createClient() : null, [])
 
   useEffect(() => {
+    if (!supabase) return
+
     const fetchServices = async () => {
-      const { data } = await supabase.from("services").select("*").eq("status", "active").order("sort_order", { ascending: true })
-      if (data) setServices(data as Service[])
+      try {
+        const { data } = await supabase.from("services").select("*").eq("status", "active").order("sort_order", { ascending: true })
+        if (data) setServices(data as Service[])
+      } catch (error) {
+        console.warn("Unable to load services:", error)
+      }
     }
-    fetchServices()
-  }, [])
+    void fetchServices()
+  }, [supabase])
 
   if (services.length === 0) return null
 
