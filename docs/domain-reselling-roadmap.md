@@ -4,6 +4,12 @@
 
 The public `/domains` page remains enquiry-led. A server-only Domain Name API OT&E adapter is now implemented behind the registrar contract for sandbox availability checks. It returns unknown when the provider response is unrecognized, does not provide prices, and has no registration/renewal/DNS capability. Live registration and payment are still disabled.
 
+## Current blockers and reliability notes
+
+- Domain Name API OT&E availability is not yet verified: requests currently return an authentication/permissions message and `unknown` availability. The provider dashboard's IP whitelist appears empty. Confirm the current endpoint/request schema, account permissions, and Vercel outbound-IP requirements with provider support before changing network assumptions.
+- The public app's global Supabase providers now check for `NEXT_PUBLIC_SUPABASE_URL` and `NEXT_PUBLIC_SUPABASE_ANON_KEY` before creating a browser client, and public pages fall back to default agency settings when those values are missing. Configure those variables in the relevant Vercel Preview and Production environments regardless; auth-dependent functionality cannot work without them. Admin routes fail closed with a clear 503 when configuration is absent.
+- Vercel runtime-log inspection is currently unavailable through the connected integration due to team-scope authorization, so the exact client exception still needs confirmation in a browser or an authorized Vercel log view. Do not claim the root cause is fully verified until a deployment is retested.
+
 ## Product decisions
 
 - Primary customer-facing currency: ZMW. Keep provider wholesale amounts and currency separate from retail prices; apply an explicit, reviewable FX and margin policy before displaying quotes.
