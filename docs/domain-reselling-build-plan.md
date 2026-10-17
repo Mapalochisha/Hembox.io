@@ -2,7 +2,7 @@
 
 > **Purpose:** This is the canonical handoff document for the domain-reselling project. Read it before continuing implementation after a context switch. Update this file as milestones are completed, decisions change, or verification results become available.
 >
-> **Last updated:** 2026-10-16  
+> **Last updated:** 2026-10-17  
 > **Repository:** `Mapalochisha/Hembox.io`  
 > **Working branch:** `feature/domain-reselling-platform`  
 > **Pull request:** https://github.com/Mapalochisha/Hembox.io/pull/2  
@@ -243,6 +243,16 @@ Do not skip these gates even if UI work can continue in parallel.
 A green build proves only the checks that ran. It does not independently prove real payment, registrar, production database, renewal or operational workflows.
 
 ## 6. Progress log
+
+### 2026-10-17 — OT&E blocker recorded and client-side configuration hardening
+
+- **Milestone:** M2 remains in progress. Domain Name API OT&E requests still return `unknown` with an authentication/permissions message. The user reports that the provider dashboard's IP whitelist is empty; this is a possible blocker, not yet a confirmed root cause. A support ticket is being pursued to confirm the current endpoint, request contract, OT&E access, and Vercel outbound-IP policy.
+- **Provider request change:** Updated the availability request payload to use the documented `domain` field rather than `domainName`. This has not yet been verified against a successful real OT&E response. Do not infer availability or pricing from errors.
+- **Client-side exception investigation:** Prior troubleshooting identified missing `NEXT_PUBLIC_SUPABASE_URL` / `NEXT_PUBLIC_SUPABASE_ANON_KEY` in the relevant Vercel environment as a likely cause of the global client crash. Vercel MCP log inspection is currently blocked by insufficient access to the Vercel team scope, so the exact browser exception has not been independently confirmed in current runtime logs.
+- **Code changes on feature branch:** Added an explicit Supabase browser-client configuration guard; the global auth and agency providers now tolerate missing public Supabase environment variables without crashing public pages; the admin middleware returns a clear 503 for protected admin routes when Supabase configuration is absent, rather than throwing during client creation. This is defensive handling, not a substitute for configuring the correct Preview/Production environment variables.
+- **Safety:** No production migration, payment processing, live registration, or merge to `main`. Registrar credentials remain server-side.
+- **Verification:** Code changes are committed to `feature/domain-reselling-platform`; CI/Vercel checks for the latest commit must be rechecked before considering this work verified. Do not mark M2 complete until the provider contract and sandbox result are confirmed.
+- **Next action:** Wait for CI/Vercel status, test the newest Preview with Supabase env configured, inspect browser/runtime errors if any remain, and use Domain Name API support's response to finish the OT&E adapter.
 
 ### 2026-10-17 — Domain Name API OT&E adapter implementation started
 
