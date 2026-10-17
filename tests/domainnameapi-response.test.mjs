@@ -15,7 +15,7 @@ test("does not infer availability from a generic success response", () => {
 })
 
 test("rejects a response that names a different domain", () => {
-  assert.equal(parseDomainNameApiAvailability({ domainName: "other.test", isAvailable: true }, "sample.test"), "available")
+  assert.equal(parseDomainNameApiAvailability({ domainName: "other.test", isAvailable: true }, "sample.test"), "unknown")
 })
 
 test("supports a nested explicit availability response", () => {
