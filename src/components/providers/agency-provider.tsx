@@ -1,7 +1,7 @@
 "use client"
 
-import { createContext, useContext, useEffect, useState } from "react"
-import { createClient } from "@/lib/supabase/client"
+import { createContext, useContext, useEffect, useMemo, useState } from "react"
+import { createClient, isSupabaseConfigured } from "@/lib/supabase/client"
 
 export interface AgencySettings {
   agency_name: string
@@ -35,16 +35,20 @@ const AgencyContext = createContext<AgencySettings>({
 
 export function AgencyProvider({ children }: { children: React.ReactNode }) {
   const [settings, setSettings] = useState<AgencySettings | null>(null)
-  const supabase = createClient()
+  const supabase = useMemo(() => isSupabaseConfigured() ? createClient() : null, [])
 
   useEffect(() => {
+    if (!supabase) return
+
     const fetchSettings = async () => {
-      const { data } = await supabase
+      try {
+        const { data, error } = await supabase
         .from('agency_settings')
         .select('*')
         .single()
-      
-      if (data) {
+
+        if (error || !data) return
+
         setSettings({
           agency_name: data.agency_name,
           contact_email: data.contact_email,
@@ -59,10 +63,13 @@ export function AgencyProvider({ children }: { children: React.ReactNode }) {
           twitter_url: data.twitter_url || "",
           linkedin_url: data.linkedin_url || "",
         })
+      } catch (error) {
+        // Keep the public site usable if the settings query is unavailable.
+        console.warn("Unable to load agency settings:", error)
       }
     }
 
-    fetchSettings()
+    void fetchSettings()
   }, [])
 
   return (
