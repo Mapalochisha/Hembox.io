@@ -244,6 +244,16 @@ A green build proves only the checks that ran. It does not independently prove r
 
 ## 6. Progress log
 
+### 2026-10-17 — Domain order-state regression coverage and provider contract review
+
+- **Milestone:** M0 regression coverage extended; M2 remains blocked pending verified OT&E access and an authoritative current request/response contract.
+- **Changes:** Added unit tests for same-state idempotency, the intended enquiry-to-registration sequence, forbidden state skips, terminal cancelled/refunded orders, registration-failure recovery, and manual-review transitions. The domain test command now runs these tests with the existing request-validation and response-normalization suites.
+- **Provider investigation:** The official [v2 migration troubleshooting guide](https://www.domainnameapi.com/knowledge-base/account-management/v2-migration-integration-error-troubleshooting-guide) states that IP whitelisting is mandatory on the v2 infrastructure and identifies a missing outbound-IP entry as a cause of authorization failures. The user reported that the whitelist is empty, making this a likely blocker, not a confirmed sole cause. Official materials currently disagree on API details: the [quick-start guide](https://www.domainnameapi.com/knowledge-base/account-management/how-to-start-domain-reselling) shows `/v1/domain/check` with `resellerId`, `apiKey`, and `domain`, while the v2 troubleshooting/rate-limit documentation refers to the newer API structure. The current OT&E Swagger page was not readable through the available inspection path. Do not switch endpoint or credential conventions based on inference; confirm with provider support or a successful OT&E response.
+- **Client exception:** The user reports that the client-side exception is now gone. Vercel runtime logs remain inaccessible through the connected integration, so this is user-confirmed behavior rather than an independently inspected runtime trace.
+- **Safety:** No registrar endpoint behavior changed; unknown/error states remain fail-closed. No production migration, payment integration, live registration, or merge to `main`.
+- **Verification:** The immediately preceding commit `9faef45b079a39c46656866514b2e6f94cdc676d` passed GitHub Actions push and pull-request CI and its Vercel check. Verification for this new test/documentation commit is pending and must be rechecked before reporting completion.
+- **Next action:** Verify this commit's CI and Vercel status. Then resolve the provider whitelist and contract with Domain Name API support; keep customer-facing availability/pricing and checkout disabled until sandbox results are verified.
+
 ### 2026-10-17 — Public domain-search validation hardening
 
 - **Scope:** Continued safe work in parallel with the unresolved Domain Name API OT&E access/contract issue.

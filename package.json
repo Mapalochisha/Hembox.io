@@ -8,7 +8,7 @@
     "start": "next start",
     "lint": "next lint",
     "db:types": "supabase gen types typescript --project-id YOUR_PROJECT_ID --schema public > src/lib/database.types.ts",
-    "test:domains": "node --experimental-strip-types --test tests/domainnameapi-response.test.mjs tests/domain-search-validation.test.mjs"
+    "test:domains": "node --experimental-strip-types --test tests/domainnameapi-response.test.mjs tests/domain-search-validation.test.mjs tests/domain-order-state.test.mjs"
   },
   "dependencies": {
     "next": "^14.2.0",
