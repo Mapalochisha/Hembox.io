@@ -38,6 +38,11 @@ export function parseDomainNameApiAvailability(
   if (!isRecord(payload)) return "unknown"
 
   const nested = isRecord(payload.data) ? payload.data : payload
+  const returnedDomain = firstString(nested, ["domainName", "domain"])
+  if (returnedDomain && returnedDomain.toLowerCase() !== requestedDomain.toLowerCase()) {
+    return "unknown"
+  }
+
   const direct = nested.isAvailable ?? nested.available ?? nested.availability
   const directResult = normalizeAvailability(direct)
   if (directResult !== "unknown") return directResult
@@ -46,11 +51,6 @@ export function parseDomainNameApiAvailability(
   if (status) {
     const statusResult = normalizeAvailability(status)
     if (statusResult !== "unknown") return statusResult
-  }
-
-  const returnedDomain = firstString(nested, ["domainName", "domain"])
-  if (returnedDomain && returnedDomain.toLowerCase() !== requestedDomain.toLowerCase()) {
-    return "unknown"
   }
 
   return "unknown"
