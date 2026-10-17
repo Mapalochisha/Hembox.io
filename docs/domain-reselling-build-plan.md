@@ -47,7 +47,8 @@ The first market is Zambia, with **ZMW as the primary customer-facing currency**
 - Pull request: https://github.com/Mapalochisha/Hembox.io/pull/2
 - Latest known feature commit at the time of the prior handoff: `2334c4dd12aefff9f112ab1eebca088136b4e1fa`
 - **Important:** these are historical verification results, not a claim that the latest commit after this document is automatically green. Re-check CI/Vercel after every meaningful change.
-- No real registrar adapter or payment gateway has been implemented.
+- Domain Name API OT&E availability adapter is implemented in the feature branch; credentials are read only from server-side environment variables. Live registration and pricing are not implemented.
+- No payment gateway has been implemented.
 - No production Supabase migration has been applied.
 - The storefront is an enquiry flow, not a live domain checker or checkout.
 
@@ -243,15 +244,24 @@ A green build proves only the checks that ran. It does not independently prove r
 
 ## 6. Progress log
 
+### 2026-10-17 — Domain Name API OT&E adapter implementation started
+
+- **Milestone:** M2 in progress; M1 provider selection is decided, but account-specific commercial/funding checks remain open.
+- **Credentials confirmed by user:** Reseller ID, live API key, and separate Test Environment API Key. Provider support confirmed that OT&E uses the existing Reseller ID together with the Test Environment API Key.
+- **Code changes:** Added `src/lib/domains/providers/domainnameapi-test.ts`, explicit `environment` on provider contracts, a `DOMAIN_PROVIDER_MODE=domainnameapi-test` selection path, and response metadata distinguishing test results from live availability. Added server-side environment-variable placeholders to `.env.example`.
+- **Safety:** Adapter only permits the official OT&E REST host, uses an 8-second timeout, returns `unknown` on errors or unrecognized payloads, never returns prices, and exposes no registration/renewal/DNS capabilities. It does not use or select the live API key.
+- **Verification:** Code has been committed to the feature branch; CI/Vercel results must be checked on the resulting commit before claiming success. No credentials were added to GitHub, no production database was changed, and no live registration/payment was enabled.
+- **Next action:** Validate request and response schemas against the current OT&E Swagger, add automated adapter tests, and verify the branch checks.
+
 ### 2026-10-16 — Domain Name API selected as initial registrar provider
 
 - **Decision:** Domain Name API is the initial provider for HEMBOX.io domain reselling.
 - **Commercial review:** Its official reseller page advertises no activation fee, no mandatory deposit/minimum balance, and no monthly fee. Higher pricing tiers can be unlocked by domain volume or optional deposits; do not make those deposits while starting without customers.
 - **API/test review:** The official quick-start documents a separate test environment at `https://dm.test.domainnameapi.com`, no real charges or public registrations in test, API access using a Reseller ID and API key, and live registration requiring funded balance. Test availability may differ from live registry availability.
 - **Documentation:** [Reseller program](https://www.domainnameapi.com/domain-reseller), [API quick start](https://www.domainnameapi.com/knowledge-base/account-management/how-to-start-domain-reselling).
-- **Milestone:** Provider decision recorded; M1 remains in progress. Account-specific pricing, account activation, credential access, payment/funding methods from Zambia, and TLD-level prices still need confirmation.
+- **Milestone:** Provider decision recorded. Account credential access is now confirmed by the user; M1 remains in progress pending account-specific pricing, payment/funding methods from Zambia, and TLD-level prices.
 - **Changes:** Build-plan documentation only; no application code, provider credentials, production database, or live registration changed.
-- **Next action:** Finish M1 by confirming reseller account/test access and Zambia-specific funding options; then implement a server-only test-environment adapter with contract tests. Keep live registration and payments disabled.
+- **Next action:** Implement and validate the server-only OT&E adapter, while separately confirming Zambia-specific funding options and TLD-level prices. Keep live registration and payments disabled.
 
 
 Add a new entry at the top of this section after each substantive implementation or verification session. Never overwrite earlier entries; retain the historical record.
@@ -302,4 +312,4 @@ When resuming this project:
 5. Work on `feature/domain-reselling-platform`, keep changes focused, run relevant tests, and update this file with the commit and verification evidence.
 6. Never claim a feature or milestone is complete without evidence, and never enable production payments/registration or apply production migrations without explicit approval.
 
-**Immediate next action: finish M1 — confirm Domain Name API reseller account activation, test credentials, account-specific pricing, and funding/payment options available from Zambia. Then proceed to M2, the sandbox adapter.**
+**Immediate next action: validate the OT&E adapter against the provider's current Swagger contract and real sandbox responses, add automated response-normalization tests, then verify CI/Vercel. Keep live registration, customer checkout, and payment disabled.**
