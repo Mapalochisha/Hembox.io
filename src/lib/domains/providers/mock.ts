@@ -9,6 +9,7 @@ import type {
  */
 export const mockDomainProvider: DomainProvider = {
   id: "mock",
+  environment: "mock",
   capabilities: {
     availabilitySearch: false,
     registration: false,
