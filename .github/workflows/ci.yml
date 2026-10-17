@@ -5,6 +5,7 @@ on:
     branches:
       - main
       - develop
+      - feature/domain-reselling-platform
   pull_request:
     branches:
       - main
