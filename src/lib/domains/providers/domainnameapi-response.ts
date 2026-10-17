@@ -27,7 +27,7 @@ function normalizeAvailability(value: unknown): DomainAvailability {
 }
 
 /**
- * Provider responses have changed across Domain Name API API generations.
+ * Provider responses have changed across Domain Name API response formats.
  * Only accept explicit availability fields/statuses; never infer availability
  * from a generic "Success" response.
  */
