@@ -41,7 +41,8 @@ export async function POST(request: Request) {
 
     return NextResponse.json({
       provider: provider.id,
-      live: provider.capabilities.availabilitySearch,
+      environment: provider.environment,
+      live: provider.environment === "live" && provider.capabilities.availabilitySearch,
       results,
     }, {
       headers: { "Cache-Control": "no-store" },
