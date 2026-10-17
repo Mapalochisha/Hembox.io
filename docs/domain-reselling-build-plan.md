@@ -257,7 +257,7 @@ A green build proves only the checks that ran. It does not independently prove r
 
 - **Decision:** Domain Name API is the initial provider for HEMBOX.io domain reselling.
 - **Commercial review:** Its official reseller page advertises no activation fee, no mandatory deposit/minimum balance, and no monthly fee. Higher pricing tiers can be unlocked by domain volume or optional deposits; do not make those deposits while starting without customers.
-- **API/test review:** The official quick-start documents a separate test environment at `https://dm.test.domainnameapi.com`, no real charges or public registrations in test, API access using a Reseller ID and API key, and live registration requiring funded balance. Test availability may differ from live registry availability.
+- **API/test review:** The official quick-start documents a separate test environment through the OT&E REST API at `https://ote.domainresellerapi.com/swagger/index.html`, with no real registrations or charges. Provider support confirmed that the existing Reseller ID is paired with the Test Environment API Key for OT&E. Live registration requires funded balance. Test availability may differ from live registry availability.
 - **Documentation:** [Reseller program](https://www.domainnameapi.com/domain-reseller), [API quick start](https://www.domainnameapi.com/knowledge-base/account-management/how-to-start-domain-reselling).
 - **Milestone:** Provider decision recorded. Account credential access is now confirmed by the user; M1 remains in progress pending account-specific pricing, payment/funding methods from Zambia, and TLD-level prices.
 - **Changes:** Build-plan documentation only; no application code, provider credentials, production database, or live registration changed.
@@ -312,4 +312,4 @@ When resuming this project:
 5. Work on `feature/domain-reselling-platform`, keep changes focused, run relevant tests, and update this file with the commit and verification evidence.
 6. Never claim a feature or milestone is complete without evidence, and never enable production payments/registration or apply production migrations without explicit approval.
 
-**Immediate next action: validate the OT&E adapter against the provider's current Swagger contract and real sandbox responses, add automated response-normalization tests, then verify CI/Vercel. Keep live registration, customer checkout, and payment disabled.**
+**Immediate next action: validate the OT&E adapter request/response schema against the provider's current Swagger contract and real sandbox responses, run the automated response-normalization tests and full CI, then verify Vercel. Keep live registration, customer checkout, and payment disabled.**
