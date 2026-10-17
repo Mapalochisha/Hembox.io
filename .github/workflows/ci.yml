@@ -46,6 +46,9 @@ jobs:
       - name: Type check
         run: npx tsc --noEmit
 
+      - name: Domain provider response tests
+        run: npm run test:domains
+
   database-schema:
     name: Domain schema integration tests
     runs-on: ubuntu-latest
