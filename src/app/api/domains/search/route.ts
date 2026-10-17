@@ -1,22 +1,10 @@
 import { NextResponse } from "next/server"
 import { z } from "zod"
 import { getDomainProvider } from "@/lib/domains/provider"
+import { parseDomainSearchRequest } from "@/lib/domains/validation"
 
 export const dynamic = "force-dynamic"
 export const runtime = "nodejs"
-
-const requestSchema = z.object({
-  domains: z.array(z.string().trim().toLowerCase().min(3).max(253)).min(1).max(10),
-}).strict()
-
-function isDomain(value: string) {
-  const labels = value.split(".")
-  return labels.length >= 2 && labels.every((label) =>
-    label.length >= 1 &&
-    label.length <= 63 &&
-    /^[a-z0-9](?:[a-z0-9-]*[a-z0-9])?$/.test(label)
-  )
-}
 
 export async function POST(request: Request) {
   let body: unknown
@@ -27,8 +15,8 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Request body must be valid JSON." }, { status: 400 })
   }
 
-  const parsed = requestSchema.safeParse(body)
-  if (!parsed.success || !parsed.data.domains.every(isDomain)) {
+  const parsed = parseDomainSearchRequest(body)
+  if (!parsed.success) {
     return NextResponse.json(
       { error: "Provide between 1 and 10 valid fully-qualified domain names." },
       { status: 400 },

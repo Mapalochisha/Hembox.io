@@ -244,6 +244,16 @@ A green build proves only the checks that ran. It does not independently prove r
 
 ## 6. Progress log
 
+### 2026-10-17 — Public domain-search validation hardening
+
+- **Scope:** Continued safe work in parallel with the unresolved Domain Name API OT&E access/contract issue.
+- **Changes:** Extracted public domain-search request validation into `src/lib/domains/validation.ts`; the API route now uses the shared validator. It normalizes whitespace/case, validates fully-qualified domain labels and length limits, rejects malformed/URL-like input and unexpected request fields, enforces a 1–10 item batch, and collapses duplicate names after normalization so one request cannot trigger repeated provider checks for the same domain.
+- **Tests:** Added regression tests for normalization, duplicate collapse, empty/oversized batches, malformed labels, URL-like input, label/domain length limits, and strict request shape. The domain test command now runs both response-parser and request-validation tests.
+- **Safety:** This does not change registrar endpoint assumptions, provider pricing, storefront behavior, live registration, payment processing, or production database state.
+- **Verification:** Commit and CI/Vercel results are pending until the new feature-branch head has completed checks. Do not mark M2 complete: OT&E credentials/permissions and the exact response contract still need a verified successful sandbox result.
+- **Next action:** Confirm this commit's CI and Vercel status, then continue with provider-contract verification or other provider-independent regression/security work while support clarifies OT&E access.
+
+
 ### 2026-10-17 — OT&E blocker recorded and client-side configuration hardening
 
 - **Milestone:** M2 remains in progress. Domain Name API OT&E requests still return `unknown` with an authentication/permissions message. The user reports that the provider dashboard's IP whitelist is empty; this is a possible blocker, not yet a confirmed root cause. A support ticket is being pursued to confirm the current endpoint, request contract, OT&E access, and Vercel outbound-IP policy.
