@@ -1,5 +1,4 @@
 import { NextResponse } from "next/server"
-import { z } from "zod"
 import { getDomainProvider } from "@/lib/domains/provider"
 import { parseDomainSearchRequest } from "@/lib/domains/validation"
 
