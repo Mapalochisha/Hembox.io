@@ -19,7 +19,7 @@ test("the normal enquiry-to-registration lifecycle is allowed", () => {
     ["awaiting_payment", "payment_confirmed"],
     ["payment_confirmed", "registration_pending"],
     ["registration_pending", "registered"],
-  ] as const
+  ]
 
   for (const [current, next] of path) {
     assert.equal(canTransitionDomainOrder(current, next), true, `${current} -> ${next}`)
@@ -34,7 +34,7 @@ test("orders cannot skip payment or registration states", () => {
 })
 
 test("cancelled and refunded orders are terminal", () => {
-  for (const terminal of ["cancelled", "refunded"] as const) {
+  for (const terminal of ["cancelled", "refunded"]) {
     for (const next of DOMAIN_ORDER_STATUSES) {
       assert.equal(canTransitionDomainOrder(terminal, next), next === terminal, `${terminal} -> ${next}`)
     }
