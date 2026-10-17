@@ -49,7 +49,7 @@ export const domainNameApiTestProvider: DomainProvider = {
         const response = await fetch(`${baseUrl}/v1/domain/check`, {
           method: "POST",
           headers: { "Content-Type": "application/json", Accept: "application/json" },
-          body: JSON.stringify({ resellerId, apiKey, domain }),
+          body: JSON.stringify({ resellerId, apiKey, domainName: domain }),
           cache: "no-store",
           signal: AbortSignal.timeout(REQUEST_TIMEOUT_MS),
         })
