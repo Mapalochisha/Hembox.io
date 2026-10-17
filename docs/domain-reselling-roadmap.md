@@ -2,7 +2,7 @@
 
 ## Current stage
 
-The public `/domains` page accepts enquiries only. The first backend slice defines a server-only registrar contract and a guarded availability endpoint. No real registrar API is called, no domain can be purchased or registered, and no prices or availability are fabricated.
+The public `/domains` page remains enquiry-led. A server-only Domain Name API OT&E adapter is now implemented behind the registrar contract for sandbox availability checks. It returns unknown when the provider response is unrecognized, does not provide prices, and has no registration/renewal/DNS capability. Live registration and payment are still disabled.
 
 ## Product decisions
 
@@ -15,7 +15,7 @@ The public `/domains` page accepts enquiries only. The first backend slice defin
 ## Phases
 
 1. **Foundation:** registrar interface, provider capability flags, input validation, explicit disabled/mock modes, domain-order data model and audit requirements.
-2. **Provider sandbox:** verify the selected registrar's API contract, credentials, supported TLDs, rate limits, sandbox semantics, and error behaviour. Build an adapter with contract tests.
+2. **Provider sandbox:** validate the Domain Name API OT&E request/response contract against the current Swagger and real sandbox responses; confirm credentials, supported TLDs, rate limits, and error behavior. Add and run response-normalization and adapter contract tests.
 3. **Quotes and orders:** server-calculated ZMW retail quotes, separately stored wholesale costs, expiry on quotes, idempotent order creation, and recoverable order states.
 4. **Payments:** add a gateway only after its onboarding/approval and webhook verification are complete. Never trust a browser redirect as proof of payment.
 5. **Live registration:** only after confirmed payment, re-check availability, register idempotently where supported, and reconcile ambiguous provider timeouts without blind failover.
