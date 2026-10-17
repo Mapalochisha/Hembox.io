@@ -11,6 +11,17 @@ export async function middleware(request: NextRequest) {
     return NextResponse.next()
   }
 
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL?.trim()
+  const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY?.trim()
+  if (!supabaseUrl || !supabaseAnonKey) {
+    // Fail closed for admin pages, but return a clear response instead of a
+    // thrown configuration exception when Preview env vars are missing.
+    return NextResponse.json(
+      { error: 'Admin authentication is not configured for this deployment.' },
+      { status: 503 },
+    )
+  }
+
   let response = NextResponse.next({
     request: {
       headers: request.headers,
@@ -18,8 +29,8 @@ export async function middleware(request: NextRequest) {
   })
 
   const supabase = createServerClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    supabaseUrl,
+    supabaseAnonKey,
     {
       cookies: {
         get(name: string) {
