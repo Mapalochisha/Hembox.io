@@ -1,5 +1,6 @@
 import "server-only"
 
+import { parseDomainNameApiAvailability } from "./domainnameapi-response"
 import type {
   DomainAvailability,
   DomainAvailabilityResult,
@@ -8,8 +9,6 @@ import type {
 
 const DEFAULT_TEST_BASE_URL = "https://ote.domainresellerapi.com"
 const REQUEST_TIMEOUT_MS = 8_000
-
-import { parseDomainNameApiAvailability } from "./domainnameapi-response"
 
 function getRequiredEnv(name: string): string {
   const value = process.env[name]?.trim()
