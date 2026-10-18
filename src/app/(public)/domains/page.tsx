@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useEffect, useRef, useState } from "react"
 import type { FormEvent } from "react"
 import Link from "next/link"
 import {
@@ -25,6 +25,20 @@ const extensions = [
   { tld: ".online", label: "Build your presence", tone: "bg-rose-50 text-rose-700" },
   { tld: ".site", label: "Make it yours", tone: "bg-slate-100 text-slate-700" },
 ]
+
+type CatalogItem = {
+  tld: string
+  currency: "ZMW"
+  pricingStatus: "current" | "price_unavailable"
+  registrationPriceMinor: number | null
+  renewalPriceMinor: number | null
+  priceUpdatedAt: string | null
+}
+
+function formatCatalogPrice(minor: number | null) {
+  if (minor === null) return "Price being confirmed"
+  return new Intl.NumberFormat("en-ZM", { style: "currency", currency: "ZMW", maximumFractionDigits: 2 }).format(minor / 100)
+}
 
 const benefits = [
   {
@@ -65,6 +79,23 @@ export default function DomainsPage() {
   const [error, setError] = useState("")
   const [success, setSuccess] = useState(false)
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const [catalog, setCatalog] = useState<CatalogItem[]>([])
+  const [catalogLoading, setCatalogLoading] = useState(true)
+  const idempotencyKey = useRef<string | null>(null)
+
+  useEffect(() => {
+    let active = true
+    fetch("/api/domains/catalog", { cache: "no-store" })
+      .then(async (response) => {
+        const result = await response.json()
+        if (!response.ok) throw new Error(result.error || "Catalogue unavailable")
+        return result.catalog as CatalogItem[]
+      })
+      .then((items) => { if (active) setCatalog(items) })
+      .catch(() => { if (active) setCatalog([]) })
+      .finally(() => { if (active) setCatalogLoading(false) })
+    return () => { active = false }
+  }, [])
 
   const selectedDomain = normaliseDomain(domain)
 
@@ -91,6 +122,7 @@ export default function DomainsPage() {
     }
 
     setIsSubmitting(true)
+    if (!idempotencyKey.current) idempotencyKey.current = crypto.randomUUID()
     try {
       const response = await fetch("/api/inquiries", {
         method: "POST",
@@ -100,6 +132,8 @@ export default function DomainsPage() {
           contact: contact.trim(),
           name: name.trim(),
           source: "domain-storefront",
+          domain: selectedDomain,
+          idempotencyKey: idempotencyKey.current,
           message: `Domain availability request: ${selectedDomain}\n\nPlease check availability with the registrar and confirm registration price, renewal price, and next steps before any payment is requested.`,
         }),
       })
@@ -110,6 +144,7 @@ export default function DomainsPage() {
       }
 
       setSuccess(true)
+      idempotencyKey.current = null
     } catch (submissionError) {
       setError(submissionError instanceof Error ? submissionError.message : "We couldn't send your request. Please try again.")
     } finally {
@@ -221,6 +256,32 @@ export default function DomainsPage() {
             </form>
           </div>
 
+          <div className="mx-auto mt-10 max-w-3xl rounded-2xl border border-slate-200 bg-white p-5 sm:p-6">
+            <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
+              <div>
+                <p className="text-xs font-bold uppercase tracking-[0.16em] text-teal">Published domain prices</p>
+                <h2 className="mt-2 text-xl font-black text-navy">Registration and renewal</h2>
+              </div>
+              <p className="text-xs text-slate-500">ZMW · availability is checked separately</p>
+            </div>
+            {catalogLoading ? (
+              <p className="mt-4 text-sm text-slate-500">Loading current catalogue…</p>
+            ) : catalog.length === 0 ? (
+              <p className="mt-4 rounded-xl bg-slate-50 p-4 text-sm leading-6 text-slate-600">No current TLD prices are published yet. You can still send an enquiry and we’ll confirm real availability and pricing before any payment.</p>
+            ) : (
+              <div className="mt-4 divide-y divide-slate-100">
+                {catalog.map((item) => (
+                  <div key={item.tld} className="flex flex-col gap-2 py-3 sm:flex-row sm:items-center sm:justify-between">
+                    <div><p className="font-bold text-navy">{item.tld}</p><p className="text-xs text-slate-500">{item.pricingStatus === "current" ? "Current pricing snapshot" : "Price requires re-verification"}</p></div>
+                    <div className="grid grid-cols-2 gap-5 text-sm">
+                      <div><p className="text-xs text-slate-500">Registration</p><p className="font-bold">{formatCatalogPrice(item.registrationPriceMinor)}</p></div>
+                      <div><p className="text-xs text-slate-500">Renewal / year</p><p className="font-bold">{formatCatalogPrice(item.renewalPriceMinor)}</p></div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
           <div className="mx-auto mt-8 max-w-3xl">
             <p className="mb-3 text-center text-xs font-bold uppercase tracking-[0.16em] text-slate-400">Popular domain endings</p>
             <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">

@@ -2,7 +2,7 @@
 
 > **Purpose:** This is the canonical handoff document for the domain-reselling project. Read it before continuing implementation after a context switch. Update this file as milestones are completed, decisions change, or verification results become available.
 >
-> **Last updated:** 2026-10-17  
+> **Last updated:** 2026-10-18  
 > **Repository:** `Mapalochisha/Hembox.io`  
 > **Working branch:** `feature/domain-reselling-platform`  
 > **Pull request:** https://github.com/Mapalochisha/Hembox.io/pull/2  
@@ -369,3 +369,12 @@ When resuming this project:
 - Added an admin-only order-list endpoint with status filtering, bounded results, and recent audit events. Added a Domain Orders entry in the admin sidebar. No order state can be mutated from this screen.
 - No guest-order retrieval, checkout, payment, registration, or DNS controls. If the domain schema has not been applied to a Preview database, these pages show a controlled unavailable state rather than inventing orders.
 - Verification: this commit requires fresh GitHub Actions push and pull-request runs and a Vercel check.
+
+
+### 2026-10-18 — Durable domain enquiries and public catalogue display
+
+- The public /domains page now reads the public retail-only catalogue endpoint and displays registration and renewal prices only when the backend marks the price snapshot current. It continues to make no availability claim.
+- Domain enquiries now carry the normalized domain and a browser-generated idempotency key. After the inquiry is saved, the API best-effort creates an enquiry-state row in domain_orders. A missing/unapplied domain migration does not break the established inquiry flow; the failure is logged server-side.
+- Added optional account association for signed-in enquiries, plus a contact field so WhatsApp-only enquiries are not mislabeled as email addresses. Guest orders are visible only to admins; there is no guest retrieval endpoint.
+- Added a database trigger to write a minimal audit event transactionally when a domain order is inserted. This does not authorize payment or registration transitions.
+- Verification pending for this commit; run push CI, PR CI, and Vercel checks before reporting completion.

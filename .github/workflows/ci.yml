@@ -104,11 +104,17 @@ jobs:
       - name: Apply provider-independent pricing policy migration
         run: psql -v ON_ERROR_STOP=1 -f supabase/migrations/20261018090000_domain_pricing_policy.sql
 
+      - name: Apply durable domain enquiry migration
+        run: psql -v ON_ERROR_STOP=1 -f supabase/migrations/20261018100000_domain_enquiry_link.sql
+
       - name: Assert domain schema constraints and security policies
         run: psql -v ON_ERROR_STOP=1 -f supabase/tests/domain_reselling_foundation.test.sql
 
       - name: Assert pricing policy schema and access controls
         run: psql -v ON_ERROR_STOP=1 -f supabase/tests/domain_pricing_policy.test.sql
+
+      - name: Assert durable domain enquiry and audit behavior
+        run: psql -v ON_ERROR_STOP=1 -f supabase/tests/domain_enquiry_link.test.sql
 
   build:
     name: Production Build

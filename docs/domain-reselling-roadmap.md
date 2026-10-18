@@ -55,3 +55,8 @@ The pricing layer now uses integer minor-unit arithmetic, an explicit FX scaling
 - Signed-in customer order listing at GET /api/domains/orders and /profile/domains, relying on the authenticated user's RLS scope.
 - Admin order queue at GET /api/admin/domains/orders, with status filters and recent audit events; no admin mutation actions yet.
 - These screens are scaffolding around the durable order model, not a complete checkout. They remain read-only until provider-verified quotes and payment/registration workflows exist.
+
+
+## Enquiry persistence and public catalogue (2026-10-18)
+
+The domain storefront displays the enabled retail-only catalogue, suppressing stale prices and explicitly separating price from availability. A submitted domain enquiry remains saved in the existing inquiries system and now also creates a durable order in enquiry status when the domain-reselling migration is present. The order write is idempotent and best-effort, so it cannot break the existing inquiry form if the domain schema has not yet been applied to a Preview environment. An insert trigger records a minimal audit event. Payment and registration remain disabled.
