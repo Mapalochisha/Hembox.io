@@ -5,7 +5,7 @@ begin;
 
 do $test$
 declare
-  order_id uuid;
+  inserted_order_id uuid;
   audit_count integer;
 begin
   insert into public.domain_orders (
@@ -14,11 +14,11 @@ begin
     '+260971234567', 'Schema Test', 'enquiry.example', 'enquiry',
     'a1111111-1111-4111-8111-111111111111'
   )
-  returning id into order_id;
+  returning id into inserted_order_id;
 
   select count(*) into audit_count
   from public.domain_audit_events
-  where order_id = order_id
+  where domain_audit_events.order_id = inserted_order_id
     and event_type = 'domain_order.created';
 
   if audit_count <> 1 then
