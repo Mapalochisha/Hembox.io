@@ -101,8 +101,14 @@ jobs:
       - name: Apply domain migration to disposable PostgreSQL
         run: psql -v ON_ERROR_STOP=1 -f supabase/migrations/20261016093000_domain_reselling_foundation.sql
 
+      - name: Apply provider-independent pricing policy migration
+        run: psql -v ON_ERROR_STOP=1 -f supabase/migrations/20261018090000_domain_pricing_policy.sql
+
       - name: Assert domain schema constraints and security policies
         run: psql -v ON_ERROR_STOP=1 -f supabase/tests/domain_reselling_foundation.test.sql
+
+      - name: Assert pricing policy schema and access controls
+        run: psql -v ON_ERROR_STOP=1 -f supabase/tests/domain_pricing_policy.test.sql
 
   build:
     name: Production Build

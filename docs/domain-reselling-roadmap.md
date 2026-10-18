@@ -2,7 +2,9 @@
 
 ## Current stage
 
-The public `/domains` page remains enquiry-led. A server-only Domain Name API OT&E adapter is now implemented behind the registrar contract for sandbox availability checks. It returns unknown when the provider response is unrecognized, does not provide prices, and has no registration/renewal/DNS capability. Live registration and payment are still disabled.
+The public `/domains` page remains enquiry-led. Provider-independent pricing policy and catalogue APIs are now being built around the registrar interface; no TLD is seeded or enabled without verified source costs. A server-only Domain Name API OT&E adapter is now implemented behind the registrar contract for sandbox availability checks. It returns unknown when the provider response is unrecognized, does not provide prices, and has no registration/renewal/DNS capability. Live registration and payment are still disabled.
+
+The pricing layer now uses integer minor-unit arithmetic, an explicit FX scaling convention, basis-point markup, upward rounding, a 24-hour freshness gate, and restricted price-history snapshots. Admins can maintain a TLD catalogue through role-protected server routes. Public catalogue responses expose retail-only ZMW prices and never imply domain availability. This foundation is not a live quote or checkout.
 
 ## Current blockers and reliability notes
 
@@ -37,3 +39,12 @@ The public `/domains` page remains enquiry-led. A server-only Domain Name API OT
 - Never claim a domain is available without a live provider response, or registered without provider confirmation.
 - Apply RLS to exposed tables and scope customer reads/writes to the authenticated owner.
 - Add migrations to the feature branch first; review schema and policies before applying anything to the production Supabase project.
+
+
+## 2026-10-18 implementation note
+
+- Added `src/lib/domains/pricing.ts` for provider-independent pricing math and freshness checks.
+- Added `/api/admin/domains/catalog` for admin-only catalogue maintenance and `/api/domains/catalog` for public retail-only catalogue reads.
+- Added `/admin/domains` to maintain pricing inputs and enabled TLDs from the management console.
+- Added a pricing-policy migration, restricted price-history table, and CI schema/unit tests.
+- This does not verify provider availability, provider wholesale prices, payments, or registration. The admin must enter a documented, verified cost/FX source before enabling a TLD. OT&E troubleshooting remains deferred until the provider workstream resumes.

@@ -18,7 +18,8 @@ import {
   LogOut,
   PanelLeftClose,
   PanelLeftOpen,
-  DollarSign
+  DollarSign,
+  Globe2
 } from "lucide-react"
 import { useAuth } from "@/components/providers/auth-provider"
 import { useSidebar } from "./sidebar-provider"
@@ -31,6 +32,7 @@ const menuItems = [
   { icon: Briefcase, label: "Services", href: "/admin/services" },
   { icon: Star, label: "Portfolio", href: "/admin/portfolio" },
   { icon: DollarSign, label: "Pricing", href: "/admin/pricing" },
+  { icon: Globe2, label: "Domains", href: "/admin/domains" },
   { icon: Image, label: "Media", href: "/admin/media" },
   { icon: MessageSquare, label: "Messages", href: "/admin/messages" },
 ]

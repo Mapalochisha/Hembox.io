@@ -101,6 +101,8 @@ Use `[x]` only after the milestone's acceptance criteria have been met and verif
 
 ### [ ] M3 — Pricing policy and TLD catalogue
 
+**Implementation progress (2026-10-18):** Provider-independent integer pricing math, a 24-hour price-freshness gate, an admin-only TLD catalogue API, a public retail-only catalogue endpoint, price-history snapshots, and unit/schema tests have been added. This milestone remains incomplete until actual wholesale/renewal costs and FX inputs are verified, the catalogue is configured from trustworthy source data, and the full acceptance criteria are tested.
+
 **Scope**
 - Define retail margin, FX source/update policy, rounding, quote validity, and treatment of taxes/fees.
 - Store provider wholesale cost/currency separately from retail price/currency.
@@ -167,6 +169,8 @@ Use `[x]` only after the milestone's acceptance criteria have been met and verif
 - Status shown to customers is based on verified backend state.
 
 ### [ ] M8 — Admin and operations console
+
+**Implementation progress (2026-10-18):** Added an admin-only domain catalogue screen and server-side catalogue API with role verification, server-calculated ZMW retail prices, and price-history recording. Full order/payment/provider reconciliation, manual review, refunds, and operational audit workflows remain unimplemented.
 
 **Scope**
 - Manage TLD enablement and pricing.
@@ -343,3 +347,15 @@ When resuming this project:
 6. Never claim a feature or milestone is complete without evidence, and never enable production payments/registration or apply production migrations without explicit approval.
 
 **Immediate next action: validate the OT&E adapter request/response schema against the provider's current Swagger contract and real sandbox responses, run the automated response-normalization tests and full CI, then verify Vercel. Keep live registration, customer checkout, and payment disabled.**
+
+
+### 2026-10-18 — Provider-independent pricing and catalogue foundation
+
+- **Scope:** Build around the registrar abstraction while deferring OT&E credentials, IP whitelisting, and provider request/response verification until the provider workstream resumes.
+- **Changes:** Added integer-only ZMW retail pricing calculations with explicit FX-rate scaling, basis-point markup, upward rounding, and safe-integer validation. Added a freshness gate that suppresses public prices when a saved pricing snapshot is missing, invalid, future-dated, or older than 24 hours.
+- **Catalogue API:** Added an admin-only API to maintain TLD wholesale costs, renewal costs, FX assumptions, markup, source notes, and enablement. Retail prices are calculated on the server. The public catalogue endpoint returns only enabled TLDs and ZMW retail prices; it never returns wholesale costs and explicitly states that availability has not been checked. A stale price is returned as unavailable rather than presented as a current price.
+- **Audit/schema:** Added a migration for pricing-policy fields and a restricted price-history table. Catalogue rows remain disabled by default. If price-history recording fails, the API leaves the TLD disabled rather than making it purchasable without its history record.
+- **Tests:** Added pricing calculation/freshness unit tests and disposable-PostgreSQL checks for row-level security, grants, and complete pricing requirements. CI now applies the new migration after the existing foundation migration.
+- **Safety:** No provider API behavior changed. No checkout, payment gateway, registration, DNS controls, or production migration was enabled. No catalogue prices are seeded, because actual wholesale/renewal costs and FX inputs have not yet been verified.
+- **Verification:** Pending for the new commit; do not mark this work complete until push CI, PR CI, and Vercel checks for the resulting head have finished successfully.
+- **Next:** Verify CI and deployment checks, then continue with durable order/quote foundations, customer order visibility, and admin operations while keeping all real purchase actions disabled.
