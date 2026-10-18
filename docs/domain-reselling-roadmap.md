@@ -60,3 +60,8 @@ The pricing layer now uses integer minor-unit arithmetic, an explicit FX scaling
 ## Enquiry persistence and public catalogue (2026-10-18)
 
 The domain storefront displays the enabled retail-only catalogue, suppressing stale prices and explicitly separating price from availability. A submitted domain enquiry remains saved in the existing inquiries system and now also creates a durable order in enquiry status when the domain-reselling migration is present. The order write is idempotent and best-effort, so it cannot break the existing inquiry form if the domain schema has not yet been applied to a Preview environment. An insert trigger records a minimal audit event. Payment and registration remain disabled.
+
+
+## Current verification (2026-10-18)
+
+The combined branch head `f3ee9b89d35ee3907e9d5dc064a277d429eba1fd` passed [push CI](https://github.com/Mapalochisha/Hembox.io/actions/runs/39154051748), [pull-request CI](https://github.com/Mapalochisha/Hembox.io/actions/runs/39154055608), and [Vercel](https://vercel.com/mapalochishas-projects/hembox-io/KLnxVvU5kywYXAUhk8btGqBZDdmt). Provider verification remains intentionally deferred while provider-independent pricing, enquiry persistence, customer visibility, and admin operations are built. Payments, checkout, live registration, and production migration remain disabled.

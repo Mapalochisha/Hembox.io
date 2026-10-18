@@ -348,7 +348,7 @@ When resuming this project:
 5. Work on `feature/domain-reselling-platform`, keep changes focused, run relevant tests, and update this file with the commit and verification evidence.
 6. Never claim a feature or milestone is complete without evidence, and never enable production payments/registration or apply production migrations without explicit approval.
 
-**Immediate next action: validate the OT&E adapter request/response schema against the provider's current Swagger contract and real sandbox responses, run the automated response-normalization tests and full CI, then verify Vercel. Keep live registration, customer checkout, and payment disabled.**
+**Immediate next action:** continue provider-independent quote/order foundations and safe operations tooling, then evaluate the Zambia-compatible payment gateway and complete security/release gates. Return to the Domain Name API OT&E credentials, IP allowlisting, and request/response contract only after the surrounding product layers are built. Keep checkout, live payments, and registration disabled.
 
 
 ### 2026-10-18 — Provider-independent pricing and catalogue foundation
@@ -359,7 +359,7 @@ When resuming this project:
 - **Audit/schema:** Added a migration for pricing-policy fields and a restricted price-history table. Catalogue rows remain disabled by default. If price-history recording fails, the API leaves the TLD disabled rather than making it purchasable without its history record.
 - **Tests:** Added pricing calculation/freshness unit tests and disposable-PostgreSQL checks for row-level security, grants, and complete pricing requirements. CI now applies the new migration after the existing foundation migration.
 - **Safety:** No provider API behavior changed. No checkout, payment gateway, registration, DNS controls, or production migration was enabled. No catalogue prices are seeded, because actual wholesale/renewal costs and FX inputs have not yet been verified.
-- **Verification:** Pending for the new commit; do not mark this work complete until push CI, PR CI, and Vercel checks for the resulting head have finished successfully.
+- **Verification:** The combined implementation through commit `f3ee9b89d35ee3907e9d5dc064a277d429eba1fd` passes push CI ([run](https://github.com/Mapalochisha/Hembox.io/actions/runs/39154051748)), pull-request CI ([run](https://github.com/Mapalochisha/Hembox.io/actions/runs/39154055608)), and Vercel ([check](https://vercel.com/mapalochishas-projects/hembox-io/KLnxVvU5kywYXAUhk8btGqBZDdmt)). Checks include lint, TypeScript, domain/pricing/payment-state tests, disposable PostgreSQL migration and access-control tests, and production build.
 - **Next:** Verify CI and deployment checks, then continue with durable order/quote foundations, customer order visibility, and admin operations while keeping all real purchase actions disabled.
 
 
@@ -368,7 +368,7 @@ When resuming this project:
 - Added a signed-in customer endpoint that reads only that user's domain orders through the authenticated Supabase client and the existing owner RLS policy. Added /profile/domains as a read-only order dashboard with explicit status and pricing display.
 - Added an admin-only order-list endpoint with status filtering, bounded results, and recent audit events. Added a Domain Orders entry in the admin sidebar. No order state can be mutated from this screen.
 - No guest-order retrieval, checkout, payment, registration, or DNS controls. If the domain schema has not been applied to a Preview database, these pages show a controlled unavailable state rather than inventing orders.
-- Verification: this commit requires fresh GitHub Actions push and pull-request runs and a Vercel check.
+- Verification: included in the combined green CI/Vercel result recorded in the latest progress entry below.
 
 
 ### 2026-10-18 — Durable domain enquiries and public catalogue display
@@ -377,4 +377,15 @@ When resuming this project:
 - Domain enquiries now carry the normalized domain and a browser-generated idempotency key. After the inquiry is saved, the API best-effort creates an enquiry-state row in domain_orders. A missing/unapplied domain migration does not break the established inquiry flow; the failure is logged server-side.
 - Added optional account association for signed-in enquiries, plus a contact field so WhatsApp-only enquiries are not mislabeled as email addresses. Guest orders are visible only to admins; there is no guest retrieval endpoint.
 - Added a database trigger to write a minimal audit event transactionally when a domain order is inserted. This does not authorize payment or registration transitions.
-- Verification pending for this commit; run push CI, PR CI, and Vercel checks before reporting completion.
+- Verification: the combined implementation through commit `f3ee9b89d35ee3907e9d5dc064a277d429eba1fd` passes push CI ([run](https://github.com/Mapalochisha/Hembox.io/actions/runs/39154051748)), pull-request CI ([run](https://github.com/Mapalochisha/Hembox.io/actions/runs/39154055608)), and Vercel ([check](https://vercel.com/mapalochishas-projects/hembox-io/KLnxVvU5kywYXAUhk8btGqBZDdmt)).
+
+
+### 2026-10-18 — Verification and current handoff
+
+- **Verified head:** `f3ee9b89d35ee3907e9d5dc064a277d429eba1fd`.
+- **Push CI:** passed — https://github.com/Mapalochisha/Hembox.io/actions/runs/39154051748
+- **Pull-request CI:** passed — https://github.com/Mapalochisha/Hembox.io/actions/runs/39154055608
+- **Vercel:** passed — https://vercel.com/mapalochishas-projects/hembox-io/KLnxVvU5kywYXAUhk8btGqBZDdmt
+- **Current delivery:** provider-independent pricing math/catalogue, public retail-only price display with a freshness gate, idempotent durable domain enquiries and insert audit events, customer read-only order dashboard, admin catalogue and read-only order queue, and order/payment transition foundations.
+- **Still incomplete:** trusted registrar costs and real availability, quote expiry/final pre-purchase recheck, full cart/checkout, gateway selection/integration, signed webhook processing, registration/provisioning, renewals/DNS, full operational recovery, and production launch. Do not merge or apply production migrations without explicit authorization.
+- **Next:** continue quote/order and checkout foundations without activating them, then gateway/security work; return to the registrar blocker at the end as requested.
