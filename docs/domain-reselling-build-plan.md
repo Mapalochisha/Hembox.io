@@ -158,6 +158,8 @@ Use `[x]` only after the milestone's acceptance criteria have been met and verif
 
 ### [ ] M7 — Customer account and domain dashboard
 
+**Implementation progress (2026-10-18):** Added an authenticated, read-only customer order API and /profile/domains dashboard. Reads are scoped to the signed-in user and backed by the existing owner RLS policy. The dashboard is intentionally read-only; order creation and guest-order access remain gated until quote/order flow is implemented.
+
 **Scope**
 - Display customer orders, domain status, registration/expiry dates and renewal information.
 - Add order-status notifications.
@@ -170,7 +172,7 @@ Use `[x]` only after the milestone's acceptance criteria have been met and verif
 
 ### [ ] M8 — Admin and operations console
 
-**Implementation progress (2026-10-18):** Added an admin-only domain catalogue screen and server-side catalogue API with role verification, server-calculated ZMW retail prices, and price-history recording. Full order/payment/provider reconciliation, manual review, refunds, and operational audit workflows remain unimplemented.
+**Implementation progress (2026-10-18):** Added an admin-only domain catalogue screen and server-side catalogue API with role verification, server-calculated ZMW retail prices, and price-history recording. Added a read-only admin order queue with status filtering and recent audit-event visibility. Full order/payment/provider reconciliation, manual review actions, refunds, and operational audit workflows remain unimplemented.
 
 **Scope**
 - Manage TLD enablement and pricing.
@@ -359,3 +361,11 @@ When resuming this project:
 - **Safety:** No provider API behavior changed. No checkout, payment gateway, registration, DNS controls, or production migration was enabled. No catalogue prices are seeded, because actual wholesale/renewal costs and FX inputs have not yet been verified.
 - **Verification:** Pending for the new commit; do not mark this work complete until push CI, PR CI, and Vercel checks for the resulting head have finished successfully.
 - **Next:** Verify CI and deployment checks, then continue with durable order/quote foundations, customer order visibility, and admin operations while keeping all real purchase actions disabled.
+
+
+### 2026-10-18 — Customer domain dashboard and admin order visibility
+
+- Added a signed-in customer endpoint that reads only that user's domain orders through the authenticated Supabase client and the existing owner RLS policy. Added /profile/domains as a read-only order dashboard with explicit status and pricing display.
+- Added an admin-only order-list endpoint with status filtering, bounded results, and recent audit events. Added a Domain Orders entry in the admin sidebar. No order state can be mutated from this screen.
+- No guest-order retrieval, checkout, payment, registration, or DNS controls. If the domain schema has not been applied to a Preview database, these pages show a controlled unavailable state rather than inventing orders.
+- Verification: this commit requires fresh GitHub Actions push and pull-request runs and a Vercel check.

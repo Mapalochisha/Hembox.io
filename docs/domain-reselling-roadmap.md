@@ -48,3 +48,10 @@ The pricing layer now uses integer minor-unit arithmetic, an explicit FX scaling
 - Added `/admin/domains` to maintain pricing inputs and enabled TLDs from the management console.
 - Added a pricing-policy migration, restricted price-history table, and CI schema/unit tests.
 - This does not verify provider availability, provider wholesale prices, payments, or registration. The admin must enter a documented, verified cost/FX source before enabling a TLD. OT&E troubleshooting remains deferred until the provider workstream resumes.
+
+
+## Customer and operations surfaces added (2026-10-18)
+
+- Signed-in customer order listing at GET /api/domains/orders and /profile/domains, relying on the authenticated user's RLS scope.
+- Admin order queue at GET /api/admin/domains/orders, with status filters and recent audit events; no admin mutation actions yet.
+- These screens are scaffolding around the durable order model, not a complete checkout. They remain read-only until provider-verified quotes and payment/registration workflows exist.
