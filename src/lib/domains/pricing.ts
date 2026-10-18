@@ -26,7 +26,7 @@ function requireSafeInteger(name: string, value: number, minimum: number) {
 }
 
 function ceilDivide(numerator: bigint, denominator: bigint) {
-  return (numerator + denominator - 1n) / denominator
+  return (numerator + denominator - BigInt(1)) / denominator
 }
 
 export function calculateRetailPrice(input: DomainPricingInput): {
