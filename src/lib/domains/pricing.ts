@@ -8,8 +8,8 @@
  * never silently reduces the configured margin.
  */
 
-export const FX_RATE_SCALE = 1_000_000n
-export const BASIS_POINTS = 10_000n
+export const FX_RATE_SCALE = BigInt(1_000_000)
+export const BASIS_POINTS = BigInt(10_000)
 export const DEFAULT_PRICE_ROUNDING_MINOR = 100
 
 export type DomainPricingInput = {

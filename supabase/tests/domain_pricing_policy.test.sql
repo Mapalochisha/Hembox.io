@@ -26,6 +26,11 @@ begin
     raise exception 'service_role must be able to write price history';
   end if;
 
+  if has_table_privilege('service_role', 'public.domain_price_snapshots', 'UPDATE')
+     or has_table_privilege('service_role', 'public.domain_price_snapshots', 'DELETE') then
+    raise exception 'Price history must be append-only for service_role';
+  end if;
+
   begin
     insert into public.domain_tld_catalog (
       tld, provider_id, wholesale_currency, retail_currency,

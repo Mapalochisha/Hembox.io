@@ -48,7 +48,8 @@ create index if not exists domain_price_snapshots_tld_created_idx
 
 alter table public.domain_price_snapshots enable row level security;
 revoke all on public.domain_price_snapshots from anon, authenticated;
-grant all on public.domain_price_snapshots to service_role;
+revoke update, delete, truncate on public.domain_price_snapshots from service_role;
+grant select, insert on public.domain_price_snapshots to service_role;
 
 comment on table public.domain_price_snapshots is
   'Append-only server-written history of domain wholesale cost, FX, margin and retail price assumptions.';
