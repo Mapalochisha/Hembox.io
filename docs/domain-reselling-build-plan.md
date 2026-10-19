@@ -446,3 +446,12 @@ When resuming this project:
 - Stores only event identifiers, signature-verification outcome, processing state and sanitized error codes. Raw webhook bodies, credentials and cardholder data are not stored.
 - Added RLS/admin-read controls, server-role write access, immutable event identity/verification evidence, constrained processing transitions and a no-delete guard. CI includes disposable-PostgreSQL tests for duplicate-event rejection and ledger immutability.
 - This is schema groundwork only: no gateway is integrated, no webhook route exists, and no real payments are accepted. Verification remains pending for the resulting branch head.
+
+
+### 2026-10-19 — Webhook ledger security review
+
+- Reviewed the durable webhook ledger after adding its initial schema. The review found that the database still permitted a row with `signature_verified = false` to transition to `processed`, and allowed direct insertion in a terminal processing state. Those paths could undermine the future webhook handler if a caller made a mistake.
+- Added `20261019220000_domain_payment_webhook_processing_guards.sql`: ledger rows must be inserted as `received`; unverified events cannot be marked processed; provider/event/type identifiers must be trimmed; and `processed_at` becomes immutable once assigned. Verification evidence and event identity remain immutable.
+- Expanded disposable PostgreSQL integration assertions to cover unverified-event rejection, bypassing the received state, timestamp mutation and non-canonical event IDs. Added the new migration to the CI schema sequence.
+- **Verification status:** pending for the resulting head. Do not treat the change as complete until push CI, pull-request CI and Vercel Preview have finished for the exact commit.
+- **Scope unchanged:** no webhook route, gateway, payment initiation, refund, registrar call, production migration or live purchase action was enabled.
