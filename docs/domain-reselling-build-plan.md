@@ -471,3 +471,10 @@ When resuming this project:
 - Added a database trigger that permits new attempts to start only as `pending` or `unknown`, rejects confirmation timestamps on unconfirmed attempts, requires timestamps for confirmed/refunded attempts, rejects future timestamps, and preserves the original confirmation timestamp.
 - Added disposable PostgreSQL regression cases and wired the migration into CI. The change is schema hardening only; no payment route or provider is enabled.
 - **Verification:** the combined implementation commit `ed24e3dedaae36faa5b4283635b87c0adae734a6` passed push CI ([run](https://github.com/Mapalochisha/Hembox.io/actions/runs/39318444932)), pull-request CI ([run](https://github.com/Mapalochisha/Hembox.io/actions/runs/39318451696)), and Vercel Preview ([deployment](https://vercel.com/mapalochishas-projects/hembox-io/5A3uHFHKtFAEBcZJjFKN82N3U4xi)). This documentation update itself will trigger fresh checks; verify the new documentation head before release.
+
+
+### 2026-10-19 — Webhook ledger visibility in recovery operations
+
+- Extended the admin recovery API and dashboard to display the latest linked webhook ledger events per order, including event ID/type, signature-verification result, processing state, sanitized error code and timestamps.
+- The view deliberately excludes raw webhook bodies and secrets. It remains read-only and does not confirm payments, retry processing, or change order/payment state.
+- **Verification:** implementation commit `c5d593403fa698bdbf7d635ed3fadd86cc4985e1` passed push CI ([run](https://github.com/Mapalochisha/Hembox.io/actions/runs/39319287051)), pull-request CI ([run](https://github.com/Mapalochisha/Hembox.io/actions/runs/39319293703)), and Vercel Preview ([deployment](https://vercel.com/mapalochishas-projects/hembox-io/2YMGzpxbqzitEzyzDaLqfgDZkGJS)). This documentation update triggers fresh checks for the new head.
