@@ -107,6 +107,9 @@ jobs:
       - name: Apply durable domain enquiry migration
         run: psql -v ON_ERROR_STOP=1 -f supabase/migrations/20261018100000_domain_enquiry_link.sql
 
+      - name: Apply domain order transition guards
+        run: psql -v ON_ERROR_STOP=1 -f supabase/migrations/20261019193000_domain_order_transition_guards.sql
+
       - name: Assert domain schema constraints and security policies
         run: psql -v ON_ERROR_STOP=1 -f supabase/tests/domain_reselling_foundation.test.sql
 
@@ -115,6 +118,9 @@ jobs:
 
       - name: Assert durable domain enquiry and audit behavior
         run: psql -v ON_ERROR_STOP=1 -f supabase/tests/domain_enquiry_link.test.sql
+
+      - name: Assert domain order transition guards and audit behavior
+        run: psql -v ON_ERROR_STOP=1 -f supabase/tests/domain_order_transition_guards.test.sql
 
   build:
     name: Production Build
