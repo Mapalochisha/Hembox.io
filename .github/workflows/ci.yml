@@ -113,6 +113,9 @@ jobs:
       - name: Apply payment attempt lifecycle guards
         run: psql -v ON_ERROR_STOP=1 -f supabase/migrations/20261019203000_domain_payment_transition_guards.sql
 
+      - name: Apply payment confirmation evidence guards
+        run: psql -v ON_ERROR_STOP=1 -f supabase/migrations/20261019230000_domain_payment_confirmation_evidence.sql
+
       - name: Apply payment webhook event ledger
         run: psql -v ON_ERROR_STOP=1 -f supabase/migrations/20261019210000_domain_payment_webhook_ledger.sql
 
