@@ -2,10 +2,9 @@ import { NextResponse } from "next/server"
 import type { SupabaseClient } from "@supabase/supabase-js"
 import { createClient } from "@/lib/supabase/server"
 import { createServiceClient } from "@/lib/supabase/service"
-import { getDomainRecoveryAction } from "@/lib/domains/recovery"
+import { deriveRegistrationReconciliationState, getDomainRecoveryAction } from "@/lib/domains/recovery"
 import type {
   PaymentReconciliationState,
-  RegistrationReconciliationState,
 } from "@/lib/domains/recovery"
 
 export const dynamic = "force-dynamic"
@@ -27,12 +26,6 @@ function paymentState(status?: string): PaymentReconciliationState {
   return "not_started"
 }
 
-function registrationState(status: string): RegistrationReconciliationState {
-  if (status === "registered") return "confirmed_registered"
-  if (status === "registration_failed") return "failed"
-  if (status === "registration_pending") return "ambiguous"
-  return "not_started"
-}
 
 export async function GET() {
   try {
@@ -47,7 +40,7 @@ export async function GET() {
     const supabase = createServiceClient() as unknown as SupabaseClient
     const { data: orders, error: ordersError } = await supabase
       .from("domain_orders")
-      .select("id,domain_name,status,quote_expires_at,provider_id,provider_order_reference,registered_at,created_at,updated_at")
+      .select("id,domain_name,status,quote_expires_at,provider_id,provider_order_reference,provider_domain_reference,registered_at,created_at,updated_at")
       .order("updated_at", { ascending: false })
       .limit(100)
     if (ordersError) throw ordersError
@@ -89,7 +82,11 @@ export async function GET() {
       const quoteExpired = (order.status === "quoted" || order.status === "awaiting_payment")
         && (!quoteExpiresAt || Date.parse(quoteExpiresAt) <= now)
       const paymentReconciliation = paymentState(payment?.status)
-      const registrationReconciliation = registrationState(order.status)
+      const registrationReconciliation = deriveRegistrationReconciliationState({
+        orderStatus: order.status,
+        providerDomainReference: order.provider_domain_reference,
+        registeredAt: order.registered_at,
+      })
       const recommendedAction = getDomainRecoveryAction({
         status: order.status,
         quoteExpired,
