@@ -389,3 +389,15 @@ When resuming this project:
 - **Current delivery:** provider-independent pricing math/catalogue, public retail-only price display with a freshness gate, idempotent durable domain enquiries and insert audit events, customer read-only order dashboard, admin catalogue and read-only order queue, and order/payment transition foundations.
 - **Still incomplete:** trusted registrar costs and real availability, quote expiry/final pre-purchase recheck, full cart/checkout, gateway selection/integration, signed webhook processing, registration/provisioning, renewals/DNS, full operational recovery, and production launch. Do not merge or apply production migrations without explicit authorization.
 - **Next:** continue quote/order and checkout foundations without activating them, then gateway/security work; return to the registrar blocker at the end as requested.
+
+
+### 2026-10-19 — Quote, payment-port, and recovery foundations
+
+- Added `src/lib/domains/quotes.ts`: immutable quote snapshots, normalized domain names, integer ZMW price values, separately recorded registration/renewal prices, bounded validity (15-minute default; 60-minute maximum), and rejection of stale/future price snapshots. Expired quotes require a new quote; this module does not persist or issue checkout sessions.
+- Added `src/lib/domains/payment-provider.ts`: a gateway port, typed payment intent/lookup/verified-event contracts, exact amount/currency/provider matching, and a fail-closed disabled provider. Any non-disabled provider mode throws rather than accidentally enabling a gateway. No payment provider is integrated.
+- Added `src/lib/domains/recovery.ts`: conservative recovery recommendations for expired quotes, pending/unknown payment states, and ambiguous registration outcomes. It never executes retries or treats a timeout as proof of registration failure.
+- Added quote snapshot and payment-attempt schema foundations to the unmerged durable-order migration. Quote snapshots reject UPDATE and DELETE; payment attempts have idempotency keys and unique provider payment/webhook-event references. Both tables use RLS and admin-only reads; writes are server-side. The payment schema is operational scaffolding only and stores no raw webhook bodies or credentials.
+- Added unit coverage for quote expiry and stale pricing, disabled payment behavior, payment evidence matching, and recovery decisions. Extended disposable-PostgreSQL assertions for quote immutability, RLS/grants, and duplicate webhook-event protection.
+- No payment initiation/webhook route, gateway credentials, checkout UI, registration operation, production migration, or live purchase capability was enabled.
+- Verification is pending for the latest branch head; do not mark this milestone green until push CI, PR CI, and Vercel checks complete successfully.
+
