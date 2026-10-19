@@ -455,3 +455,11 @@ When resuming this project:
 - Expanded disposable PostgreSQL integration assertions to cover unverified-event rejection, bypassing the received state, timestamp mutation and non-canonical event IDs. Added the new migration to the CI schema sequence.
 - **Verification status:** pending for the resulting head. Do not treat the change as complete until push CI, pull-request CI and Vercel Preview have finished for the exact commit.
 - **Scope unchanged:** no webhook route, gateway, payment initiation, refund, registrar call, production migration or live purchase action was enabled.
+
+
+### 2026-10-19 — Conservative registration recovery derivation
+
+- Security review found that the recovery dashboard inferred `confirmed_registered` or a definitive `failed` registration outcome directly from the order status. That is not independent registrar evidence and could overstate what is known after an ambiguous timeout.
+- The recovery queue now treats `registration_pending` and `registration_failed` as ambiguous until a future provider lookup/reconciliation exists. A locally `registered` order is considered confirmed for the dashboard only when it has both a non-empty registrar domain reference and a valid registration timestamp; missing evidence is escalated as inconsistent state.
+- Added unit tests for missing/malformed registration evidence and ambiguous failed/pending states. No registrar calls were introduced; the Domain Name API workstream remains deferred.
+- **Verification:** pending for the latest branch head; CI and Vercel must complete successfully before this work is marked verified.
