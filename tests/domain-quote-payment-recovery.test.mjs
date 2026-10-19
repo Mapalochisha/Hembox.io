@@ -76,7 +76,7 @@ test("payment provider defaults to disabled and unknown modes fail closed", asyn
   )
 })
 
-test("payment evidence must match provider, exact amount and currency", () => {
+test("payment evidence must match provider, confirmed status, exact amount and currency", () => {
   const event = {
     provider: "example-gateway",
     eventId: "evt-1",
@@ -101,6 +101,7 @@ test("payment evidence must match provider, exact amount and currency", () => {
     amountMinor: 15000,
     currency: "ZMW",
   }), false)
+  assert.equal(isVerifiedPaymentForOrder({ ...event, status: "failed" }, { provider: "example-gateway", amountMinor: 15000, currency: "ZMW" }), false)
 })
 
 test("ambiguous registration outcomes require lookup before any retry", () => {
