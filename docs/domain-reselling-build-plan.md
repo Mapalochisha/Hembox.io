@@ -453,7 +453,7 @@ When resuming this project:
 - Reviewed the durable webhook ledger after adding its initial schema. The review found that the database still permitted a row with `signature_verified = false` to transition to `processed`, and allowed direct insertion in a terminal processing state. Those paths could undermine the future webhook handler if a caller made a mistake.
 - Added `20261019220000_domain_payment_webhook_processing_guards.sql`: ledger rows must be inserted as `received`; unverified events cannot be marked processed; provider/event/type identifiers must be trimmed; and `processed_at` becomes immutable once assigned. Verification evidence and event identity remain immutable.
 - Expanded disposable PostgreSQL integration assertions to cover unverified-event rejection, bypassing the received state, timestamp mutation and non-canonical event IDs. Added the new migration to the CI schema sequence.
-- **Verification status:** pending for the resulting head. Do not treat the change as complete until push CI, pull-request CI and Vercel Preview have finished for the exact commit.
+- **Verification:** implementation commit `ed24e3dedaae36faa5b4283635b87c0adae734a6` passed push CI ([run](https://github.com/Mapalochisha/Hembox.io/actions/runs/39318444932)), pull-request CI ([run](https://github.com/Mapalochisha/Hembox.io/actions/runs/39318451696)), and Vercel Preview ([deployment](https://vercel.com/mapalochishas-projects/hembox-io/5A3uHFHKtFAEBcZJjFKN82N3U4xi)).
 - **Scope unchanged:** no webhook route, gateway, payment initiation, refund, registrar call, production migration or live purchase action was enabled.
 
 
@@ -462,7 +462,7 @@ When resuming this project:
 - Security review found that the recovery dashboard inferred `confirmed_registered` or a definitive `failed` registration outcome directly from the order status. That is not independent registrar evidence and could overstate what is known after an ambiguous timeout.
 - The recovery queue now treats `registration_pending` and `registration_failed` as ambiguous until a future provider lookup/reconciliation exists. A locally `registered` order is considered confirmed for the dashboard only when it has both a non-empty registrar domain reference and a valid registration timestamp; missing evidence is escalated as inconsistent state.
 - Added unit tests for missing/malformed registration evidence and ambiguous failed/pending states. No registrar calls were introduced; the Domain Name API workstream remains deferred.
-- **Verification:** pending for the latest branch head; CI and Vercel must complete successfully before this work is marked verified.
+- **Verification:** the combined implementation commit `ed24e3dedaae36faa5b4283635b87c0adae734a6` passed push CI ([run](https://github.com/Mapalochisha/Hembox.io/actions/runs/39318444932)), pull-request CI ([run](https://github.com/Mapalochisha/Hembox.io/actions/runs/39318451696)), and Vercel Preview ([deployment](https://vercel.com/mapalochishas-projects/hembox-io/5A3uHFHKtFAEBcZJjFKN82N3U4xi)).
 
 
 ### 2026-10-19 — Payment confirmation evidence constraints
@@ -470,4 +470,4 @@ When resuming this project:
 - A second persistence review found that a payment attempt could carry a non-null `confirmed_at` while its status remained pending/failed, and a service-role insert could start directly in a confirmed state. Those combinations could make downstream reconciliation trust inconsistent evidence.
 - Added a database trigger that permits new attempts to start only as `pending` or `unknown`, rejects confirmation timestamps on unconfirmed attempts, requires timestamps for confirmed/refunded attempts, rejects future timestamps, and preserves the original confirmation timestamp.
 - Added disposable PostgreSQL regression cases and wired the migration into CI. The change is schema hardening only; no payment route or provider is enabled.
-- Verification is pending for the newest head and must be confirmed against push CI, pull-request CI and Vercel Preview.
+- **Verification:** the combined implementation commit `ed24e3dedaae36faa5b4283635b87c0adae734a6` passed push CI ([run](https://github.com/Mapalochisha/Hembox.io/actions/runs/39318444932)), pull-request CI ([run](https://github.com/Mapalochisha/Hembox.io/actions/runs/39318451696)), and Vercel Preview ([deployment](https://vercel.com/mapalochishas-projects/hembox-io/5A3uHFHKtFAEBcZJjFKN82N3U4xi)). This documentation update itself will trigger fresh checks; verify the new documentation head before release.
