@@ -399,7 +399,7 @@ When resuming this project:
 - Added quote snapshot and payment-attempt schema foundations to the unmerged durable-order migration. Quote snapshots reject UPDATE and DELETE; payment attempts have idempotency keys and unique provider payment/webhook-event references. Both tables use RLS and admin-only reads; writes are server-side. The payment schema is operational scaffolding only and stores no raw webhook bodies or credentials.
 - Added unit coverage for quote expiry and stale pricing, disabled payment behavior, payment evidence matching, and recovery decisions. Extended disposable-PostgreSQL assertions for quote immutability, RLS/grants, and duplicate webhook-event protection.
 - No payment initiation/webhook route, gateway credentials, checkout UI, registration operation, production migration, or live purchase capability was enabled.
-- Verification is pending for the latest branch head; do not mark this milestone green until push CI, PR CI, and Vercel checks complete successfully.
+- Verification of code commit `da00702017879ccbb6b8a8dffc8a167bc59bd81a` completed successfully; the verification evidence is recorded below.
 
 
 
@@ -409,3 +409,12 @@ When resuming this project:
 - Linked the recovery dashboard from the admin domain-order queue.
 - Evaluated public Zambia merchant documentation for Flutterwave, DPO Pay by Network and Pesapal. Flutterwave is the provisional first candidate to investigate because it publishes Zambia ZMW mobile-money API documentation and collection fees; DPO and Pesapal are viable alternatives to request commercial terms from. The roadmap records the source links and outstanding merchant eligibility/settlement checks.
 - No gateway was selected for implementation or connected. The payment port remains disabled; onboarding, current fee confirmation, settlement verification, signed webhook handling, idempotent event processing and end-to-end reconciliation remain release prerequisites.
+
+
+### Verification snapshot — implementation commit `da00702017879ccbb6b8a8dffc8a167bc59bd81a`
+
+- Push CI: **passed** — https://github.com/Mapalochisha/Hembox.io/actions/runs/39301438289
+- Pull-request CI: **passed** — https://github.com/Mapalochisha/Hembox.io/actions/runs/39301442068
+- CI jobs: disposable PostgreSQL schema/access-control assertions, lint, TypeScript, all domain unit tests, and production build passed.
+- Vercel Preview: **READY** for the same commit — https://vercel.com/mapalochishas-projects/hembox-io/4tkCNhUK53PdYtdUg6nqJYVgS7yU
+- The docs update containing this verification snapshot will itself trigger a new CI/Preview verification; treat that newer head as unverified until its checks complete.
