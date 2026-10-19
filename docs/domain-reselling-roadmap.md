@@ -121,3 +121,8 @@ A follow-up feature migration enforces payment-attempt invariants at the databas
 ## Durable webhook replay ledger (2026-10-19)
 
 Added a provider-neutral event ledger keyed uniquely by provider and event ID. Event identity and signature-verification evidence cannot be changed, rows cannot be deleted, processing transitions are constrained, and only minimal metadata is retained. Disposable PostgreSQL CI verifies replay rejection. A future webhook handler must still verify signatures, validate amount/currency/order/provider, and process each event transactionally; this migration alone does not enable payments.
+
+
+## Webhook ledger processing guards (2026-10-19)
+
+Security review found that the first ledger migration did not prohibit a failed signature check from being transitioned to `processed`, and allowed inserts directly into terminal states. The follow-up migration now requires received-only inserts, blocks processing when signature verification is false, enforces canonical trimmed event identifiers, and prevents rewriting `processed_at` after assignment. CI exercises these constraints against disposable PostgreSQL. This remains provider-neutral schema hardening only; signature verification must still happen in a future server-side handler before the database records verified evidence.
