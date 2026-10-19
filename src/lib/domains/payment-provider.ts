@@ -95,6 +95,7 @@ export function isVerifiedPaymentForOrder(
 ): boolean {
   return (
     event.verified === true &&
+    event.status === "confirmed" &&
     event.provider === expected.provider &&
     Number.isSafeInteger(event.amountMinor) &&
     event.amountMinor > 0 &&
