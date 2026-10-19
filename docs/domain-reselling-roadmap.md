@@ -116,3 +116,8 @@ A documentation-only commit records this evidence and will trigger its own CI/Pr
 ## Payment-attempt lifecycle integrity (2026-10-19)
 
 A follow-up feature migration enforces payment-attempt invariants at the database boundary: order/provider/idempotency/amount/currency identity cannot be edited, assigned provider references and confirmation timestamps cannot be replaced, confirmed payments cannot regress to pending/failed/cancelled, and refunded attempts are terminal. Creation and status changes produce transactional audit events with minimal non-secret metadata. Disposable PostgreSQL tests run in CI. This is a safety foundation only; no payment provider or live payment flow is enabled.
+
+
+## Durable webhook replay ledger (2026-10-19)
+
+Added a provider-neutral event ledger keyed uniquely by provider and event ID. Event identity and signature-verification evidence cannot be changed, rows cannot be deleted, processing transitions are constrained, and only minimal metadata is retained. Disposable PostgreSQL CI verifies replay rejection. A future webhook handler must still verify signatures, validate amount/currency/order/provider, and process each event transactionally; this migration alone does not enable payments.

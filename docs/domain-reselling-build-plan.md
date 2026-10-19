@@ -438,3 +438,11 @@ When resuming this project:
 - **Safety:** This does not create a payment route or activate any gateway. Service-role operations remain subject to the database triggers. No production migration was applied, and PR #2 remains unmerged.
 - **Verification:** Pending for the new implementation commit; do not mark this entry verified until push CI, pull-request CI, and Vercel Preview have completed for the exact head.
 - **Next:** Re-check the latest CI and Preview result, address any failures, then continue security review of recovery-state derivation and persistence constraints.
+
+
+### 2026-10-19 — Durable payment webhook replay ledger
+
+- Added an append-only-by-identity webhook event ledger with a database-enforced unique provider/event ID key, so replay protection can cover the entire event history rather than only the most recent event stored on a payment attempt.
+- Stores only event identifiers, signature-verification outcome, processing state and sanitized error codes. Raw webhook bodies, credentials and cardholder data are not stored.
+- Added RLS/admin-read controls, server-role write access, immutable event identity/verification evidence, constrained processing transitions and a no-delete guard. CI includes disposable-PostgreSQL tests for duplicate-event rejection and ledger immutability.
+- This is schema groundwork only: no gateway is integrated, no webhook route exists, and no real payments are accepted. Verification remains pending for the resulting branch head.

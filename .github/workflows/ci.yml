@@ -113,6 +113,9 @@ jobs:
       - name: Apply payment attempt lifecycle guards
         run: psql -v ON_ERROR_STOP=1 -f supabase/migrations/20261019203000_domain_payment_transition_guards.sql
 
+      - name: Apply payment webhook event ledger
+        run: psql -v ON_ERROR_STOP=1 -f supabase/migrations/20261019210000_domain_payment_webhook_ledger.sql
+
       - name: Assert domain schema constraints and security policies
         run: psql -v ON_ERROR_STOP=1 -f supabase/tests/domain_reselling_foundation.test.sql
 
@@ -127,6 +130,9 @@ jobs:
 
       - name: Assert payment attempt lifecycle guards and audit behavior
         run: psql -v ON_ERROR_STOP=1 -f supabase/tests/domain_payment_transition_guards.test.sql
+
+      - name: Assert payment webhook idempotency ledger
+        run: psql -v ON_ERROR_STOP=1 -f supabase/tests/domain_payment_webhook_ledger.test.sql
 
   build:
     name: Production Build
