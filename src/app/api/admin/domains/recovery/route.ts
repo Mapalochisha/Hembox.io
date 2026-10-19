@@ -65,6 +65,41 @@ export async function GET() {
     if (quoteResult.error) throw quoteResult.error
     if (paymentResult.error) throw paymentResult.error
 
+    const paymentAttemptIds = (paymentResult.data ?? []).map((payment) => payment.id)
+    let webhookEvents: Array<{
+      id: string
+      payment_attempt_id: string | null
+      event_id: string
+      event_type: string
+      signature_verified: boolean
+      processing_status: string
+      safe_error_code: string | null
+      received_at: string
+      processed_at: string | null
+    }> = []
+    if (paymentAttemptIds.length) {
+      const { data, error } = await supabase
+        .from("domain_payment_webhook_events")
+        .select("id,payment_attempt_id,event_id,event_type,signature_verified,processing_status,safe_error_code,received_at,processed_at")
+        .in("payment_attempt_id", paymentAttemptIds)
+        .order("received_at", { ascending: false })
+        .limit(300)
+      if (error) throw error
+      webhookEvents = data ?? []
+    }
+
+    const orderIdByPaymentAttempt = new Map<string, string>(
+      (paymentResult.data ?? []).map((payment) => [payment.id, payment.order_id]),
+    )
+    const webhookEventsByOrder = new Map<string, typeof webhookEvents>()
+    for (const event of webhookEvents) {
+      const orderId = event.payment_attempt_id ? orderIdByPaymentAttempt.get(event.payment_attempt_id) : undefined
+      if (!orderId) continue
+      const eventsForOrder = webhookEventsByOrder.get(orderId) ?? []
+      if (eventsForOrder.length < 5) eventsForOrder.push(event)
+      webhookEventsByOrder.set(orderId, eventsForOrder)
+    }
+
     const latestQuoteByOrder = new Map<string, (typeof quoteResult.data)[number]>()
     for (const quote of quoteResult.data ?? []) {
       if (!latestQuoteByOrder.has(quote.order_id)) latestQuoteByOrder.set(quote.order_id, quote)
@@ -123,6 +158,15 @@ export async function GET() {
           providerOrderReference: order.provider_order_reference,
           registeredAt: order.registered_at,
         },
+        webhookEvents: (webhookEventsByOrder.get(order.id) ?? []).map((event) => ({
+          eventId: event.event_id,
+          eventType: event.event_type,
+          signatureVerified: event.signature_verified,
+          processingStatus: event.processing_status,
+          safeErrorCode: event.safe_error_code,
+          receivedAt: event.received_at,
+          processedAt: event.processed_at,
+        })),
         recommendedAction,
       }
     })
