@@ -463,3 +463,11 @@ When resuming this project:
 - The recovery queue now treats `registration_pending` and `registration_failed` as ambiguous until a future provider lookup/reconciliation exists. A locally `registered` order is considered confirmed for the dashboard only when it has both a non-empty registrar domain reference and a valid registration timestamp; missing evidence is escalated as inconsistent state.
 - Added unit tests for missing/malformed registration evidence and ambiguous failed/pending states. No registrar calls were introduced; the Domain Name API workstream remains deferred.
 - **Verification:** pending for the latest branch head; CI and Vercel must complete successfully before this work is marked verified.
+
+
+### 2026-10-19 — Payment confirmation evidence constraints
+
+- A second persistence review found that a payment attempt could carry a non-null `confirmed_at` while its status remained pending/failed, and a service-role insert could start directly in a confirmed state. Those combinations could make downstream reconciliation trust inconsistent evidence.
+- Added a database trigger that permits new attempts to start only as `pending` or `unknown`, rejects confirmation timestamps on unconfirmed attempts, requires timestamps for confirmed/refunded attempts, rejects future timestamps, and preserves the original confirmation timestamp.
+- Added disposable PostgreSQL regression cases and wired the migration into CI. The change is schema hardening only; no payment route or provider is enabled.
+- Verification is pending for the newest head and must be confirmed against push CI, pull-request CI and Vercel Preview.
