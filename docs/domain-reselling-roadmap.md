@@ -95,3 +95,10 @@ The combined branch head `f3ee9b89d35ee3907e9d5dc064a277d429eba1fd` passed [push
 **Why Flutterwave is first to investigate:** it has the clearest publicly documented ZMW mobile-money integration and published collection fees. Before selecting it, verify HEMBOX's merchant eligibility, required business documents, exact settlement destination/currency and timing, refund/chargeback costs, transaction limits, account approval, and current fees directly with the provider. If those terms are unsuitable, request quotes from DPO and Pesapal. Do not hard-code the public fee figures as permanent pricing policy.
 
 The payment adapter remains disabled. No credentials, webhook endpoint, checkout session or live payment flow has been added.
+
+
+## Latest implementation verification (2026-10-19)
+
+The quote/payment/recovery implementation at `da00702017879ccbb6b8a8dffc8a167bc59bd81a` passed [push CI](https://github.com/Mapalochisha/Hembox.io/actions/runs/39301438289) and [pull-request CI](https://github.com/Mapalochisha/Hembox.io/actions/runs/39301442068). The disposable PostgreSQL schema/access-control tests, lint, TypeScript, domain unit tests and production build all passed. [Vercel Preview is READY for that commit](https://vercel.com/mapalochishas-projects/hembox-io/4tkCNhUK53PdYtdUg6nqJYVgS7yU).
+
+A documentation-only commit records this evidence and will trigger its own CI/Preview checks; do not consider the new head verified until those complete.
