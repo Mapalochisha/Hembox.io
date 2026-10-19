@@ -11,6 +11,7 @@ type Item = {
   updatedAt: string
   quote: null | { expiresAt: string; registrationPriceMinor: number; renewalPriceMinor: number; currency: string }
   payment: null | { provider: string; status: string; amountMinor: number; currency: string; lastCheckedAt: string | null }
+  webhookEvents: Array<{ eventId: string; eventType: string; signatureVerified: boolean; processingStatus: string; safeErrorCode: string | null; receivedAt: string; processedAt: string | null }>
   registration: { provider: string | null; providerOrderReference: string | null; registeredAt: string | null }
   recommendedAction: string
 }
@@ -53,13 +54,14 @@ export default function AdminDomainRecoveryPage() {
     {error ? <p role="alert" className="rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900">{error}</p> : null}
     {loading ? <div className="flex h-40 items-center justify-center"><Loader2 className="h-7 w-7 animate-spin text-teal" /></div> : null}
     {!loading && !error && items.length === 0 ? <div className="rounded-2xl border border-slate-200 bg-white p-8 text-center text-sm text-slate-600">No domain orders found.</div> : null}
-    {!loading && !error && items.length > 0 ? <div className="overflow-x-auto rounded-2xl border border-slate-200 bg-white"><table className="w-full min-w-[1000px] text-left text-sm">
-      <thead className="border-b border-slate-200 bg-slate-50 text-xs uppercase tracking-wide text-slate-500"><tr><th className="px-4 py-3">Domain / order</th><th className="px-4 py-3">Order state</th><th className="px-4 py-3">Quote</th><th className="px-4 py-3">Payment</th><th className="px-4 py-3">Registration</th><th className="px-4 py-3">Suggested next step</th></tr></thead>
+    {!loading && !error && items.length > 0 ? <div className="overflow-x-auto rounded-2xl border border-slate-200 bg-white"><table className="w-full min-w-[1250px] text-left text-sm">
+      <thead className="border-b border-slate-200 bg-slate-50 text-xs uppercase tracking-wide text-slate-500"><tr><th className="px-4 py-3">Domain / order</th><th className="px-4 py-3">Order state</th><th className="px-4 py-3">Quote</th><th className="px-4 py-3">Payment</th><th className="px-4 py-3">Webhook ledger</th><th className="px-4 py-3">Registration</th><th className="px-4 py-3">Suggested next step</th></tr></thead>
       <tbody>{items.map((item) => <tr key={item.orderId} className="border-b border-slate-100 align-top last:border-0">
         <td className="px-4 py-4"><p className="font-bold text-navy">{item.domainName}</p><p className="mt-1 text-xs text-slate-500">{item.orderId}</p><p className="mt-1 text-xs text-slate-500">Updated {when(item.updatedAt)}</p></td>
         <td className="px-4 py-4">{label(item.orderStatus)}</td>
         <td className="px-4 py-4">{item.quote ? <><p>{money(item.quote.registrationPriceMinor, item.quote.currency)} registration</p><p className="mt-1 text-xs text-slate-500">{money(item.quote.renewalPriceMinor, item.quote.currency)} renewal</p><p className="mt-1 text-xs text-slate-500">Expires {when(item.quote.expiresAt)}</p></> : "No saved quote"}</td>
         <td className="px-4 py-4">{item.payment ? <><p>{label(item.payment.status)}</p><p className="mt-1 text-xs text-slate-500">{money(item.payment.amountMinor, item.payment.currency)} · {item.payment.provider}</p><p className="mt-1 text-xs text-slate-500">Checked {when(item.payment.lastCheckedAt)}</p></> : "No payment attempt"}</td>
+        <td className="px-4 py-4">{item.webhookEvents?.length ? <div className="space-y-3">{item.webhookEvents.map((event) => <div key={event.eventId} className="max-w-[240px] border-b border-slate-100 pb-2 last:border-0"><p className="font-semibold text-navy">{label(event.processingStatus)}</p><p className="mt-1 text-xs text-slate-600">{event.eventType}</p><p className="mt-1 break-all text-[11px] text-slate-500">ID: {event.eventId}</p><p className={`mt-1 text-xs ${event.signatureVerified ? "text-emerald-700" : "text-rose-700"}`}>{event.signatureVerified ? "Signature verified" : "Signature not verified"}</p>{event.safeErrorCode ? <p className="mt-1 text-xs text-rose-700">Error: {event.safeErrorCode}</p> : null}<p className="mt-1 text-[11px] text-slate-500">Received {when(event.receivedAt)}</p></div>)}</div> : <span className="text-xs text-slate-500">No linked webhook events</span>}</td>
         <td className="px-4 py-4 text-xs text-slate-600"><p>{item.registration.provider || "No provider"}</p><p className="mt-1 break-all">{item.registration.providerOrderReference || "No registrar reference"}</p><p className="mt-1">Registered {when(item.registration.registeredAt)}</p></td>
         <td className="px-4 py-4"><p className="font-semibold text-navy">{label(item.recommendedAction)}</p><p className="mt-1 max-w-xs text-xs leading-5 text-slate-500">Guidance only. Verify records and audit any manual action.</p></td>
       </tr>)}</tbody>
