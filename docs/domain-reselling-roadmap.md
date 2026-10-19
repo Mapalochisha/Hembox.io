@@ -102,3 +102,12 @@ The payment adapter remains disabled. No credentials, webhook endpoint, checkout
 The quote/payment/recovery implementation at `da00702017879ccbb6b8a8dffc8a167bc59bd81a` passed [push CI](https://github.com/Mapalochisha/Hembox.io/actions/runs/39301438289) and [pull-request CI](https://github.com/Mapalochisha/Hembox.io/actions/runs/39301442068). The disposable PostgreSQL schema/access-control tests, lint, TypeScript, domain unit tests and production build all passed. [Vercel Preview is READY for that commit](https://vercel.com/mapalochishas-projects/hembox-io/4tkCNhUK53PdYtdUg6nqJYVgS7yU).
 
 A documentation-only commit records this evidence and will trigger its own CI/Preview checks; do not consider the new head verified until those complete.
+
+
+## Database-enforced order lifecycle hardening (2026-10-19)
+
+- PostgreSQL now mirrors the application order-transition graph and rejects invalid status jumps.
+- Each actual order-state change writes an audit event in the same transaction, with only old/new status values. No-op updates do not create events.
+- CI applies the migration to disposable PostgreSQL and checks permitted transitions, forbidden jumps, terminal states and audit behavior.
+- Payment evidence additionally requires `status === "confirmed"`; a signed event describing a failed or pending payment cannot confirm an order.
+- This is lifecycle defense-in-depth only. Payment, checkout, registration, DNS and renewal actions remain disabled.
