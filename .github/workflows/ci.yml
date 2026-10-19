@@ -110,6 +110,9 @@ jobs:
       - name: Apply domain order transition guards
         run: psql -v ON_ERROR_STOP=1 -f supabase/migrations/20261019193000_domain_order_transition_guards.sql
 
+      - name: Apply payment attempt lifecycle guards
+        run: psql -v ON_ERROR_STOP=1 -f supabase/migrations/20261019203000_domain_payment_transition_guards.sql
+
       - name: Assert domain schema constraints and security policies
         run: psql -v ON_ERROR_STOP=1 -f supabase/tests/domain_reselling_foundation.test.sql
 
@@ -121,6 +124,9 @@ jobs:
 
       - name: Assert domain order transition guards and audit behavior
         run: psql -v ON_ERROR_STOP=1 -f supabase/tests/domain_order_transition_guards.test.sql
+
+      - name: Assert payment attempt lifecycle guards and audit behavior
+        run: psql -v ON_ERROR_STOP=1 -f supabase/tests/domain_payment_transition_guards.test.sql
 
   build:
     name: Production Build

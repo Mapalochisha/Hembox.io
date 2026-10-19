@@ -111,3 +111,8 @@ A documentation-only commit records this evidence and will trigger its own CI/Pr
 - CI applies the migration to disposable PostgreSQL and checks permitted transitions, forbidden jumps, terminal states and audit behavior.
 - Payment evidence additionally requires `status === "confirmed"`; a signed event describing a failed or pending payment cannot confirm an order.
 - This is lifecycle defense-in-depth only. Payment, checkout, registration, DNS and renewal actions remain disabled.
+
+
+## Payment-attempt lifecycle integrity (2026-10-19)
+
+A follow-up feature migration enforces payment-attempt invariants at the database boundary: order/provider/idempotency/amount/currency identity cannot be edited, assigned provider references and confirmation timestamps cannot be replaced, confirmed payments cannot regress to pending/failed/cancelled, and refunded attempts are terminal. Creation and status changes produce transactional audit events with minimal non-secret metadata. Disposable PostgreSQL tests run in CI. This is a safety foundation only; no payment provider or live payment flow is enabled.

@@ -427,3 +427,14 @@ When resuming this project:
 - Added disposable-PostgreSQL checks for valid transitions, invalid jumps, terminal-state protection and audit evidence, and wired them into CI.
 - Tightened payment evidence validation: a provider/amount/currency match must also explicitly report a confirmed payment.
 - All payment and registrar operations remain disabled; this is defense-in-depth, not a checkout or provisioning workflow. Record CI and Preview evidence only after the new commit has completed its checks.
+
+
+### 2026-10-19 — Payment-attempt lifecycle integrity
+
+- **Milestone:** M4/M5 reliability foundations; payment integration remains disabled.
+- **Changes:** Added a feature-branch migration that protects the immutable identity of a payment attempt (order, provider, idempotency key, amount, currency), prevents replacement of an assigned provider payment reference or confirmed timestamp, and enforces conservative status transitions. A confirmed attempt may only move to refunded; failed, cancelled and refunded attempts cannot silently be reopened. Unknown attempts may return to pending when reconciled with provider evidence.
+- **Audit:** Payment-attempt creation and each actual status change now write minimal audit events transactionally. Audit details exclude webhook bodies, secrets and provider payment references.
+- **Tests/CI:** Added disposable-PostgreSQL regression assertions for audit creation, allowed unknown-to-confirmed flow, forbidden confirmed-to-pending and refunded-to-confirmed regressions, and immutable amount/reference/timestamp. CI applies the migration after the existing order-transition migration and runs the new integration test.
+- **Safety:** This does not create a payment route or activate any gateway. Service-role operations remain subject to the database triggers. No production migration was applied, and PR #2 remains unmerged.
+- **Verification:** Pending for the new implementation commit; do not mark this entry verified until push CI, pull-request CI, and Vercel Preview have completed for the exact head.
+- **Next:** Re-check the latest CI and Preview result, address any failures, then continue security review of recovery-state derivation and persistence constraints.
