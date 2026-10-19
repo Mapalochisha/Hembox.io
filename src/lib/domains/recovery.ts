@@ -58,7 +58,7 @@ export function getDomainRecoveryAction(input: {
       return "retry_registration_status_lookup"
     }
     if (registration === "confirmed_registered") {
-      return status === "registered" ? "no_action" : "inconsistent_state_review"
+      return "inconsistent_state_review"
     }
     if (registration === "confirmed_not_registered" || registration === "failed") {
       return "eligible_for_registration_retry_after_reconciliation"
