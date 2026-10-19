@@ -131,3 +131,8 @@ Security review found that the first ledger migration did not prohibit a failed 
 ## Conservative registration recovery derivation (2026-10-19)
 
 The recovery queue no longer treats local `registration_pending` or `registration_failed` statuses as independent provider confirmation. Both are ambiguous until a provider status lookup/reconciliation is implemented. A `registered` order needs a non-empty registrar domain reference and valid registration timestamp to be treated as confirmed by the dashboard; otherwise it is escalated for inconsistent-state review. Tests cover missing/malformed evidence. This is a safer read-only recommendation, not a live registrar integration.
+
+
+## Payment confirmation evidence constraints (2026-10-19)
+
+The database now rejects new attempts inserted directly as confirmed/refunded, rejects confirmation timestamps on pending/unknown/failed/cancelled attempts, requires confirmation evidence for confirmed/refunded states, rejects future confirmation timestamps, and prevents changing the first confirmed timestamp. Disposable PostgreSQL tests cover the new cases. This remains a disabled integration foundation: only a future verified server-side payment flow should move an attempt into confirmed state.
