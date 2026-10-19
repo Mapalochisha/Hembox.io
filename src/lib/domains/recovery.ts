@@ -48,7 +48,7 @@ export function getDomainRecoveryAction(input: {
   if (status === "awaiting_payment") {
     if (payment === "unknown" || payment === "pending") return "retry_payment_status_lookup"
     if (payment === "confirmed") return "inconsistent_state_review"
-    if (payment === "failed" || payment === "refunded") return "reconcile_payment"
+    if (payment === "failed" || payment === "refunded" || payment === "not_started") return "reconcile_payment"
     return "no_action"
   }
 
