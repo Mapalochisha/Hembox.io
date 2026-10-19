@@ -82,3 +82,16 @@ The combined branch head `f3ee9b89d35ee3907e9d5dc064a277d429eba1fd` passed [push
 3. Evaluate gateway eligibility for a Zambia-based merchant and document settlement currency, fees, approval/onboarding, webhook signature verification, refund support and reconciliation capabilities. Keep the payment adapter disabled until onboarding and end-to-end verification are complete.
 4. Finish provider-backed quote creation and final availability/price recheck after the Domain Name API OT&E blocker is resolved.
 5. Only then implement checkout, verified payment webhooks, registration/provisioning and release gates.
+
+
+## Zambia payment gateway evaluation (2026-10-19; public documentation only)
+
+**Provisional first integration candidate: Flutterwave Zambia. This is not an account approval or final commercial decision.**
+
+- **Flutterwave:** its Zambia pricing page currently lists 3% for local mobile-money collections (Airtel Money, MTN MoMo and Zamtel Money) and 4.8% for international cards; it also publishes a Zambia mobile-money API and transaction-verification, webhook, and refund documentation. Its docs require server-side verification of transaction reference, status, currency and amount, and recommend signed webhook verification plus idempotent processing. Links: [Zambia pricing](https://flutterwave.com/zm/pricing/), [Zambia mobile-money API](https://developer.flutterwave.com/reference/charge-via-zambia-mobile-money), [webhooks](https://developer.flutterwave.com/docs/webhooks), [transaction verification](https://developer.flutterwave.com/docs/transaction-verification), [refunds](https://developer.flutterwave.com/docs/refunds).
+- **DPO Pay by Network:** its Zambia page advertises ZMW, local support in Lusaka, Airtel/MTN mobile money and card payments. Public pricing was not established in this review. Link: [DPO Pay Zambia](https://dpogroup.com/online-payments/zambia/).
+- **Pesapal:** its Zambia pages advertise online card/mobile-money payments and its FAQ says API access is provided to onboarded businesses and a merchant agreement/documentation is required before going live. Public fees were not established in this review. Links: [Zambia business solutions](https://www.pesapal.com/zm/business), [merchant FAQ](https://www.pesapal.com/zm/business/faqs).
+
+**Why Flutterwave is first to investigate:** it has the clearest publicly documented ZMW mobile-money integration and published collection fees. Before selecting it, verify HEMBOX's merchant eligibility, required business documents, exact settlement destination/currency and timing, refund/chargeback costs, transaction limits, account approval, and current fees directly with the provider. If those terms are unsuitable, request quotes from DPO and Pesapal. Do not hard-code the public fee figures as permanent pricing policy.
+
+The payment adapter remains disabled. No credentials, webhook endpoint, checkout session or live payment flow has been added.
