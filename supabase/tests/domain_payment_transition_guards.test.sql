@@ -50,7 +50,7 @@ begin
   select count(*) into n
   from public.domain_audit_events
   where order_id = order_key and event_type = 'domain_payment_attempt.created';
-  if n <> 1 then raise exception 'payment attempt creation must be audited once'; end if;
+  if n <> 2 then raise exception 'both valid payment attempt creations must be audited once; got %', n; end if;
 
   update public.domain_payment_attempts
     set status = 'unknown'
