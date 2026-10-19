@@ -126,3 +126,8 @@ Added a provider-neutral event ledger keyed uniquely by provider and event ID. E
 ## Webhook ledger processing guards (2026-10-19)
 
 Security review found that the first ledger migration did not prohibit a failed signature check from being transitioned to `processed`, and allowed inserts directly into terminal states. The follow-up migration now requires received-only inserts, blocks processing when signature verification is false, enforces canonical trimmed event identifiers, and prevents rewriting `processed_at` after assignment. CI exercises these constraints against disposable PostgreSQL. This remains provider-neutral schema hardening only; signature verification must still happen in a future server-side handler before the database records verified evidence.
+
+
+## Conservative registration recovery derivation (2026-10-19)
+
+The recovery queue no longer treats local `registration_pending` or `registration_failed` statuses as independent provider confirmation. Both are ambiguous until a provider status lookup/reconciliation is implemented. A `registered` order needs a non-empty registrar domain reference and valid registration timestamp to be treated as confirmed by the dashboard; otherwise it is escalated for inconsistent-state review. Tests cover missing/malformed evidence. This is a safer read-only recommendation, not a live registrar integration.
