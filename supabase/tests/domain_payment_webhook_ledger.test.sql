@@ -1,4 +1,4 @@
--- Integration checks for durable payment webhook event idempotency.
+-- Integration checks for durable payment webhook event idempotency and processing guards.
 \set ON_ERROR_STOP on
 begin;
 do $$
@@ -6,6 +6,7 @@ declare
   order_key uuid;
   payment_key uuid;
   event_key uuid;
+  unverified_event_key uuid;
   caught boolean;
 begin
   insert into public.domain_orders (customer_email, domain_name)
@@ -27,6 +28,7 @@ begin
     where id = event_key;
   update public.domain_payment_webhook_events set processing_status = 'processed', processed_at = now()
     where id = event_key;
+
   caught := false;
   begin
     insert into public.domain_payment_webhook_events (provider_id, event_id, event_type)
@@ -34,17 +36,60 @@ begin
   exception when unique_violation then caught := true;
   end;
   if not caught then raise exception 'duplicate webhook event id was accepted'; end if;
+
   caught := false;
   begin
     update public.domain_payment_webhook_events set signature_verified = false where id = event_key;
   exception when check_violation then caught := true;
   end;
   if not caught then raise exception 'webhook verification evidence was mutable'; end if;
+
+  caught := false;
+  begin
+    update public.domain_payment_webhook_events set processed_at = now() + interval '1 day' where id = event_key;
+  exception when check_violation then caught := true;
+  end;
+  if not caught then raise exception 'processed timestamp was mutable'; end if;
+
   caught := false;
   begin
     delete from public.domain_payment_webhook_events where id = event_key;
   exception when check_violation then caught := true;
   end;
   if not caught then raise exception 'webhook event ledger row was deletable'; end if;
+
+  insert into public.domain_payment_webhook_events (
+    provider_id, event_id, event_type, signature_verified
+  ) values (
+    'test-gateway', 'event-ledger-unverified-001', 'payment.updated', false
+  ) returning id into unverified_event_key;
+
+  caught := false;
+  begin
+    update public.domain_payment_webhook_events
+      set processing_status = 'processed', processed_at = now()
+      where id = unverified_event_key;
+  exception when check_violation then caught := true;
+  end;
+  if not caught then raise exception 'unverified webhook event was processed'; end if;
+
+  caught := false;
+  begin
+    insert into public.domain_payment_webhook_events (
+      provider_id, event_id, event_type, signature_verified, processing_status, processed_at
+    ) values (
+      'test-gateway', 'event-ledger-direct-processed-001', 'payment.updated', true, 'processed', now()
+    );
+  exception when check_violation then caught := true;
+  end;
+  if not caught then raise exception 'webhook event could bypass received state on insert'; end if;
+
+  caught := false;
+  begin
+    insert into public.domain_payment_webhook_events (provider_id, event_id, event_type)
+    values ('test-gateway', ' event-ledger-whitespace-001 ', 'payment.updated');
+  exception when check_violation then caught := true;
+  end;
+  if not caught then raise exception 'non-canonical webhook event ID was accepted'; end if;
 end $$;
 rollback;
