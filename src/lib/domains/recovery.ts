@@ -16,6 +16,34 @@ export type RegistrationReconciliationState =
   | "ambiguous"
   | "failed"
 
+
+/**
+ * Derive registration evidence conservatively from persisted order fields.
+ * An order status alone is not independent proof of a registrar outcome:
+ * pending/failed states require provider reconciliation, and "registered"
+ * requires both a registrar domain reference and a timestamp.
+ */
+export function deriveRegistrationReconciliationState(input: {
+  orderStatus: string
+  providerDomainReference?: string | null
+  registeredAt?: string | null
+}): RegistrationReconciliationState {
+  if (input.orderStatus === "registered") {
+    const hasDomainReference = typeof input.providerDomainReference === "string"
+      && input.providerDomainReference.trim().length > 0
+    const registeredAt = input.registeredAt ? Date.parse(input.registeredAt) : Number.NaN
+    return hasDomainReference && Number.isFinite(registeredAt)
+      ? "confirmed_registered"
+      : "ambiguous"
+  }
+
+  if (input.orderStatus === "registration_pending" || input.orderStatus === "registration_failed") {
+    return "ambiguous"
+  }
+
+  return "not_started"
+}
+
 export type DomainRecoveryAction =
   | "no_action"
   | "review_expired_quote"
