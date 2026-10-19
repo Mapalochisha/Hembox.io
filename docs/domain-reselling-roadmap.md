@@ -136,3 +136,8 @@ The recovery queue no longer treats local `registration_pending` or `registratio
 ## Payment confirmation evidence constraints (2026-10-19)
 
 The database now rejects new attempts inserted directly as confirmed/refunded, rejects confirmation timestamps on pending/unknown/failed/cancelled attempts, requires confirmation evidence for confirmed/refunded states, rejects future confirmation timestamps, and prevents changing the first confirmed timestamp. Disposable PostgreSQL tests cover the new cases. This remains a disabled integration foundation: only a future verified server-side payment flow should move an attempt into confirmed state.
+
+
+## Webhook ledger visibility in recovery operations (2026-10-19)
+
+The admin recovery queue now surfaces recent webhook ledger events linked to the order's payment attempts: event ID/type, signature-verification result, processing status, sanitized error code and timestamps. It does not expose raw payloads or secrets and provides no state-changing controls. The feature is read-only operational visibility; verified payment processing remains disabled pending a selected and approved gateway.
