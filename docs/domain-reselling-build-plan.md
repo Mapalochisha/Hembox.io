@@ -2,7 +2,7 @@
 
 > **Purpose:** This is the canonical handoff document for the domain-reselling project. Read it before continuing implementation after a context switch. Update this file as milestones are completed, decisions change, or verification results become available.
 >
-> **Last updated:** 2026-10-18  
+> **Last updated:** 2026-10-19  
 > **Repository:** `Mapalochisha/Hembox.io`  
 > **Working branch:** `feature/domain-reselling-platform`  
 > **Pull request:** https://github.com/Mapalochisha/Hembox.io/pull/2  
@@ -418,3 +418,12 @@ When resuming this project:
 - CI jobs: disposable PostgreSQL schema/access-control assertions, lint, TypeScript, all domain unit tests, and production build passed.
 - Vercel Preview: **READY** for the same commit — https://vercel.com/mapalochishas-projects/hembox-io/4tkCNhUK53PdYtdUg6nqJYVgS7yU
 - The docs update containing this verification snapshot will itself trigger a new CI/Preview verification; treat that newer head as unverified until its checks complete.
+
+
+### 2026-10-19 — Database-enforced order lifecycle hardening
+
+- Added a feature-branch migration that enforces the order-state transition graph inside PostgreSQL, in addition to the TypeScript guard. Invalid jumps are rejected at the persistence boundary.
+- Successful status changes now create transactional audit events containing the old and new state. No-op status updates do not create misleading events.
+- Added disposable-PostgreSQL checks for valid transitions, invalid jumps, terminal-state protection and audit evidence, and wired them into CI.
+- Tightened payment evidence validation: a provider/amount/currency match must also explicitly report a confirmed payment.
+- All payment and registrar operations remain disabled; this is defense-in-depth, not a checkout or provisioning workflow. Record CI and Preview evidence only after the new commit has completed its checks.
