@@ -116,6 +116,9 @@ jobs:
       - name: Apply payment webhook event ledger
         run: psql -v ON_ERROR_STOP=1 -f supabase/migrations/20261019210000_domain_payment_webhook_ledger.sql
 
+      - name: Apply payment webhook processing guards
+        run: psql -v ON_ERROR_STOP=1 -f supabase/migrations/20261019220000_domain_payment_webhook_processing_guards.sql
+
       - name: Assert domain schema constraints and security policies
         run: psql -v ON_ERROR_STOP=1 -f supabase/tests/domain_reselling_foundation.test.sql
 
