@@ -48,6 +48,7 @@ export default function AdminDomainOrdersPage() {
         <div className="mt-4 flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
           <div><p className="text-xs font-bold uppercase tracking-[0.16em] text-teal">Operations</p><h1 className="mt-2 text-3xl font-black tracking-tight text-navy">Domain order queue</h1><p className="mt-2 text-sm text-slate-600">Read-only order and audit visibility. No payment or registration actions are available yet.</p></div>
           <div className="flex gap-2">
+            <Link href="/admin/domains/recovery" className="inline-flex h-10 items-center rounded-xl border border-slate-200 bg-white px-3 text-sm font-bold">Recovery</Link>
             <select value={status} onChange={(event) => setStatus(event.target.value as (typeof statuses)[number])} className="h-10 rounded-xl border border-slate-200 bg-white px-3 text-sm">
               {statuses.map((value) => <option key={value} value={value}>{value === "all" ? "All statuses" : title(value)}</option>)}
             </select>
