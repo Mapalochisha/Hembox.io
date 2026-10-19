@@ -65,3 +65,20 @@ The domain storefront displays the enabled retail-only catalogue, suppressing st
 ## Current verification (2026-10-18)
 
 The combined branch head `f3ee9b89d35ee3907e9d5dc064a277d429eba1fd` passed [push CI](https://github.com/Mapalochisha/Hembox.io/actions/runs/39154051748), [pull-request CI](https://github.com/Mapalochisha/Hembox.io/actions/runs/39154055608), and [Vercel](https://vercel.com/mapalochishas-projects/hembox-io/KLnxVvU5kywYXAUhk8btGqBZDdmt). Provider verification remains intentionally deferred while provider-independent pricing, enquiry persistence, customer visibility, and admin operations are built. Payments, checkout, live registration, and production migration remain disabled.
+
+
+## Quote, payment and recovery foundations (2026-10-19)
+
+- `src/lib/domains/quotes.ts` creates immutable quote snapshots from fresh server-side price inputs, with separate registration/renewal values, a 15-minute default expiry, a 60-minute maximum validity, and safe-integer checks. It does not create a checkout or write to the database.
+- `src/lib/domains/payment-provider.ts` defines the gateway port and verified-payment evidence contract. The only available provider is disabled; unrecognized/non-disabled modes fail closed. No gateway has been selected or integrated, and browser redirects are not proof of payment.
+- `src/lib/domains/recovery.ts` returns conservative operational recommendations. Ambiguous registrar outcomes require a status lookup/reconciliation before retry; inconsistent payment/order state is escalated instead of silently repaired.
+- The durable-order migration now adds immutable quote snapshots and payment-attempt tracking with RLS, admin-only reads, server-side write privileges, unique idempotency keys, unique provider payment references, and unique provider webhook-event references.
+- Unit and disposable-PostgreSQL assertions cover the new behavior. The code and schema remain feature-branch scaffolding, not a production checkout or payment system.
+
+## Remaining before real checkout
+
+1. Finish CI and Preview deployment verification for the latest commit.
+2. Build admin recovery visibility around actual persisted quote/payment records, with explicit manual-review workflows and audit entries; no state-changing recovery buttons until transactional service operations exist.
+3. Evaluate gateway eligibility for a Zambia-based merchant and document settlement currency, fees, approval/onboarding, webhook signature verification, refund support and reconciliation capabilities. Keep the payment adapter disabled until onboarding and end-to-end verification are complete.
+4. Finish provider-backed quote creation and final availability/price recheck after the Domain Name API OT&E blocker is resolved.
+5. Only then implement checkout, verified payment webhooks, registration/provisioning and release gates.
