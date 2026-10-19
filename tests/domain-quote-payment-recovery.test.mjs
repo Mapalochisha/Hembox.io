@@ -7,7 +7,7 @@ import {
   getDomainPaymentProvider,
   isVerifiedPaymentForOrder,
 } from "../src/lib/domains/payment-provider.ts"
-import { getDomainRecoveryAction } from "../src/lib/domains/recovery.ts"
+import { deriveRegistrationReconciliationState, getDomainRecoveryAction } from "../src/lib/domains/recovery.ts"
 
 const now = Date.parse("2026-10-19T10:00:00.000Z")
 const quoteInput = {
@@ -102,6 +102,31 @@ test("payment evidence must match provider, confirmed status, exact amount and c
     currency: "ZMW",
   }), false)
   assert.equal(isVerifiedPaymentForOrder({ ...event, status: "failed" }, { provider: "example-gateway", amountMinor: 15000, currency: "ZMW" }), false)
+})
+
+
+test("registration recovery requires provider evidence instead of trusting local status alone", () => {
+  assert.equal(deriveRegistrationReconciliationState({
+    orderStatus: "registered",
+    registeredAt: "2026-10-19T10:00:00.000Z",
+    providerDomainReference: null,
+  }), "ambiguous")
+  assert.equal(deriveRegistrationReconciliationState({
+    orderStatus: "registered",
+    registeredAt: "not-a-date",
+    providerDomainReference: "registrar-domain-123",
+  }), "ambiguous")
+  assert.equal(deriveRegistrationReconciliationState({
+    orderStatus: "registered",
+    registeredAt: "2026-10-19T10:00:00.000Z",
+    providerDomainReference: " registrar-domain-123 ",
+  }), "confirmed_registered")
+  assert.equal(deriveRegistrationReconciliationState({
+    orderStatus: "registration_failed",
+  }), "ambiguous")
+  assert.equal(deriveRegistrationReconciliationState({
+    orderStatus: "registration_pending",
+  }), "ambiguous")
 })
 
 test("ambiguous registration outcomes require lookup before any retry", () => {
