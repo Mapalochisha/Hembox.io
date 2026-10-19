@@ -119,6 +119,11 @@ test("ambiguous registration outcomes require lookup before any retry", () => {
 test("expired quotes and inconsistent payment states are flagged conservatively", () => {
   assert.equal(getDomainRecoveryAction({
     status: "awaiting_payment",
+    payment: "not_started",
+    registration: "not_started",
+  }), "reconcile_payment")
+  assert.equal(getDomainRecoveryAction({
+    status: "awaiting_payment",
     quoteExpired: true,
     payment: "pending",
     registration: "not_started",
