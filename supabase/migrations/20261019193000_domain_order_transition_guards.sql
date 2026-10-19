@@ -1,0 +1,1 @@
+-- Database-enforced order lifecycle guard. Feature branch only.
