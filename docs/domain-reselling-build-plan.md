@@ -401,3 +401,11 @@ When resuming this project:
 - No payment initiation/webhook route, gateway credentials, checkout UI, registration operation, production migration, or live purchase capability was enabled.
 - Verification is pending for the latest branch head; do not mark this milestone green until push CI, PR CI, and Vercel checks complete successfully.
 
+
+
+### 2026-10-19 — Read-only recovery dashboard and gateway assessment
+
+- Added admin-only `GET /api/admin/domains/recovery` and `/admin/domains/recovery`. The dashboard combines the latest saved quote, payment attempt and order/registrar references, then displays a conservative recommended next step. It is read-only: no status mutation, payment confirmation, refund, or registration retry is exposed.
+- Linked the recovery dashboard from the admin domain-order queue.
+- Evaluated public Zambia merchant documentation for Flutterwave, DPO Pay by Network and Pesapal. Flutterwave is the provisional first candidate to investigate because it publishes Zambia ZMW mobile-money API documentation and collection fees; DPO and Pesapal are viable alternatives to request commercial terms from. The roadmap records the source links and outstanding merchant eligibility/settlement checks.
+- No gateway was selected for implementation or connected. The payment port remains disabled; onboarding, current fee confirmation, settlement verification, signed webhook handling, idempotent event processing and end-to-end reconciliation remain release prerequisites.
