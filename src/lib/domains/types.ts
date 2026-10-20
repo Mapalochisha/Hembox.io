@@ -12,7 +12,7 @@ export type DomainAvailabilityResult = {
   registrationPrice: DomainPrice | null
   renewalPrice: DomainPrice | null
   checkedAt: string
-  source: "mock" | "domainnameapi"
+  source: "mock" | "domainnameapi" | "namesilo"
   message?: string
 }
 
