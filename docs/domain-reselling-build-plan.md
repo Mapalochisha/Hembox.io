@@ -2,7 +2,7 @@
 
 > **Purpose:** This is the canonical handoff document for the domain-reselling project. Read it before continuing implementation after a context switch. Update this file as milestones are completed, decisions change, or verification results become available.
 >
-> **Last updated:** 2026-10-19  
+> **Last updated:** 2026-10-20
 > **Repository:** `Mapalochisha/Hembox.io`  
 > **Working branch:** `feature/domain-reselling-platform`  
 > **Pull request:** https://github.com/Mapalochisha/Hembox.io/pull/2  
@@ -47,7 +47,7 @@ The first market is Zambia, with **ZMW as the primary customer-facing currency**
 - Pull request: https://github.com/Mapalochisha/Hembox.io/pull/2
 - Latest known feature commit at the time of the prior handoff: `2334c4dd12aefff9f112ab1eebca088136b4e1fa`
 - **Important:** these are historical verification results, not a claim that the latest commit after this document is automatically green. Re-check CI/Vercel after every meaningful change.
-- Domain Name API OT&E availability adapter is implemented in the feature branch; credentials are read only from server-side environment variables. Live registration and pricing are not implemented.
+- NameSilo read-only availability adapter is implemented in the feature branch; credentials are read only from server-side environment variables. It returns no provider prices and exposes no registration, renewal, transfer, DNS, or privacy operations. Account credentials and a safe live availability smoke test are not yet verified.
 - No payment gateway has been implemented.
 - No production Supabase migration has been applied.
 - The storefront is an enquiry flow, not a live domain checker or checkout.
@@ -84,18 +84,18 @@ Use `[x]` only after the milestone's acceptance criteria have been met and verif
 - Sandbox access and required credentials/account prerequisites are understood.
 - No critical commercial blocker is hidden or assumed away.
 
-**Decision:** Domain Name API is the selected initial provider for HEMBOX.io. Its official reseller page advertises no activation fee, mandatory deposit, minimum balance, or monthly charge; live registration still requires adding account balance. The provider's official quick-start documents separate test and live environments, API credentials, availability/pricing checks, registration, renewal, transfer, and DNS operations. See [reseller terms](https://www.domainnameapi.com/domain-reseller) and [official API quick start](https://www.domainnameapi.com/knowledge-base/account-management/how-to-start-domain-reselling).\n\n**Verification caveats:** This verifies published provider documentation, not the user's account approval, actual account-specific price list, API credentials, Zambia-specific payment/funding availability, or production readiness. Those must be confirmed before any live launch.
+**Decision (updated 2026-10-20): NameSilo is the selected initial provider.** Domain Name API is retired from the active provider path because its OT&E access/contract troubleshooting was blocking progress. NameSilo documents a free API and private-label reseller options; however, its Discount Program requires account funds and the documented top-up minimum is $50, so the funding economics still need to be confirmed for HEMBOX.io. NameSilo API documentation: [API reference](https://www.namesilo.com/api-reference), [reseller options](https://www.namesilo.com/support/v2/articles/about/reseller-options), [API Manager](https://www.namesilo.com/support/v2/articles/account-options/api-manager), and [reseller FAQ](https://www.namesilo.com/support/v2/articles/domain-manager/reseller-frequently-asked). Sandbox credentials must be requested from NameSilo support before any state-changing operation is tested. The active adapter is read-only availability only; live registration and prices remain disabled.\n\n**Verification caveats:** Public docs do not verify the user's API key, account funding/payment options from Zambia, account-specific price list, sandbox access, or production readiness. Those must be confirmed before any live launch.
 
-### [ ] M2 — Domain Name API sandbox adapter
+### [ ] M2 — NameSilo read-only adapter and account verification
 
 **Scope**
 - Implement the chosen provider behind the existing server-side provider interface.
-- Support only verified provider capabilities, beginning with availability and pricing where available.
+- Support only verified provider capabilities; the current NameSilo adapter supports availability checks only and intentionally returns no prices.
 - Add adapter contract tests, input/output normalization, timeouts, rate-limit handling and sanitized error logging.
 - Keep live registration disabled.
 
 **Acceptance criteria**
-- Tests use real sandbox responses or documented fixtures where the sandbox cannot support a test.
+- Adapter parsing and failure behavior pass fixture-based tests. NameSilo sandbox credentials must be requested and verified before any state-changing operation; read-only availability still requires a controlled account/API-key smoke test.
 - Unknown/error states are not reported as available.
 - Credentials remain server-only; no live registration can be triggered accidentally.
 
@@ -250,6 +250,16 @@ A green build proves only the checks that ran. It does not independently prove r
 
 ## 6. Progress log
 
+### 2026-10-20 — Registrar decision changed from Domain Name API to NameSilo
+
+- **Decision:** NameSilo is now the selected initial registrar. Domain Name API is retired from the active integration path because OT&E access and request/response troubleshooting were consuming time without a verified working connection.
+- **Implementation:** Added a server-only `src/lib/domains/providers/namesilo.ts` adapter using NameSilo's documented `checkRegisterAvailability` endpoint. The provider factory accepts `DOMAIN_PROVIDER_MODE=namesilo`; the previous Domain Name API modes are no longer selected. The adapter uses an 8-second timeout, returns `unknown` on HTTP/network/parse failures, returns no prices, and exposes no registration, renewal, transfer, DNS, or privacy capability.
+- **Testing:** Added NameSilo response parser fixtures and adapter regression coverage. The exact current branch head `04ddb1f5d7c58edbb2c993864258b69e225671b4` passed [push CI](https://github.com/Mapalochisha/Hembox.io/actions/runs/39379545939), [pull-request CI](https://github.com/Mapalochisha/Hembox.io/actions/runs/39379547861), and [Vercel Preview](https://vercel.com/mapalochishas-projects/hembox-io/4d3NZ34eC1cZWkauw6Wut9rndPju).
+- **Commercial caveat:** NameSilo advertises free API/reseller tooling, but its Discount Program requires account funds and the published top-up minimum is $50. Confirm the account's funding options and actual TLD registration/renewal pricing before relying on the margin model. Request sandbox credentials from NameSilo support before testing any state-changing operation.
+- **Safety:** No API key was added to source control. No real registration, payment, DNS, or renewal operation was enabled; no production migration was applied; PR #2 remains open and in draft.
+- **Next action:** Configure `NAMESILO_API_KEY` and `DOMAIN_PROVIDER_MODE=namesilo` in Preview only when the user is ready, then run a read-only availability smoke test with a known available and known registered domain. Do not paste credentials into chat. Re-run CI/Preview after this progress-document update.
+
+
 ### 2026-10-17 — Domain order-state regression coverage and provider contract review
 
 - **Milestone:** M0 regression coverage extended; M2 remains blocked pending verified OT&E access and an authoritative current request/response contract.
@@ -258,7 +268,7 @@ A green build proves only the checks that ran. It does not independently prove r
 - **Client exception:** The user reports that the client-side exception is now gone. Vercel runtime logs remain inaccessible through the connected integration, so this is user-confirmed behavior rather than an independently inspected runtime trace.
 - **Safety:** No registrar endpoint behavior changed; unknown/error states remain fail-closed. No production migration, payment integration, live registration, or merge to `main`.
 - **Verification:** The immediately preceding validation commit `9faef45b079a39c46656866514b2e6f94cdc676d` passed GitHub Actions push and pull-request CI and its Vercel check. The order-state regression tests and provider-documentation update are included in the current branch. Latest verified head at this log update, `af061919a6c1a5e21e4db8e1be03c8f9da412e0e`, passed push CI ([run](https://github.com/Mapalochisha/Hembox.io/actions/runs/39071824691)), pull-request CI ([run](https://github.com/Mapalochisha/Hembox.io/actions/runs/39071829481)), and Vercel ([deployment](https://vercel.com/mapalochishas-projects/hembox-io/6UQ3BRRmRUBdnckfsd8ToAeH8NyN)). The checks included lint, TypeScript, domain validation/response/order-state tests, disposable PostgreSQL schema integration tests, and production build. This documentation-only follow-up will itself trigger checks, so re-verify the resulting head before reporting completion.
-- **Next action:** Verify this commit's CI and Vercel status. Then resolve the provider whitelist and contract with Domain Name API support; keep customer-facing availability/pricing and checkout disabled until sandbox results are verified.
+- **Superseded:** The Domain Name API workstream was retired on 2026-10-20 after continued OT&E access/contract friction. See the NameSilo provider-switch progress entry below.
 
 ### 2026-10-17 — Public domain-search validation hardening
 
@@ -267,7 +277,7 @@ A green build proves only the checks that ran. It does not independently prove r
 - **Tests:** Added regression tests for normalization, duplicate collapse, empty/oversized batches, malformed labels, URL-like input, label/domain length limits, and strict request shape. The domain test command now runs both response-parser and request-validation tests.
 - **Safety:** This does not change registrar endpoint assumptions, provider pricing, storefront behavior, live registration, payment processing, or production database state.
 - **Verification:** The validation implementation at `9faef45b079a39c46656866514b2e6f94cdc676d` passed both GitHub Actions runs ([push run](https://github.com/Mapalochisha/Hembox.io/actions/runs/39071611581), [pull-request run](https://github.com/Mapalochisha/Hembox.io/actions/runs/39071615439)); lint, TypeScript type-check, domain response/request tests, disposable PostgreSQL schema integration tests, and production build all succeeded. Vercel check is successful: [deployment](https://vercel.com/mapalochishas-projects/hembox-io/4NySQwaHPjUqJHwNs8qRCLnh9oGM). CI caught a TypeScript target compatibility issue in the first deduplication implementation; it was corrected to use a filter/index lookup and the final commit passed. This progress-log update is documentation-only, so verify its resulting branch head before treating the latest commit as green. Do not mark M2 complete: OT&E credentials/permissions and the exact response contract still need a verified successful sandbox result.
-- **Next action:** Confirm this commit's CI and Vercel status, then continue with provider-contract verification or other provider-independent regression/security work while support clarifies OT&E access.
+- **Superseded:** The Domain Name API workstream was retired on 2026-10-20. Continue with NameSilo read-only verification and provider-independent work; do not resume Domain Name API troubleshooting unless the user explicitly reverses the decision.
 
 
 ### 2026-10-17 — OT&E blocker recorded and client-side configuration hardening
@@ -278,7 +288,7 @@ A green build proves only the checks that ran. It does not independently prove r
 - **Code changes on feature branch:** Added an explicit Supabase browser-client configuration guard. The global auth and agency providers, landing-page portfolio/services loaders, pricing page, and login/register/Google/phone auth components now avoid constructing the browser client when public Supabase configuration is absent; optional public content falls back to an empty/default state, while auth actions show a configuration message. The admin middleware returns a clear 503 for protected admin routes when Supabase configuration is absent, rather than throwing during client creation. This is defensive handling, not a substitute for configuring the correct Preview/Production environment variables.
 - **Safety:** No production migration, payment processing, live registration, or merge to `main`. Registrar credentials remain server-side.
 - **Verification:** Implementation head `af60c24c96fc1965f7d376700ac49424b687a335` passed both GitHub Actions CI runs ([push run](https://github.com/Mapalochisha/Hembox.io/actions/runs/39069835069), [pull-request run](https://github.com/Mapalochisha/Hembox.io/actions/runs/39069839697)); schema integration tests, lint/type check, and production build all succeeded. Vercel's check is successful and its Preview deployment is Ready: [deployment](https://vercel.com/mapalochishas-projects/hembox-io/9FMmPxE5mDaSXWZdZK92kQNqUAgT), [Preview URL](https://hembox-io-git-feature-domain-rese-acfcea-mapalochishas-projects.vercel.app). The exact browser exception has not yet been independently confirmed as resolved because runtime-log access is restricted and the Preview is not accessible to the web inspection tool; it still needs a real browser smoke test. This documentation follow-up creates a new commit, so its own CI/Vercel checks must also be rechecked. Do not mark M2 complete until the provider contract and sandbox result are confirmed.
-- **Next action:** Wait for CI/Vercel status, test the newest Preview with Supabase env configured, inspect browser/runtime errors if any remain, and use Domain Name API support's response to finish the OT&E adapter.
+- **Superseded:** Domain Name API is no longer the selected provider. NameSilo is the active adapter; its credentials and read-only availability response still require account-level verification.
 
 ### 2026-10-17 — Domain Name API OT&E adapter implementation started
 
@@ -348,7 +358,7 @@ When resuming this project:
 5. Work on `feature/domain-reselling-platform`, keep changes focused, run relevant tests, and update this file with the commit and verification evidence.
 6. Never claim a feature or milestone is complete without evidence, and never enable production payments/registration or apply production migrations without explicit approval.
 
-**Immediate next action:** continue provider-independent quote/order foundations and safe operations tooling, then evaluate the Zambia-compatible payment gateway and complete security/release gates. Return to the Domain Name API OT&E credentials, IP allowlisting, and request/response contract only after the surrounding product layers are built. Keep checkout, live payments, and registration disabled.
+**Immediate next action:** continue provider-independent quote/order foundations and safe operations tooling, then verify the NameSilo API key and read-only availability behavior in Preview. Request NameSilo sandbox credentials before any state-changing provider test. Evaluate the Zambia-compatible payment gateway and complete security/release gates. Keep checkout, live payments, and registration disabled.
 
 
 ### 2026-10-18 — Provider-independent pricing and catalogue foundation
