@@ -1,15 +1,21 @@
 "use client"
 
-import { createClient } from "@/lib/supabase/client"
+import { useMemo } from "react"
+import { createClient, isSupabaseConfigured } from "@/lib/supabase/client"
 import { Button } from "@/components/ui/button"
 import { useToast } from "@/hooks/use-toast"
 import { Chrome } from "lucide-react"
 
 export function GoogleAuthButton() {
-  const supabase = createClient()
+  const supabase = useMemo(() => isSupabaseConfigured() ? createClient() : null, [])
   const { toast } = useToast()
 
   const handleGoogleSignIn = async () => {
+    if (!supabase) {
+      toast({ title: "Sign-in unavailable", description: "Authentication is not configured for this deployment. Please contact support.", variant: "destructive" })
+      return
+    }
+
     try {
       const { error } = await supabase.auth.signInWithOAuth({
         provider: "google",

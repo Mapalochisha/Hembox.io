@@ -1,7 +1,7 @@
 'use client'
 
-import { createContext, useContext, useEffect, useState } from 'react'
-import { createClient } from '@/lib/supabase/client'
+import { createContext, useContext, useEffect, useMemo, useState } from 'react'
+import { createClient, isSupabaseConfigured } from '@/lib/supabase/client'
 import { User, AuthState } from '@/types'
 
 const AuthContext = createContext<AuthState & {
@@ -22,9 +22,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     isAdmin: false,
   })
 
-  const supabase = createClient()
+  const supabase = useMemo(() => isSupabaseConfigured() ? createClient() : null, [])
 
   const refreshUser = async () => {
+    if (!supabase) {
+      setState({ user: null, isLoading: false, isAdmin: false })
+      return
+    }
+
     try {
       const { data: { user: authUser } } = await supabase.auth.getUser()
 
@@ -64,6 +69,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }
 
   const signOut = async () => {
+    if (!supabase) return
     await supabase.auth.signOut()
     document.cookie = 'user_role=; path=/; max-age=0'
     setState({ user: null, isLoading: false, isAdmin: false })
@@ -71,6 +77,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }
 
   useEffect(() => {
+    if (!supabase) {
+      setState({ user: null, isLoading: false, isAdmin: false })
+      return
+    }
+
     refreshUser()
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
