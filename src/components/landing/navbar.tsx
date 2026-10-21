@@ -3,8 +3,6 @@
 import { useState } from "react"
 import Link from "next/link"
 import { useAuth } from "@/components/providers/auth-provider"
-import { useAgency } from "@/components/providers/agency-provider"
-import { Button } from "@/components/ui/button"
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -17,20 +15,26 @@ import { Menu, X, User, LogOut, LayoutDashboard } from "lucide-react"
 export function Navbar() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
   const { user, isAdmin, signOut } = useAuth()
-  const { agency_name } = useAgency()
 
   return (
     <header className="fixed top-0 w-full z-50 border-b border-black/[0.05] bg-white/70 backdrop-blur-xl">
       <div className="max-w-[1200px] mx-auto px-6 lg:px-8">
         <div className="flex h-[72px] items-center justify-between">
-          <Link href="/" className="flex items-center gap-2.5 group">
-            <div className="relative w-9 h-9 rounded-xl bg-navy flex items-center justify-center overflow-hidden group-hover:scale-105 transition">
-              <div className="absolute inset-0 bg-gradient-to-br from-teal to-coral opacity-0 group-hover:opacity-100 transition-opacity" />
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" className="relative z-10">
-                <path d="M4 4h7v7H4zM13 4h7v4h-7zM4 13h4v7H4zM13 11h7v9h-7z" fill="white" />
-              </svg>
-            </div>
-            <span className="text-[19px] font-[800] tracking-tight">{agency_name}</span>
+          <Link href="/" aria-label="HEMBOX.io home" className="group inline-flex shrink-0 items-center">
+            <span
+              aria-hidden="true"
+              className="h-10 w-[226px] shrink-0 bg-navy transition-colors duration-200 group-hover:bg-gradient-to-r group-hover:from-teal group-hover:to-coral"
+              style={{
+                maskImage: "url('/hembox-logo.svg')",
+                maskRepeat: "no-repeat",
+                maskPosition: "left center",
+                maskSize: "contain",
+                WebkitMaskImage: "url('/hembox-logo.svg')",
+                WebkitMaskRepeat: "no-repeat",
+                WebkitMaskPosition: "left center",
+                WebkitMaskSize: "contain",
+              }}
+            />
           </Link>
 
           <nav className="hidden md:flex items-center gap-8">
