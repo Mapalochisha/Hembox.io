@@ -10,7 +10,7 @@ import { AgencyProvider } from "@/components/providers/agency-provider";
 // statically prerendering pages during a Vercel build.
 export const dynamic = "force-dynamic";
 
-const inter = Inter({ 
+const inter = Inter({
   subsets: ["latin"],
   display: "swap",
   variable: "--font-inter",
@@ -19,6 +19,10 @@ const inter = Inter({
 export const metadata: Metadata = {
   title: "Hembox.io — Your website shouldn't be boring",
   description: "We build fast, beautiful sites that actually convert. No templates. No bloat. Just results.",
+  icons: {
+    icon: [{ url: "/favicon.svg", type: "image/svg+xml" }],
+    shortcut: [{ url: "/favicon.svg", type: "image/svg+xml" }],
+  },
 };
 
 export default function RootLayout({
