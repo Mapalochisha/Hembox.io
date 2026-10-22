@@ -101,7 +101,7 @@ test("state-changing sandbox methods refuse calls without the explicit OTE confi
   })
 
   await assert.rejects(
-    api.registerDomain({ domain: "example.com", years: 1 } as never),
+    api.registerDomain({ domain: "example.com", years: 1 }),
     /confirmSandboxOnly/,
   )
   assert.equal(callCount, 0)

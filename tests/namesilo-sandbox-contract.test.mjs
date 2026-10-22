@@ -22,7 +22,7 @@ test("sandbox URLs always target OTE and encode the API key", () => {
 })
 
 test("sandbox URL builder rejects arbitrary operations and reserved fields", () => {
-  assert.throws(() => buildNameSiloSandboxUrl("test", "notAnOperation" as never, {}), /Unsupported/)
+  assert.throws(() => buildNameSiloSandboxUrl("test", "notAnOperation", {}), /Unsupported/)
   assert.throws(() => buildNameSiloSandboxUrl("test", "getDomainInfo", { key: "override" }), /reserved/)
 })
 
