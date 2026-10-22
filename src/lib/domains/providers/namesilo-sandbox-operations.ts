@@ -1,7 +1,7 @@
 import "server-only"
 
-import { parseNameSiloAvailability } from "./namesilo-response"
-import { resolveNameSiloApiConfig } from "./namesilo-config"
+import { parseNameSiloAvailability } from "./namesilo-response.ts"
+import { resolveNameSiloApiConfig } from "./namesilo-config.ts"
 import {
   buildNameSiloSandboxUrl,
   normalizeNameSiloSandboxDomain,
@@ -9,14 +9,14 @@ import {
   validateNameSiloYears,
   NAMESILO_SANDBOX_API_BASE_URL,
   type NameSiloSandboxOperation,
-} from "./namesilo-sandbox-contract"
+} from "./namesilo-sandbox-contract.ts"
 import {
   createNotAttemptedOutcome,
   parseNameSiloMutationOutcome,
   parseNameSiloSandboxDomainInfo,
   type NameSiloMutationOutcome,
   type NameSiloSandboxDomainInfo,
-} from "./namesilo-operation-response"
+} from "./namesilo-operation-response.ts"
 
 const REQUEST_TIMEOUT_MS = 8_000
 const CONFIRM_SANDBOX_ONLY = "OTE_ONLY" as const

@@ -1,4 +1,4 @@
-import type { NameSiloSandboxOperation } from "./namesilo-sandbox-contract"
+import type { NameSiloSandboxOperation } from "./namesilo-sandbox-contract.ts"
 import { normalizeNameSiloSandboxDomain } from "./namesilo-sandbox-contract"
 
 type UnknownRecord = Record<string, unknown>
