@@ -137,6 +137,13 @@ test("domain info remains unknown on errors or mismatched domains", () => {
   assert.equal(authError.providerCode, 110)
   assert.match(authError.message, /API key/)
 
+  const unknownCode = parseNameSiloSandboxDomainInfo({
+    reply: { code: 114, detail: "A safe provider explanation" },
+  }, "example.com")
+  assert.equal(unknownCode.state, "unknown")
+  assert.equal(unknownCode.providerCode, 114)
+  assert.match(unknownCode.message, /A safe provider explanation/)
+
   const network = parseNameSiloSandboxDomainInfo(null, "example.com", false)
   assert.equal(network.state, "unknown")
   assert.equal(network.providerCode, null)

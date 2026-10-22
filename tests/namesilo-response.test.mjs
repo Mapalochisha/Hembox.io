@@ -67,3 +67,50 @@ test("malformed payloads leave all requested domains unknown", () => {
     assert.equal(result.get("example.com"), "unknown")
   }
 })
+
+
+test("accepts NameSilo batch responses with available records and unavailable string arrays", () => {
+  const result = parseNameSiloAvailability({
+    reply: {
+      code: 300,
+      detail: "success",
+      available: [
+        { domain: "EXAMPLE.COM", price: "9.99" },
+        { domain: "EXAMPLE.NET", price: "10.99" },
+      ],
+      unavailable: ["taken.com", "taken.net"],
+      invalid: ["bad..example.com"],
+    },
+  }, ["example.com", "example.net", "taken.com", "taken.net", "bad..example.com"])
+
+  assert.equal(result.get("example.com"), "available")
+  assert.equal(result.get("example.net"), "available")
+  assert.equal(result.get("taken.com"), "unavailable")
+  assert.equal(result.get("taken.net"), "unavailable")
+  assert.equal(result.get("bad..example.com"), "unknown")
+})
+
+test("accepts XML-to-JSON $t domain entries", () => {
+  const result = parseNameSiloAvailability({
+    reply: {
+      code: 300,
+      available: { domain: [{ "$t": "EXAMPLE.COM", price: "9.99" }] },
+      unavailable: { domain: { "$t": "taken.net" } },
+    },
+  }, ["example.com", "taken.net"])
+
+  assert.equal(result.get("example.com"), "available")
+  assert.equal(result.get("taken.net"), "unavailable")
+})
+
+test("conflicting available/unavailable buckets remain unknown", () => {
+  const result = parseNameSiloAvailability({
+    reply: {
+      code: 300,
+      available: { domain: "example.com" },
+      unavailable: ["example.com"],
+    },
+  }, ["example.com"])
+
+  assert.equal(result.get("example.com"), "unknown")
+})

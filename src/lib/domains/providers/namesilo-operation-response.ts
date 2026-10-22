@@ -54,6 +54,13 @@ function domainValue(value: unknown): string | null {
   return result ? result.toLowerCase() : null
 }
 
+function safeProviderDetail(value: unknown): string | null {
+  if (typeof value !== "string") return null
+  const compact = value.trim().split(/\\s+/).join(" ")
+    .replace(/\\b(api[_ -]?key|key)\\s*[:=]\\s*[^\\s,;]+/gi, "$1=[redacted]")
+  return compact ? compact.slice(0, 200) : null
+}
+
 function booleanValue(value: unknown): boolean | null {
   const normalized = textValue(value)?.toLowerCase()
   if (normalized === "1" || normalized === "true" || normalized === "yes") return true
@@ -192,11 +199,13 @@ export function parseNameSiloSandboxDomainInfo(
   const parsedCode = Number(reply.code)
   const providerCode = Number.isInteger(parsedCode) ? parsedCode : null
   if (providerCode !== 300) {
-    const message = providerCode === 200
+    const detail = safeProviderDetail(reply.detail)
+    const summary = providerCode === 200
       ? "NameSilo OTE reports that the domain is not active or does not belong to this sandbox account."
       : providerCode === 110
         ? "NameSilo OTE rejected the API key."
-        : "NameSilo OTE did not return a successful domain-info response."
+        : `NameSilo OTE returned response code ${providerCode ?? "unknown"}.`
+    const message = detail ? `${summary} Provider detail: ${detail}` : summary
     return unknownDomainInfo(domain, providerCode, message)
   }
 

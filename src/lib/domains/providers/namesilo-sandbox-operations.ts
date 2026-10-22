@@ -28,6 +28,31 @@ type ApiResult = {
   payload: unknown
 }
 
+type ProviderReplyDiagnostics = {
+  code: number | null
+  detail: string | null
+}
+
+function safeProviderDetail(value: unknown): string | null {
+  if (typeof value !== "string") return null
+  const compact = value.trim().split(/\\s+/).join(" ")
+    .replace(/\\b(api[_ -]?key|key)\\s*[:=]\\s*[^\\s,;]+/gi, "$1=[redacted]")
+  return compact ? compact.slice(0, 200) : null
+}
+
+function getProviderReplyDiagnostics(payload: unknown): ProviderReplyDiagnostics {
+  if (typeof payload !== "object" || payload === null || !("reply" in payload)) {
+    return { code: null, detail: null }
+  }
+  const reply = payload.reply
+  if (typeof reply !== "object" || reply === null) return { code: null, detail: null }
+  const rawCode = "code" in reply ? Number(reply.code) : Number.NaN
+  return {
+    code: Number.isInteger(rawCode) ? rawCode : null,
+    detail: "detail" in reply ? safeProviderDetail(reply.detail) : null,
+  }
+}
+
 type SandboxDependencies = {
   env?: Record<string, string | undefined>
   fetchImpl?: typeof fetch
@@ -41,7 +66,8 @@ export type NameSiloSandboxOperations = {
   checkAvailability(domains: string[]): Promise<Array<{
     domain: string
     availability: "available" | "unavailable" | "unknown"
-    providerCode?: number | null
+    providerCode: number | null
+    message: string
   }>>
   getDomainInfo(domain: string): Promise<NameSiloSandboxDomainInfo>
   registerDomain(input: MutatingConfirmation & {
@@ -120,20 +146,27 @@ export function createNameSiloSandboxOperations(dependencies: SandboxDependencie
     }
     const result = await call("checkRegisterAvailability", { domains: domains.join(",") })
     if (!result.transportSucceeded) {
-      return domains.map((domain) => ({ domain, availability: "unknown" as const, providerCode: null }))
+      return domains.map((domain) => ({
+        domain,
+        availability: "unknown" as const,
+        providerCode: null,
+        message: "NameSilo OTE availability request failed or timed out.",
+      }))
     }
 
     const parsed = parseNameSiloAvailability(result.payload, domains)
-    const payload = result.payload
-    const reply = typeof payload === "object" && payload !== null && "reply" in payload ? payload.reply : null
-    const rawCode = typeof reply === "object" && reply !== null && "code" in reply ? Number(reply.code) : Number.NaN
-    const providerCode = Number.isInteger(rawCode) ? rawCode : null
+    const diagnostics = getProviderReplyDiagnostics(result.payload)
 
-    return domains.map((domain) => ({
-      domain,
-      availability: parsed.get(domain) ?? "unknown" as const,
-      providerCode,
-    }))
+    return domains.map((domain) => {
+      const availability = parsed.get(domain) ?? "unknown"
+      const message = availability !== "unknown"
+        ? "Availability reported by NameSilo OTE. It is not a live-registry guarantee."
+        : diagnostics.code === 300
+          ? `NameSilo OTE returned code 300 but no recognized availability entry matched this domain.${diagnostics.detail ? ` Provider detail: ${diagnostics.detail}` : ""}`
+          : `NameSilo OTE returned response code ${diagnostics.code ?? "unknown"}.${diagnostics.detail ? ` Provider detail: ${diagnostics.detail}` : ""}`
+
+      return { domain, availability, providerCode: diagnostics.code, message }
+    })
   }
 
   async function registerDomain(input: Parameters<NameSiloSandboxOperations["registerDomain"]>[0]) {

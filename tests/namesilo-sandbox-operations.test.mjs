@@ -167,3 +167,51 @@ test("renewal will not call the transactional endpoint for an expired domain", a
   assert.equal(outcome.state, "not_attempted")
   assert.deepEqual(operations, ["/api/getDomainInfo"])
 })
+
+
+test("batch availability recognizes array-based NameSilo OTE responses", async () => {
+  const api = createNameSiloSandboxOperations({
+    env: env(),
+    fetchImpl: async () => response({
+      reply: {
+        code: 300,
+        detail: "success",
+        available: [{ domain: "example.com", price: "9.99" }],
+        unavailable: ["example.net"],
+      },
+    }),
+  })
+
+  const results = await api.checkAvailability(["example.com", "example.net"])
+  assert.equal(results[0].availability, "available")
+  assert.equal(results[0].providerCode, 300)
+  assert.match(results[0].message, /not a live-registry guarantee/)
+  assert.equal(results[1].availability, "unavailable")
+})
+
+test("batch availability reports a diagnostic when code 300 has no recognized domain bucket", async () => {
+  const api = createNameSiloSandboxOperations({
+    env: env(),
+    fetchImpl: async () => response({ reply: { code: 300, detail: "success" } }),
+  })
+
+  const results = await api.checkAvailability(["example.com"])
+  assert.equal(results[0].availability, "unknown")
+  assert.equal(results[0].providerCode, 300)
+  assert.match(results[0].message, /no recognized availability entry/)
+})
+
+test("domain-info keeps code 114 unclassified but preserves its provider detail", async () => {
+  const api = createNameSiloSandboxOperations({
+    env: env(),
+    fetchImpl: async () => response({
+      reply: { code: 114, detail: "Sample domain is not present in this test account" },
+    }),
+  })
+
+  const info = await api.getDomainInfo("example.com")
+  assert.equal(info.state, "unknown")
+  assert.equal(info.providerCode, 114)
+  assert.match(info.message, /response code 114/)
+  assert.match(info.message, /not present in this test account/)
+})
