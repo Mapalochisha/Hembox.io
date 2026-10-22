@@ -1,5 +1,5 @@
 import type { NameSiloSandboxOperation } from "./namesilo-sandbox-contract.ts"
-import { normalizeNameSiloSandboxDomain } from "./namesilo-sandbox-contract"
+import { normalizeNameSiloSandboxDomain } from "./namesilo-sandbox-contract.ts"
 
 type UnknownRecord = Record<string, unknown>
 
