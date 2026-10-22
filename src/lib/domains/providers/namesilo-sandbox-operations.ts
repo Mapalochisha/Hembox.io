@@ -23,10 +23,15 @@ import {
 const REQUEST_TIMEOUT_MS = 8_000
 const CONFIRM_SANDBOX_ONLY = "OTE_ONLY" as const
 
-type ApiResult = {
-  transportSucceeded: boolean
-  payload: unknown
-}
+type ApiFailure =
+  | { kind: "http"; status: number }
+  | { kind: "timeout" }
+  | { kind: "invalid_json" }
+  | { kind: "network" }
+
+type ApiResult =
+  | { transportSucceeded: true; payload: unknown; failure: null }
+  | { transportSucceeded: false; payload: null; failure: ApiFailure }
 
 type ProviderReplyDiagnostics = {
   code: number | null
@@ -50,6 +55,23 @@ function getProviderReplyDiagnostics(payload: unknown): ProviderReplyDiagnostics
   return {
     code: Number.isInteger(rawCode) ? rawCode : null,
     detail: "detail" in reply ? safeProviderDetail(reply.detail) : null,
+  }
+}
+
+function describeTransportFailure(
+  operation: "availability" | "domain-info",
+  failure: ApiFailure,
+): string {
+  const request = `NameSilo OTE ${operation} request`
+  switch (failure.kind) {
+    case "http":
+      return `${request} returned HTTP ${failure.status}.`
+    case "timeout":
+      return `${request} timed out.`
+    case "invalid_json":
+      return `${request} returned invalid JSON.`
+    case "network":
+      return `${request} failed at the network layer.`
   }
 }
 
@@ -124,19 +146,51 @@ export function createNameSiloSandboxOperations(dependencies: SandboxDependencie
         signal: AbortSignal.timeout(REQUEST_TIMEOUT_MS),
         headers: { Accept: "application/json" },
       })
-      if (!response.ok) return { transportSucceeded: false, payload: null }
-      return { transportSucceeded: true, payload: await response.json() as unknown }
-    } catch {
+      if (!response.ok) {
+        return {
+          transportSucceeded: false,
+          payload: null,
+          failure: { kind: "http", status: response.status },
+        }
+      }
+
+      try {
+        return {
+          transportSucceeded: true,
+          payload: await response.json() as unknown,
+          failure: null,
+        }
+      } catch {
+        return {
+          transportSucceeded: false,
+          payload: null,
+          failure: { kind: "invalid_json" },
+        }
+      }
+    } catch (error) {
       // For mutations, a timeout/network failure is ambiguous: the registrar may
-      // have processed the request before the response was lost.
-      return { transportSucceeded: false, payload: null }
+      // have processed the request before the response was lost. Never expose
+      // exception text because it may contain a URL or request details.
+      const name = error instanceof Error ? error.name : ""
+      return {
+        transportSucceeded: false,
+        payload: null,
+        failure: name === "TimeoutError" || name === "AbortError"
+          ? { kind: "timeout" }
+          : { kind: "network" },
+      }
     }
   }
 
   async function domainInfo(domainInput: string): Promise<NameSiloSandboxDomainInfo> {
     const domain = normalizeNameSiloSandboxDomain(domainInput)
     const result = await call("getDomainInfo", { domain })
-    return parseNameSiloSandboxDomainInfo(result.payload, domain, result.transportSucceeded)
+    return parseNameSiloSandboxDomainInfo(
+      result.payload,
+      domain,
+      result.transportSucceeded,
+      result.transportSucceeded ? undefined : describeTransportFailure("domain-info", result.failure),
+    )
   }
 
   async function checkAvailability(domainsInput: string[]) {
@@ -150,7 +204,7 @@ export function createNameSiloSandboxOperations(dependencies: SandboxDependencie
         domain,
         availability: "unknown" as const,
         providerCode: null,
-        message: "NameSilo OTE availability request failed or timed out.",
+        message: describeTransportFailure("availability", result.failure),
       }))
     }
 
