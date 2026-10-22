@@ -186,10 +186,15 @@ export function parseNameSiloSandboxDomainInfo(
   payload: unknown,
   requestedDomain: string,
   transportSucceeded = true,
+  transportFailureMessage?: string,
 ): NameSiloSandboxDomainInfo {
   const domain = normalizeNameSiloSandboxDomain(requestedDomain)
   if (!transportSucceeded) {
-    return unknownDomainInfo(domain, null, "NameSilo OTE domain-info request failed or timed out.")
+    return unknownDomainInfo(
+      domain,
+      null,
+      transportFailureMessage ?? "NameSilo OTE domain-info request failed or timed out.",
+    )
   }
   if (!isRecord(payload) || !isRecord(payload.reply)) {
     return unknownDomainInfo(domain, null, "NameSilo OTE returned an unrecognized domain-info response.")
