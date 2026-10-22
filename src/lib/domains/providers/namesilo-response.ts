@@ -29,9 +29,11 @@ function collectDomains(value: unknown): string[] {
 }
 
 function collectBucket(value: unknown): string[] {
-  // Accept nested { domain: ... }, array-of-records, and plain-string arrays.
+  // Accept only recognized bucket containers: nested { domain: ... } or
+  // arrays of domain records/strings. A bare scalar bucket is malformed.
+  if (Array.isArray(value)) return collectDomains(value)
   if (isRecord(value) && "domain" in value) return collectDomains(value.domain)
-  return collectDomains(value)
+  return []
 }
 
 /**
