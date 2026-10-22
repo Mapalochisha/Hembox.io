@@ -115,14 +115,25 @@ export function parseNameSiloMutationOutcome(
   const providerOrderAmount = amountValue && /^\d+(?:\.\d+)?$/.test(amountValue) ? amountValue : null
   const returnedDomain = domainValue(reply.domain)
 
-  if (providerCode === 280) {
+  // Recognized NameSilo client/account errors are definite rejections. An
+  // unrecognized code remains ambiguous so callers cannot blindly retry.
+  const definiteRejection =
+    providerCode === 108 || // missing required parameters
+    providerCode === 110 || // invalid API key
+    providerCode === 111 || // API key IP restriction
+    providerCode === 200 || // domain not active or not in this account
+    (operation === "registerDomain" && providerCode === 261) // domain unavailable to register
+
+  if (definiteRejection) {
     return {
       ...base,
       providerCode,
       providerOrderAmount,
       state: "rejected",
       reconciliationRequired: false,
-      message: "NameSilo rejected the sandbox request. Check the sandbox API key and account permissions.",
+      message: providerCode === 110 || providerCode === 111
+        ? "NameSilo rejected the sandbox request because the API key or source-IP permissions need checking."
+        : "NameSilo rejected the sandbox request. Check the domain state, parameters and account permissions.",
     }
   }
 
@@ -170,11 +181,15 @@ export function parseNameSiloSandboxDomainInfo(
   if (Number(reply.code) !== 300) return unknownDomainInfo(domain)
 
   const nested = isRecord(reply.domain) ? reply.domain : reply
+  // getDomainInfo's documented reply normally identifies the queried domain
+  // through the request and may omit a repeated "domain" property in JSON.
+  // If the provider does return an identity, reject a mismatch; don't require
+  // an echo field that the API contract doesn't promise.
   const returnedDomain = domainValue(isRecord(reply.domain)
     ? (reply.domain.domain ?? reply.domain.name ?? reply.domain["#text"])
     : reply.domain)
 
-  if (returnedDomain !== domain) return unknownDomainInfo(domain)
+  if (returnedDomain && returnedDomain !== domain) return unknownDomainInfo(domain)
 
   const nameServerContainer = nested.nameservers ?? nested.nameserver
   const nameServerValue = isRecord(nameServerContainer) && "nameserver" in nameServerContainer

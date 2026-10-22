@@ -79,7 +79,7 @@ test("transfer response code 302 is treated as successful-with-warning", () => {
 
 test("known NameSilo authentication response is rejected without exposing provider detail", () => {
   const result = parseNameSiloMutationOutcome({
-    reply: { code: 280, detail: "API key not valid" },
+    reply: { code: 110, detail: "Invalid API key" },
   }, "registerDomain", "example.com")
   assert.equal(result.state, "rejected")
   assert.equal(result.message.includes("API key not valid"), false)
@@ -96,26 +96,25 @@ test("network failures, unknown codes, malformed payloads and mismatched domains
   assert.ok(results.every((result) => result.reconciliationRequired))
 })
 
-test("getDomainInfo parser extracts only confirmed, matching domain fields", () => {
+test("getDomainInfo parser accepts documented reply shape without an echoed domain field", () => {
   const result = parseNameSiloSandboxDomainInfo({
     reply: {
       code: 300,
-      domain: {
-        domain: "EXAMPLE.COM",
-        status: "Active",
-        created: "2026-10-22",
-        expires: "2027-10-22",
-        locked: "false",
-        auto_renew: "0",
-        nameservers: { nameserver: [{ "#text": "NS1.NAMESILO.COM" }, { "#text": "NS2.NAMESILO.COM" }] },
-      },
+      detail: "success",
+      status: "Active",
+      created: "2026-10-22",
+      expires: "2027-10-22",
+      locked: "Yes",
+      auto_renew: "No",
+      nameservers: { nameserver: [{ "#text": "NS1.NAMESILO.COM" }, { "#text": "NS2.NAMESILO.COM" }] },
     },
   }, "example.com")
   assert.equal(result.state, "found")
+  assert.equal(result.domain, "example.com")
   assert.equal(result.providerStatus, "Active")
   assert.equal(result.createdAt, "2026-10-22")
   assert.equal(result.expiresAt, "2027-10-22")
-  assert.equal(result.locked, false)
+  assert.equal(result.locked, true)
   assert.equal(result.autoRenew, false)
   assert.deepEqual(result.nameservers, ["ns1.namesilo.com", "ns2.namesilo.com"])
 })

@@ -1,4 +1,6 @@
-import "server-only"
+// Node-only sandbox utility: kept out of customer-facing routes. The node:buffer
+// import also prevents this module from being treated as browser-compatible.
+import { Buffer } from "node:buffer"
 
 import { parseNameSiloAvailability } from "./namesilo-response.ts"
 import { resolveNameSiloApiConfig } from "./namesilo-config.ts"
@@ -174,6 +176,16 @@ export function createNameSiloSandboxOperations(dependencies: SandboxDependencie
         "Renewal was not attempted because OTE domain information could not confirm that the domain is in the sandbox account.",
       )
     }
+    // NameSilo's renewDomain can restore a domain during its restoration period.
+    // This tool only allows renewal for an active sandbox domain, avoiding
+    // accidental restoration charges. Restoration needs a separate explicit flow.
+    if (existing.providerStatus?.toLowerCase() !== "active") {
+      return createNotAttemptedOutcome(
+        "renewDomain",
+        domain,
+        "Renewal was not attempted because the sandbox domain is not confirmed active. Expired/processing domains require separate review.",
+      )
+    }
 
     const result = await call("renewDomain", { domain, years: String(years) })
     return parseNameSiloMutationOutcome(result.payload, "renewDomain", domain, result.transportSucceeded)
@@ -205,6 +217,13 @@ export function createNameSiloSandboxOperations(dependencies: SandboxDependencie
         "changeNameServers",
         domain,
         "Nameserver change was not attempted because OTE domain information could not confirm that the domain is in the sandbox account.",
+      )
+    }
+    if (existing.providerStatus?.toLowerCase() !== "active") {
+      return createNotAttemptedOutcome(
+        "changeNameServers",
+        domain,
+        "Nameserver change was not attempted because the sandbox domain is not confirmed active.",
       )
     }
 

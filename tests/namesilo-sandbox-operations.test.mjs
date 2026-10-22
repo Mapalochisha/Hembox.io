@@ -130,3 +130,39 @@ test("mutation network failures stay ambiguous and never log or retry", async ()
   assert.equal(result.reconciliationRequired, true)
   assert.equal(callCount, 2)
 })
+
+test("getDomainInfo may omit the queried domain in its documented successful reply", async () => {
+  const api = createNameSiloSandboxOperations({
+    env: env(),
+    fetchImpl: async (url) => {
+      const parsed = new URL(String(url))
+      assert.equal(parsed.pathname, "/api/getDomainInfo")
+      return response({ reply: { code: 300, detail: "success", status: "Active", created: "2026-10-22", expires: "2027-10-22" } })
+    },
+  })
+
+  const info = await api.getDomainInfo("example.com")
+  assert.equal(info.state, "found")
+  assert.equal(info.domain, "example.com")
+  assert.equal(info.providerStatus, "Active")
+})
+
+test("renewal will not call the transactional endpoint for an expired domain", async () => {
+  const operations = []
+  const api = createNameSiloSandboxOperations({
+    env: env(),
+    fetchImpl: async (url) => {
+      const parsed = new URL(String(url))
+      operations.push(parsed.pathname)
+      return response({ reply: { code: 300, detail: "success", status: "Expired", created: "2024-10-22", expires: "2025-10-22" } })
+    },
+  })
+
+  const outcome = await api.renewDomain({
+    confirmSandboxOnly: "OTE_ONLY",
+    domain: "example.com",
+    years: 1,
+  })
+  assert.equal(outcome.state, "not_attempted")
+  assert.deepEqual(operations, ["/api/getDomainInfo"])
+})
