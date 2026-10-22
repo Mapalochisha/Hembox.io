@@ -215,3 +215,53 @@ test("domain-info keeps code 114 unclassified but preserves its provider detail"
   assert.match(info.message, /response code 114/)
   assert.match(info.message, /not present in this test account/)
 })
+
+
+test("domain-info reports HTTP status for non-successful OTE responses without exposing credentials", async () => {
+  const api = createNameSiloSandboxOperations({
+    env: env(),
+    fetchImpl: async () => response(null, 403),
+  })
+
+  const info = await api.getDomainInfo("namesilo.com")
+  assert.equal(info.state, "unknown")
+  assert.equal(info.providerCode, null)
+  assert.match(info.message, /HTTP 403/)
+  assert.doesNotMatch(info.message, /dummy-sandbox-key/)
+})
+
+test("domain-info distinguishes OTE timeouts from network failures", async () => {
+  const timedOut = createNameSiloSandboxOperations({
+    env: env(),
+    fetchImpl: async () => {
+      const error = new Error("simulated timeout")
+      error.name = "TimeoutError"
+      throw error
+    },
+  })
+  const networkFailed = createNameSiloSandboxOperations({
+    env: env(),
+    fetchImpl: async () => { throw new TypeError("simulated network failure") },
+  })
+
+  const timeoutInfo = await timedOut.getDomainInfo("namesilo.com")
+  const networkInfo = await networkFailed.getDomainInfo("namesilo.com")
+  assert.match(timeoutInfo.message, /timed out/)
+  assert.match(networkInfo.message, /network layer/)
+})
+
+test("domain-info identifies invalid JSON while keeping response details private", async () => {
+  const api = createNameSiloSandboxOperations({
+    env: env(),
+    fetchImpl: async () => ({
+      ok: true,
+      status: 200,
+      json: async () => { throw new SyntaxError("private response contents") },
+    }),
+  })
+
+  const info = await api.getDomainInfo("namesilo.com")
+  assert.equal(info.state, "unknown")
+  assert.match(info.message, /invalid JSON/)
+  assert.doesNotMatch(info.message, /private response contents/)
+})
