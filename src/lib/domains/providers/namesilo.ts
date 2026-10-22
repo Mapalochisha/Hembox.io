@@ -1,54 +1,84 @@
 import "server-only"
 
 import { parseNameSiloAvailability } from "./namesilo-response"
+import { resolveNameSiloApiConfig, type NameSiloEnvironment } from "./namesilo-config"
 import type { DomainAvailabilityResult, DomainProvider } from "../types"
 
-const API_BASE_URL = "https://www.namesilo.com/api"
 const REQUEST_TIMEOUT_MS = 8_000
 
-function getApiKey(): string {
-  const key = process.env.NAMESILO_API_KEY?.trim()
-  if (!key) throw new Error("NameSilo API credentials are not configured.")
-  return key
-}
-
 /**
- * Read-only NameSilo adapter. This adapter only checks registration
- * availability; it cannot register, renew, transfer or change DNS settings.
- * NameSilo's documented API requires GET requests with the key in the query.
- * Never log request URLs or provider response bodies because they can contain
- * sensitive account information.
+ * Read-only NameSilo adapter. Endpoint and key are selected together by the
+ * explicit environment. This adapter only checks availability; it cannot
+ * register, renew, transfer or change DNS settings.
+ *
+ * NameSilo's API requires the key in the query string. Never log request URLs
+ * or provider response bodies because they can contain credentials/account data.
  */
-export const nameSiloProvider: DomainProvider = {
-  id: "namesilo",
-  environment: "live",
-  capabilities: {
-    availabilitySearch: true,
-    registration: false,
-    renewal: false,
-    transfers: false,
-    dnsManagement: false,
-    privacyProtection: false,
-  },
+export function createNameSiloProvider(environment: NameSiloEnvironment): DomainProvider {
+  return {
+    id: "namesilo",
+    environment,
+    capabilities: {
+      availabilitySearch: true,
+      registration: false,
+      renewal: false,
+      transfers: false,
+      dnsManagement: false,
+      privacyProtection: false,
+    },
 
-  async checkAvailability(domains: string[]): Promise<DomainAvailabilityResult[]> {
-    const apiKey = getApiKey()
-    const checkedAt = new Date().toISOString()
-    const url = new URL(`${API_BASE_URL}/checkRegisterAvailability`)
-    url.searchParams.set("version", "1")
-    url.searchParams.set("type", "json")
-    url.searchParams.set("key", apiKey)
-    url.searchParams.set("domains", domains.join(","))
+    async checkAvailability(domains: string[]): Promise<DomainAvailabilityResult[]> {
+      const { apiBaseUrl, apiKey } = resolveNameSiloApiConfig(environment)
+      const checkedAt = new Date().toISOString()
+      const url = new URL(`${apiBaseUrl}/checkRegisterAvailability`)
+      url.searchParams.set("version", "1")
+      url.searchParams.set("type", "json")
+      url.searchParams.set("key", apiKey)
+      url.searchParams.set("domains", domains.join(","))
 
-    try {
-      const response = await fetch(url, {
-        method: "GET",
-        cache: "no-store",
-        signal: AbortSignal.timeout(REQUEST_TIMEOUT_MS),
-        headers: { Accept: "application/json" },
-      })
+      try {
+        const response = await fetch(url, {
+          method: "GET",
+          cache: "no-store",
+          signal: AbortSignal.timeout(REQUEST_TIMEOUT_MS),
+          headers: { Accept: "application/json" },
+        })
 
-      if (!response.ok) {
+        if (!response.ok) {
+          const label = environment === "test" ? "NameSilo sandbox" : "NameSilo"
+          return domains.map((domain) => ({
+            domain,
+            availability: "unknown",
+            registrationPrice: null,
+            renewalPrice: null,
+            checkedAt,
+            source: "namesilo",
+            message: response.status === 401 || response.status === 403
+              ? `${label} authentication or API permissions need checking.`
+              : `${label} could not confirm availability.`,
+          }))
+        }
+
+        const payload: unknown = await response.json()
+        const availability = parseNameSiloAvailability(payload, domains)
+        const label = environment === "test" ? "NameSilo sandbox" : "NameSilo"
+
+        return domains.map((domain) => {
+          const state = availability.get(domain.toLowerCase()) ?? "unknown"
+          return {
+            domain,
+            availability: state,
+            registrationPrice: null,
+            renewalPrice: null,
+            checkedAt,
+            source: "namesilo" as const,
+            message: state === "unknown"
+              ? `${label} did not return a recognized result for this domain; availability remains unconfirmed.`
+              : `Availability reported by ${label}. Final availability and price must be rechecked before purchase.`,
+          }
+        })
+      } catch {
+        const label = environment === "test" ? "NameSilo sandbox" : "NameSilo"
         return domains.map((domain) => ({
           domain,
           availability: "unknown",
@@ -56,39 +86,12 @@ export const nameSiloProvider: DomainProvider = {
           renewalPrice: null,
           checkedAt,
           source: "namesilo",
-          message: response.status === 401 || response.status === 403
-            ? "NameSilo authentication or API permissions need checking."
-            : "NameSilo could not confirm availability.",
+          message: `${label} request failed or timed out; availability remains unknown.`,
         }))
       }
-
-      const payload: unknown = await response.json()
-      const availability = parseNameSiloAvailability(payload, domains)
-
-      return domains.map((domain) => {
-        const state = availability.get(domain.toLowerCase()) ?? "unknown"
-        return {
-          domain,
-          availability: state,
-          registrationPrice: null,
-          renewalPrice: null,
-          checkedAt,
-          source: "namesilo" as const,
-          message: state === "unknown"
-            ? "NameSilo did not return a recognized result for this domain; availability remains unconfirmed."
-            : "Availability reported by NameSilo. Final availability and price must be rechecked before purchase.",
-        }
-      })
-    } catch {
-      return domains.map((domain) => ({
-        domain,
-        availability: "unknown",
-        registrationPrice: null,
-        renewalPrice: null,
-        checkedAt,
-        source: "namesilo",
-        message: "The NameSilo request failed or timed out; availability remains unknown.",
-      }))
-    }
-  },
+    },
+  }
 }
+
+export const nameSiloProvider = createNameSiloProvider("live")
+export const nameSiloSandboxProvider = createNameSiloProvider("test")
