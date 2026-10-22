@@ -62,3 +62,27 @@ Transfers are implemented in the OTE operations module but not exposed in this C
 - If a mutation times out or returns an unrecognized result, the tool marks the result ambiguous and requires read-only provider reconciliation before any retry. Never repeat a mutation blindly.
 - NameSilo documents registration/transfer result codes 301/302 as successful operations with fallback behavior; the adapter treats these as success-with-warning.
 - No API key or raw provider response body is printed by the client.
+
+
+## Vercel Preview diagnostics (preferred to local npm)
+
+For testing the actual OTE connection, use the protected Preview deployment with `vercel curl`. You do not need to run npm locally.
+
+After the feature branch's latest Preview deployment finishes, test batch availability:
+
+```bash
+vercel curl "https://YOUR-PREVIEW-URL/api/domains/search" -- \
+  --request POST \
+  --header "Content-Type: application/json" \
+  --data '{"domains":["example.com","example.net"]}'
+```
+
+The response should contain one result per domain. A provider code of 300 means NameSilo accepted the availability request, but the parser still needs a recognized per-domain entry to classify availability.
+
+To inspect a sandbox `getDomainInfo` response, call the read-only Preview endpoint:
+
+```bash
+vercel curl "https://YOUR-PREVIEW-URL/api/domains/provider-diagnostic?domain=example.com"
+```
+
+This endpoint returns normalized fields and safe provider messages only. It exists only when `VERCEL_ENV=preview` and `DOMAIN_PROVIDER_MODE=namesilo-sandbox`, relies on Vercel Preview deployment protection, and has no mutation operations. Production and other provider modes return 404.

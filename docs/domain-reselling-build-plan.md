@@ -516,3 +516,13 @@ When resuming this project:
 - Updated mutation classification for NameSilo's documented error codes and restricted renewal and nameserver changes to domains OTE explicitly reports as active. NameSilo warns `renewDomain` can restore a domain during its restoration period; this tool blocks expired/processing domains instead of risking an unexpected restoration charge.
 - The CLI and client remain separate from public/customer routes. No registration, renewal, transfer, nameserver change, payment, or sandbox-fund spend has been performed.
 - **Verification:** CLI commit `f699afc54111261bd09e023b3fcaad601b490ee7` passed [CI](https://github.com/Mapalochisha/Hembox.io/actions/runs/39833284375) and [Vercel Preview](https://vercel.com/mapalochishas-projects/hembox-io/BiV2FWXVdSKBHmYzH8qqMNAR8eST). Response-diagnostics commit `dc7bcd5a588c20bee99ad2538c1a7331f9acd70e` passed [CI](https://github.com/Mapalochisha/Hembox.io/actions/runs/39833837149) and [Vercel Preview](https://vercel.com/mapalochishas-projects/hembox-io/72YgjAYFNv4yR1b9TaarKS4t7wXU). Both runs passed lint/type-check, schema integration, and production build. No OTE mutation was performed.
+
+
+## 2026-10-22 — Vercel-first OTE diagnostics and batch parser fix
+
+- **Batch response issue:** the OTE CLI returned code 300 for a request covering `example.com` and `example.net`, but classified both as `unknown`. The parser only handled a nested `{ domain: ... }` bucket. It now also supports arrays of domain records, plain string arrays, and the `$t` / `#text` XML-to-JSON forms.
+- **Conservative classification:** explicit invalid names and domains present in both available/unavailable buckets remain `unknown`. A provider code of 300 alone is insufficient to claim availability.
+- **Response diagnostics:** preserve sanitized, bounded provider `detail` text with unknown response codes (including 114), rather than guessing their meaning.
+- **Vercel-first test path:** added `GET /api/domains/provider-diagnostic?domain=...`, which performs only a read-only NameSilo OTE domain-info lookup. It is gated to Vercel Preview with `DOMAIN_PROVIDER_MODE=namesilo-sandbox`, requires Preview deployment protection, and returns normalized fields only. It cannot run in production or perform state-changing operations.
+- **Safety:** no production settings changed, no API key committed, no domain registered or modified, and no sandbox funds spent.
+- **Verification:** GitHub Actions and Vercel Preview are pending for this change. Run the batch check via `vercel curl` only after both have passed.

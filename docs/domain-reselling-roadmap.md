@@ -153,3 +153,8 @@ The admin recovery queue now surfaces recent webhook ledger events linked to the
 ## 2026-10-22 — Local sandbox CLI
 
 A local `npm run namesilo:ote -- ...` CLI now supports OTE domain-info and availability checks, plus guarded registration, renewal and nameserver changes for disposable test domains. It reads the sandbox key from ignored `.env.local`, never accepts a live endpoint override, and does not expose transfer authorization codes through the CLI. See [NameSilo OTE sandbox testing](./namesilo-sandbox-testing.md). No state-changing operation has been performed.
+
+
+## 2026-10-22 — Vercel-first NameSilo diagnostics
+
+Batch response parsing accepts NameSilo's nested, array and XML-to-JSON availability forms while failing conservatively on missing/conflicting entries. A read-only `GET /api/domains/provider-diagnostic?domain=...` endpoint is available only on a protected Vercel Preview configured with `namesilo-sandbox`. It returns normalized domain-info results and safe provider detail, and has no mutation capabilities. Use `vercel curl` for remote tests rather than requiring local npm setup.

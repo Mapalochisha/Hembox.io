@@ -56,8 +56,8 @@ function domainValue(value: unknown): string | null {
 
 function safeProviderDetail(value: unknown): string | null {
   if (typeof value !== "string") return null
-  const compact = value.trim().split(/\\s+/).join(" ")
-    .replace(/\\b(api[_ -]?key|key)\\s*[:=]\\s*[^\\s,;]+/gi, "$1=[redacted]")
+  const compact = value.trim().split(/\s+/).join(" ")
+    .replace(/\b(api[_ -]?key|key)\s*[:=]\s*[^\s,;]+/gi, "$1=[redacted]")
   return compact ? compact.slice(0, 200) : null
 }
 
