@@ -111,6 +111,8 @@ test("getDomainInfo parser accepts documented reply shape without an echoed doma
   }, "example.com")
   assert.equal(result.state, "found")
   assert.equal(result.domain, "example.com")
+  assert.equal(result.providerCode, 300)
+  assert.match(result.message, /returned domain information/)
   assert.equal(result.providerStatus, "Active")
   assert.equal(result.createdAt, "2026-10-22")
   assert.equal(result.expiresAt, "2027-10-22")
@@ -120,7 +122,23 @@ test("getDomainInfo parser accepts documented reply shape without an echoed doma
 })
 
 test("domain info remains unknown on errors or mismatched domains", () => {
-  assert.equal(parseNameSiloSandboxDomainInfo({ reply: { code: 300, domain: { domain: "other.net" } } }, "example.com").state, "unknown")
-  assert.equal(parseNameSiloSandboxDomainInfo({ reply: { code: 280 } }, "example.com").state, "unknown")
-  assert.equal(parseNameSiloSandboxDomainInfo(null, "example.com", false).state, "unknown")
+  const mismatch = parseNameSiloSandboxDomainInfo({ reply: { code: 300, domain: { domain: "other.net" } } }, "example.com")
+  assert.equal(mismatch.state, "unknown")
+  assert.equal(mismatch.providerCode, 300)
+  assert.match(mismatch.message, /different domain/)
+
+  const notOwned = parseNameSiloSandboxDomainInfo({ reply: { code: 200, detail: "Domain does not belong to this user" } }, "example.com")
+  assert.equal(notOwned.state, "unknown")
+  assert.equal(notOwned.providerCode, 200)
+  assert.match(notOwned.message, /does not belong/)
+
+  const authError = parseNameSiloSandboxDomainInfo({ reply: { code: 110, detail: "Invalid API key" } }, "example.com")
+  assert.equal(authError.state, "unknown")
+  assert.equal(authError.providerCode, 110)
+  assert.match(authError.message, /API key/)
+
+  const network = parseNameSiloSandboxDomainInfo(null, "example.com", false)
+  assert.equal(network.state, "unknown")
+  assert.equal(network.providerCode, null)
+  assert.match(network.message, /failed or timed out/)
 })

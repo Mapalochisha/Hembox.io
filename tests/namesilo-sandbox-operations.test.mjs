@@ -144,6 +144,7 @@ test("getDomainInfo may omit the queried domain in its documented successful rep
   const info = await api.getDomainInfo("example.com")
   assert.equal(info.state, "found")
   assert.equal(info.domain, "example.com")
+  assert.equal(info.providerCode, 300)
   assert.equal(info.providerStatus, "Active")
 })
 

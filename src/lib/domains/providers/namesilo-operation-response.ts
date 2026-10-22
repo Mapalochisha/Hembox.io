@@ -23,6 +23,8 @@ export type NameSiloMutationOutcome = {
 export type NameSiloSandboxDomainInfo = {
   state: "found" | "unknown"
   domain: string
+  providerCode: number | null
+  message: string
   providerStatus: string | null
   createdAt: string | null
   expiresAt: string | null
@@ -64,10 +66,16 @@ function strings(value: unknown): string[] {
   return values.map(textValue).filter((item): item is string => Boolean(item))
 }
 
-function unknownDomainInfo(domain: string): NameSiloSandboxDomainInfo {
+function unknownDomainInfo(
+  domain: string,
+  providerCode: number | null = null,
+  message = "NameSilo OTE did not confirm the domain information.",
+): NameSiloSandboxDomainInfo {
   return {
     state: "unknown",
     domain,
+    providerCode,
+    message,
     providerStatus: null,
     createdAt: null,
     expiresAt: null,
@@ -173,12 +181,24 @@ export function parseNameSiloSandboxDomainInfo(
   transportSucceeded = true,
 ): NameSiloSandboxDomainInfo {
   const domain = normalizeNameSiloSandboxDomain(requestedDomain)
-  if (!transportSucceeded || !isRecord(payload) || !isRecord(payload.reply)) {
-    return unknownDomainInfo(domain)
+  if (!transportSucceeded) {
+    return unknownDomainInfo(domain, null, "NameSilo OTE domain-info request failed or timed out.")
+  }
+  if (!isRecord(payload) || !isRecord(payload.reply)) {
+    return unknownDomainInfo(domain, null, "NameSilo OTE returned an unrecognized domain-info response.")
   }
 
   const reply = payload.reply
-  if (Number(reply.code) !== 300) return unknownDomainInfo(domain)
+  const parsedCode = Number(reply.code)
+  const providerCode = Number.isInteger(parsedCode) ? parsedCode : null
+  if (providerCode !== 300) {
+    const message = providerCode === 200
+      ? "NameSilo OTE reports that the domain is not active or does not belong to this sandbox account."
+      : providerCode === 110
+        ? "NameSilo OTE rejected the API key."
+        : "NameSilo OTE did not return a successful domain-info response."
+    return unknownDomainInfo(domain, providerCode, message)
+  }
 
   const nested = isRecord(reply.domain) ? reply.domain : reply
   // getDomainInfo's documented reply normally identifies the queried domain
@@ -189,7 +209,9 @@ export function parseNameSiloSandboxDomainInfo(
     ? (reply.domain.domain ?? reply.domain.name ?? reply.domain["#text"])
     : reply.domain)
 
-  if (returnedDomain && returnedDomain !== domain) return unknownDomainInfo(domain)
+  if (returnedDomain && returnedDomain !== domain) {
+    return unknownDomainInfo(domain, providerCode, "NameSilo OTE returned information for a different domain.")
+  }
 
   const nameServerContainer = nested.nameservers ?? nested.nameserver
   const nameServerValue = isRecord(nameServerContainer) && "nameserver" in nameServerContainer
@@ -208,6 +230,8 @@ export function parseNameSiloSandboxDomainInfo(
   return {
     state: "found",
     domain,
+    providerCode,
+    message: "NameSilo OTE returned domain information for the requested domain.",
     providerStatus: readFirst(["status", "domain_status"]),
     createdAt: readFirst(["created", "create_date", "created_date", "registration_date"]),
     expiresAt: readFirst(["expires", "expiration", "expires_date", "expiration_date"]),

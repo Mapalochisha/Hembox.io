@@ -28,7 +28,7 @@ Check availability for one or more sandbox test names:
 npm run namesilo:ote -- availability example.com example.net
 ```
 
-A not-found/not-owned domain may return `state: "unknown"` from the domain-info command. A `checkRegisterAvailability` result of `unavailable` only describes the sandbox registry.
+A not-found/not-owned domain may return `state: "unknown"` and a provider code/message from the domain-info command; code 200 means NameSilo did not confirm that the domain is active or owned by the sandbox account. A `checkRegisterAvailability` result of `unavailable` only describes the sandbox registry.
 
 ## Mutating sandbox operations
 
