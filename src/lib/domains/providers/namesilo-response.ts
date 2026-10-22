@@ -44,8 +44,11 @@ export function parseNameSiloAvailability(
   requestedDomains: string[],
 ): Map<string, DomainAvailability> {
   const result = new Map<string, DomainAvailability>()
-  const requested = new Set(requestedDomains.map((domain) => domain.trim().toLowerCase()))
-  for (const domain of requested) result.set(domain, "unknown")
+  const requestedDomainsNormalized = Array.from(new Set(
+    requestedDomains.map((domain) => domain.trim().toLowerCase()),
+  ))
+  const requested = new Set(requestedDomainsNormalized)
+  for (const domain of requestedDomainsNormalized) result.set(domain, "unknown")
 
   if (!isRecord(payload) || !isRecord(payload.reply)) return result
   const reply = payload.reply
@@ -55,7 +58,7 @@ export function parseNameSiloAvailability(
   const unavailable = new Set(collectBucket(reply.unavailable))
   const invalid = new Set(collectBucket(reply.invalid))
 
-  for (const domain of requested) {
+  for (const domain of requestedDomainsNormalized) {
     const isAvailable = available.has(domain)
     const isUnavailable = unavailable.has(domain)
     if (invalid.has(domain) || (isAvailable && isUnavailable)) {
