@@ -12,6 +12,8 @@ function usage() {
   console.error(`NameSilo OTE sandbox tools (never targets production)
 
 Usage:
+  npm run namesilo:ote -- account
+  npm run namesilo:ote -- list
   npm run namesilo:ote -- info <domain.com|domain.net>
   npm run namesilo:ote -- availability <domain.com|domain.net> [another-domain.net ...]
   npm run namesilo:ote -- register <domain.com|domain.net> <years> --confirm-ote-only
@@ -30,6 +32,25 @@ async function main() {
   if (!command || command === "help" || command === "--help") {
     usage()
     process.exitCode = command ? 0 : 2
+    return
+  }
+
+  // Read-only account probes: they do not reference a domain and are the
+  // safest way to prove the OTE key/account work. getDomainInfo is
+  // account-scoped, so run `list` before concluding anything from `info`.
+  if (command === "account") {
+    if (args.length) throw new Error("account takes no arguments.")
+    const balance = await api.getAccountBalance()
+    printJson(balance)
+    if (balance.balance === null) process.exitCode = 2
+    return
+  }
+
+  if (command === "list") {
+    if (args.length) throw new Error("list takes no arguments.")
+    const list = await api.listDomains()
+    printJson(list)
+    if (list.providerCode !== 300) process.exitCode = 2
     return
   }
 

@@ -2,11 +2,23 @@ import test from "node:test"
 import assert from "node:assert/strict"
 import { createNameSiloSandboxOperations } from "../src/lib/domains/providers/namesilo-sandbox-operations.ts"
 
-function response(payload, status = 200) {
+function response(payload, status = 200, headers = {}) {
+  const text = typeof payload === "string"
+    ? payload
+    : payload === null || payload === undefined
+      ? ""
+      : JSON.stringify(payload)
   return {
     ok: status >= 200 && status < 300,
     status,
-    json: async () => payload,
+    headers: {
+      get: (name) => headers[String(name).toLowerCase()] ?? null,
+    },
+    json: async () => {
+      if (typeof payload === "string") throw new SyntaxError("response is not JSON")
+      return payload
+    },
+    text: async () => text,
   }
 }
 
@@ -264,4 +276,128 @@ test("domain-info identifies invalid JSON while keeping response details private
   assert.equal(info.state, "unknown")
   assert.match(info.message, /invalid JSON/)
   assert.doesNotMatch(info.message, /private response contents/)
+})
+
+test("domain-info explains an HTTP 400 that carries a structured JSON provider reply", async () => {
+  const api = createNameSiloSandboxOperations({
+    env: env(),
+    fetchImpl: async () => response(
+      { request: { operation: "getDomainInfo" }, reply: { code: 114, detail: "Invalid Domain Syntax" } },
+      400,
+      { "content-type": "application/json" },
+    ),
+  })
+
+  const info = await api.getDomainInfo("namesilo.com")
+  assert.equal(info.state, "unknown")
+  assert.match(info.message, /HTTP 400/)
+  assert.match(info.message, /Provider code 114/)
+  assert.match(info.message, /Invalid Domain Syntax/)
+  assert.doesNotMatch(info.message, /dummy-sandbox-key/)
+})
+
+test("domain-info explains an HTTP error returned as XML", async () => {
+  const api = createNameSiloSandboxOperations({
+    env: env(),
+    fetchImpl: async () => response(
+      "<namesilo><reply><code>114</code><detail>Invalid Domain Syntax</detail></reply></namesilo>",
+      400,
+      { "content-type": "application/xml" },
+    ),
+  })
+
+  const info = await api.getDomainInfo("namesilo.com")
+  assert.match(info.message, /HTTP 400/)
+  assert.match(info.message, /Provider code 114/)
+  assert.match(info.message, /Invalid Domain Syntax/)
+})
+
+test("domain-info does not treat an HTML error page as a provider reply", async () => {
+  const api = createNameSiloSandboxOperations({
+    env: env(),
+    fetchImpl: async () => response(
+      "<html><body><code>500</code>Request blocked</body></html>",
+      400,
+      { "content-type": "text/html; charset=utf-8", server: "cloudflare" },
+    ),
+  })
+
+  const info = await api.getDomainInfo("namesilo.com")
+  assert.match(info.message, /HTTP 400/)
+  assert.match(info.message, /no structured provider reply/i)
+  assert.match(info.message, /text\/html/)
+  assert.match(info.message, /cloudflare/)
+  assert.doesNotMatch(info.message, /Provider code 500/)
+  assert.doesNotMatch(info.message, /Request blocked/)
+})
+
+test("account balance is a key/account probe that does not reference a domain", async () => {
+  let requestedUrl
+  const api = createNameSiloSandboxOperations({
+    env: env(),
+    fetchImpl: async (url) => {
+      requestedUrl = new URL(String(url))
+      return response({ reply: { code: 300, detail: "success", balance: 355.75 } })
+    },
+  })
+
+  const balance = await api.getAccountBalance()
+  assert.equal(requestedUrl.origin, "https://ote.namesilo.com")
+  assert.equal(requestedUrl.pathname, "/api/getAccountBalance")
+  assert.equal(requestedUrl.searchParams.get("key"), "dummy-sandbox-key")
+  assert.equal(requestedUrl.searchParams.has("domain"), false)
+  assert.equal(balance.providerCode, 300)
+  assert.equal(balance.balance, "355.75")
+})
+
+test("account balance reports provider rejection without inventing a balance", async () => {
+  const api = createNameSiloSandboxOperations({
+    env: env(),
+    fetchImpl: async () => response({ reply: { code: 110, detail: "Invalid API key" } }),
+  })
+
+  const balance = await api.getAccountBalance()
+  assert.equal(balance.providerCode, 110)
+  assert.equal(balance.balance, null)
+  assert.match(balance.message, /rejected the API key/i)
+  assert.match(balance.message, /Invalid API key/)
+})
+
+test("domain list accepts JSON arrays and XML-to-JSON domain containers", async () => {
+  const jsonList = createNameSiloSandboxOperations({
+    env: env(),
+    fetchImpl: async () => response({
+      reply: { code: 300, detail: "success", domains: [{ domain: "A.com" }, { domain: "b.net" }] },
+    }),
+  })
+  const xmlList = createNameSiloSandboxOperations({
+    env: env(),
+    fetchImpl: async () => response({
+      reply: { code: 300, detail: "success", domains: { domain: [{ $t: "a.com" }, { "#text": "b.net" }] } },
+    }),
+  })
+
+  const jsonResult = await jsonList.listDomains()
+  const xmlResult = await xmlList.listDomains()
+  assert.deepEqual(jsonResult.domains, ["a.com", "b.net"])
+  assert.deepEqual(xmlResult.domains, ["a.com", "b.net"])
+  assert.equal(jsonResult.providerCode, 300)
+})
+
+test("domain list distinguishes an empty sandbox account from a listing failure", async () => {
+  const empty = createNameSiloSandboxOperations({
+    env: env(),
+    fetchImpl: async () => response({ reply: { code: 300, detail: "success" } }),
+  })
+  const failed = createNameSiloSandboxOperations({
+    env: env(),
+    fetchImpl: async () => response({ reply: { code: 210, detail: "General error" } }),
+  })
+
+  const emptyResult = await empty.listDomains()
+  const failedResult = await failed.listDomains()
+  assert.deepEqual(emptyResult.domains, [])
+  assert.match(emptyResult.message, /no active domains/i)
+  assert.equal(failedResult.providerCode, 210)
+  assert.match(failedResult.message, /response code 210/)
 })

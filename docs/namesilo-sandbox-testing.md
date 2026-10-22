@@ -16,10 +16,24 @@ This guide is for NameSilo's API-only OTE sandbox, not the live registrar. Sandb
 
 ## Read-only checks
 
-Read sandbox domain information:
+Start with the account probes. They validate the sandbox key/account and reveal
+which domains actually exist in OTE, without referencing a domain:
 
 ```bash
-npm run namesilo:ote -- info example.com
+npm run namesilo:ote -- account
+npm run namesilo:ote -- list
+```
+
+`getDomainInfo` is documented as account-scoped ("a domain within your account"),
+so it can only return `300` for a domain that `list` shows in the sandbox
+account. Querying a public name that is not in OTE is expected to fail; that
+failure does **not** indicate a HEMBOX or credential problem. See
+[namesilo-ote-investigation.md](./namesilo-ote-investigation.md).
+
+Read sandbox domain information for a domain that OTE lists:
+
+```bash
+npm run namesilo:ote -- info <domain-from-list>.com
 ```
 
 Check availability for one or more sandbox test names:
@@ -79,10 +93,26 @@ vercel curl "https://YOUR-PREVIEW-URL/api/domains/search" -- \
 
 The response should contain one result per domain. A provider code of 300 means NameSilo accepted the availability request, but the parser still needs a recognized per-domain entry to classify availability.
 
-To inspect a sandbox `getDomainInfo` response, call the read-only Preview endpoint:
+To prove the sandbox key/account work and see which domains OTE actually holds,
+use the read-only account scope (no domain involved):
 
 ```bash
-vercel curl "https://YOUR-PREVIEW-URL/api/domains/provider-diagnostic?domain=example.com"
+vercel curl "https://YOUR-PREVIEW-URL/api/domains/provider-diagnostic?scope=account"
 ```
 
-This endpoint returns normalized fields and safe provider messages only. It exists only when `VERCEL_ENV=preview` and `DOMAIN_PROVIDER_MODE=namesilo-sandbox`, relies on Vercel Preview deployment protection, and has no mutation operations. Production and other provider modes return 404.
+To inspect a single sandbox `getDomainInfo` response, call the domain scope. Use
+a domain returned by the account scope, not `example.com` or `namesilo.com` —
+both are known-bad samples:
+
+```bash
+vercel curl "https://YOUR-PREVIEW-URL/api/domains/provider-diagnostic?domain=LISTED-DOMAIN.com"
+```
+
+The endpoint returns normalized fields and safe provider messages only. For
+non-2xx OTE responses the message now includes the HTTP status, a sanitized
+provider code/detail when the body is JSON or XML, and the response
+`content-type`/`server`; raw response bodies and credentials are never returned.
+The endpoint exists only when `VERCEL_ENV=preview` and
+`DOMAIN_PROVIDER_MODE=namesilo-sandbox`, relies on Vercel Preview deployment
+protection, and has no mutation operations. Production and other provider modes
+return 404.

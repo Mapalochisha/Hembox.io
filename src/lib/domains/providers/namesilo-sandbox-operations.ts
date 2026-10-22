@@ -14,17 +14,31 @@ import {
 } from "./namesilo-sandbox-contract.ts"
 import {
   createNotAttemptedOutcome,
+  parseNameSiloAccountBalance,
+  parseNameSiloDomainList,
   parseNameSiloMutationOutcome,
   parseNameSiloSandboxDomainInfo,
   type NameSiloMutationOutcome,
+  type NameSiloSandboxAccountBalance,
   type NameSiloSandboxDomainInfo,
+  type NameSiloSandboxDomainList,
 } from "./namesilo-operation-response.ts"
 
 const REQUEST_TIMEOUT_MS = 8_000
 const CONFIRM_SANDBOX_ONLY = "OTE_ONLY" as const
+const MAX_FAILURE_BODY_CHARS = 16_384
+
+type HttpFailure = {
+  kind: "http"
+  status: number
+  providerCode: number | null
+  providerDetail: string | null
+  contentType: string | null
+  server: string | null
+}
 
 type ApiFailure =
-  | { kind: "http"; status: number }
+  | HttpFailure
   | { kind: "timeout" }
   | { kind: "invalid_json" }
   | { kind: "network" }
@@ -58,14 +72,94 @@ function getProviderReplyDiagnostics(payload: unknown): ProviderReplyDiagnostics
   }
 }
 
+function headerValue(response: Response, name: string): string | null {
+  try {
+    const value = response.headers?.get?.(name)
+    return value ? value.trim().slice(0, 120) : null
+  } catch {
+    return null
+  }
+}
+
+function xmlReplyDiagnostics(text: string): ProviderReplyDiagnostics {
+  const code = /<code>\s*(\d{1,3})\s*<\/code>/i.exec(text)?.[1]
+  const detail = /<detail>([\s\S]{0,400}?)<\/detail>/i.exec(text)?.[1]
+  return {
+    code: code && Number.isInteger(Number(code)) ? Number(code) : null,
+    detail: detail ? safeProviderDetail(detail.replace(/<[^>]*>/g, " ")) : null,
+  }
+}
+
+/**
+ * NameSilo can return a structured provider reply (JSON or XML) together with a
+ * non-2xx status. Extracting only the documented code/detail fields explains
+ * the failure without retaining or logging the raw response body.
+ */
+async function readHttpFailure(response: Response): Promise<{
+  providerCode: number | null
+  providerDetail: string | null
+  contentType: string | null
+  server: string | null
+}> {
+  const contentType = headerValue(response, "content-type")
+  const server = headerValue(response, "server")
+  let body = ""
+  try {
+    if (typeof response.text === "function") {
+      body = (await response.text()).slice(0, MAX_FAILURE_BODY_CHARS).trim()
+    }
+  } catch {
+    body = ""
+  }
+
+  const empty = { providerCode: null, providerDetail: null, contentType, server }
+  if (!body) return empty
+
+  // Only inspect structured provider replies. HTML error pages commonly contain
+  // <code> tags and must not be mistaken for a NameSilo response code.
+  const isHtml = contentType?.toLowerCase().includes("html") ?? false
+  if (!isHtml && body.startsWith("{")) {
+    try {
+      const diagnostics = getProviderReplyDiagnostics(JSON.parse(body) as unknown)
+      return {
+        providerCode: diagnostics.code,
+        providerDetail: diagnostics.detail,
+        contentType,
+        server,
+      }
+    } catch {
+      return empty
+    }
+  }
+
+  const looksXml = !isHtml && (body.startsWith("<") || (contentType?.toLowerCase().includes("xml") ?? false))
+  if (looksXml) {
+    const diagnostics = xmlReplyDiagnostics(body)
+    return {
+      providerCode: diagnostics.code,
+      providerDetail: diagnostics.detail,
+      contentType,
+      server,
+    }
+  }
+
+  return empty
+}
+
 function describeTransportFailure(
-  operation: "availability" | "domain-info",
+  operation: "availability" | "domain-info" | "account-balance" | "domain-list",
   failure: ApiFailure,
 ): string {
   const request = `NameSilo OTE ${operation} request`
   switch (failure.kind) {
-    case "http":
-      return `${request} returned HTTP ${failure.status}.`
+    case "http": {
+      const provider = failure.providerCode !== null
+        ? ` Provider code ${failure.providerCode}.${failure.providerDetail ? ` Provider detail: ${failure.providerDetail}` : ""}`
+        : " No structured provider reply was returned."
+      const contentType = failure.contentType ? ` Response content type: ${failure.contentType}.` : ""
+      const server = failure.server ? ` Response server: ${failure.server}.` : ""
+      return `${request} returned HTTP ${failure.status}.${provider}${contentType}${server}`
+    }
     case "timeout":
       return `${request} timed out.`
     case "invalid_json":
@@ -92,6 +186,9 @@ export type NameSiloSandboxOperations = {
     message: string
   }>>
   getDomainInfo(domain: string): Promise<NameSiloSandboxDomainInfo>
+  /** Read-only OTE account probes; they never reference or change a domain. */
+  getAccountBalance(): Promise<NameSiloSandboxAccountBalance>
+  listDomains(): Promise<NameSiloSandboxDomainList>
   registerDomain(input: MutatingConfirmation & {
     domain: string
     years: number
@@ -150,7 +247,7 @@ export function createNameSiloSandboxOperations(dependencies: SandboxDependencie
         return {
           transportSucceeded: false,
           payload: null,
-          failure: { kind: "http", status: response.status },
+          failure: { kind: "http", status: response.status, ...(await readHttpFailure(response)) },
         }
       }
 
@@ -190,6 +287,24 @@ export function createNameSiloSandboxOperations(dependencies: SandboxDependencie
       domain,
       result.transportSucceeded,
       result.transportSucceeded ? undefined : describeTransportFailure("domain-info", result.failure),
+    )
+  }
+
+  async function accountBalance(): Promise<NameSiloSandboxAccountBalance> {
+    const result = await call("getAccountBalance", {})
+    return parseNameSiloAccountBalance(
+      result.payload,
+      result.transportSucceeded,
+      result.transportSucceeded ? undefined : describeTransportFailure("account-balance", result.failure),
+    )
+  }
+
+  async function domainList(): Promise<NameSiloSandboxDomainList> {
+    const result = await call("listDomains", {})
+    return parseNameSiloDomainList(
+      result.payload,
+      result.transportSucceeded,
+      result.transportSucceeded ? undefined : describeTransportFailure("domain-list", result.failure),
     )
   }
 
@@ -321,5 +436,14 @@ export function createNameSiloSandboxOperations(dependencies: SandboxDependencie
     return parseNameSiloMutationOutcome(result.payload, "changeNameServers", domain, result.transportSucceeded)
   }
 
-  return { checkAvailability, getDomainInfo: domainInfo, registerDomain, renewDomain, transferDomain, changeNameServers }
+  return {
+    checkAvailability,
+    getDomainInfo: domainInfo,
+    getAccountBalance: accountBalance,
+    listDomains: domainList,
+    registerDomain,
+    renewDomain,
+    transferDomain,
+    changeNameServers,
+  }
 }

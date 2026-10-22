@@ -3,6 +3,8 @@ export const NAMESILO_SANDBOX_API_BASE_URL = "https://ote.namesilo.com/api"
 export type NameSiloSandboxOperation =
   | "checkRegisterAvailability"
   | "getDomainInfo"
+  | "getAccountBalance"
+  | "listDomains"
   | "registerDomain"
   | "renewDomain"
   | "transferDomain"
@@ -11,6 +13,10 @@ export type NameSiloSandboxOperation =
 const ALLOWED_OPERATIONS: ReadonlySet<string> = new Set([
   "checkRegisterAvailability",
   "getDomainInfo",
+  // Read-only account probes used only for OTE diagnostics. getDomainInfo is
+  // account-scoped, so these establish whether the key/account work at all.
+  "getAccountBalance",
+  "listDomains",
   "registerDomain",
   "renewDomain",
   "transferDomain",

@@ -33,6 +33,19 @@ export type NameSiloSandboxDomainInfo = {
   autoRenew: boolean | null
 }
 
+/** Read-only OTE account probes. They validate the key/account without a domain. */
+export type NameSiloSandboxAccountBalance = {
+  providerCode: number | null
+  balance: string | null
+  message: string
+}
+
+export type NameSiloSandboxDomainList = {
+  providerCode: number | null
+  domains: string[]
+  message: string
+}
+
 function isRecord(value: unknown): value is UnknownRecord {
   return typeof value === "object" && value !== null && !Array.isArray(value)
 }
@@ -41,7 +54,7 @@ function textValue(value: unknown): string | null {
   if (typeof value === "string" && value.trim()) return value.trim()
   if (typeof value === "number" && Number.isFinite(value)) return String(value)
   if (isRecord(value)) {
-    for (const key of ["#text", "domain", "name", "value"]) {
+    for (const key of ["#text", "$t", "domain", "name", "value"]) {
       const result = value[key]
       if (typeof result === "string" && result.trim()) return result.trim()
     }
@@ -71,6 +84,47 @@ function booleanValue(value: unknown): boolean | null {
 function strings(value: unknown): string[] {
   const values = Array.isArray(value) ? value : value === undefined || value === null ? [] : [value]
   return values.map(textValue).filter((item): item is string => Boolean(item))
+}
+
+function normalizedDomainEntry(value: unknown): string | null {
+  const text = textValue(value)
+  if (!text) return null
+  const normalized = text.trim().toLowerCase().replace(/\.$/, "")
+  return /^[a-z0-9](?:[a-z0-9-]*[a-z0-9])?(?:\.[a-z0-9](?:[a-z0-9-]*[a-z0-9])?)+$/.test(normalized)
+    ? normalized
+    : null
+}
+
+/**
+ * listDomains returns `reply.domains` as an array of `{ domain }` records in
+ * JSON, or as `{ domain: [{ $t }] }` when the XML reply is converted to JSON.
+ * Walk the recognized containers only; never treat other reply fields as names.
+ */
+function collectDomainEntries(value: unknown, sink: string[] = [], depth = 0): string[] {
+  if (depth > 5) return sink
+  if (Array.isArray(value)) {
+    for (const item of value) collectDomainEntries(item, sink, depth + 1)
+    return sink
+  }
+  if (typeof value === "string") {
+    const entry = normalizedDomainEntry(value)
+    if (entry) sink.push(entry)
+    return sink
+  }
+  if (!isRecord(value)) return sink
+
+  // XML converted to JSON commonly represents a text-only element as
+  // `{ "$t": "example.com" }` or `{ "#text": "example.com" }`.
+  if ("$t" in value || "#text" in value) {
+    const entry = normalizedDomainEntry(value)
+    if (entry) sink.push(entry)
+    return sink
+  }
+
+  for (const key of ["domain", "domains", "name"]) {
+    if (key in value) collectDomainEntries(value[key], sink, depth + 1)
+  }
+  return sink
 }
 
 function unknownDomainInfo(
@@ -252,6 +306,123 @@ export function parseNameSiloSandboxDomainInfo(
     nameservers,
     locked: booleanValue(nested.locked ?? reply.locked),
     autoRenew: booleanValue(nested.auto_renew ?? nested.autoRenew ?? reply.auto_renew ?? reply.autoRenew),
+  }
+}
+
+function failedReplySummary(
+  providerCode: number | null,
+  detail: string | null,
+  summary: string,
+): string {
+  return detail ? `${summary} Provider detail: ${detail}` : summary
+}
+
+/**
+ * getAccountBalance validates the OTE key/account without referencing a domain,
+ * so it is a better connectivity probe than getDomainInfo on a public name.
+ */
+export function parseNameSiloAccountBalance(
+  payload: unknown,
+  transportSucceeded = true,
+  transportFailureMessage?: string,
+): NameSiloSandboxAccountBalance {
+  if (!transportSucceeded) {
+    return {
+      providerCode: null,
+      balance: null,
+      message: transportFailureMessage ?? "NameSilo OTE account-balance request failed or timed out.",
+    }
+  }
+  if (!isRecord(payload) || !isRecord(payload.reply)) {
+    return {
+      providerCode: null,
+      balance: null,
+      message: "NameSilo OTE returned an unrecognized account-balance response.",
+    }
+  }
+
+  const reply = payload.reply
+  const parsedCode = Number(reply.code)
+  const providerCode = Number.isInteger(parsedCode) ? parsedCode : null
+  if (providerCode !== 300) {
+    return {
+      providerCode,
+      balance: null,
+      message: failedReplySummary(
+        providerCode,
+        safeProviderDetail(reply.detail),
+        providerCode === 110
+          ? "NameSilo OTE rejected the API key."
+          : `NameSilo OTE returned response code ${providerCode ?? "unknown"} for the account-balance request.`,
+      ),
+    }
+  }
+
+  const balance = textValue(reply.balance)
+  if (!balance || !/^\d+(?:\.\d+)?$/.test(balance)) {
+    return {
+      providerCode,
+      balance: null,
+      message: "NameSilo OTE accepted the account-balance request but did not return a numeric balance.",
+    }
+  }
+
+  return {
+    providerCode,
+    balance,
+    message: "NameSilo OTE returned the sandbox account balance. Sandbox funds are not production funds.",
+  }
+}
+
+/**
+ * listDomains reports what actually exists in the OTE account. getDomainInfo is
+ * documented as account-scoped, so this determines whether a successful
+ * domain-info lookup is possible at all without registering a sandbox domain.
+ */
+export function parseNameSiloDomainList(
+  payload: unknown,
+  transportSucceeded = true,
+  transportFailureMessage?: string,
+): NameSiloSandboxDomainList {
+  if (!transportSucceeded) {
+    return {
+      providerCode: null,
+      domains: [],
+      message: transportFailureMessage ?? "NameSilo OTE domain-list request failed or timed out.",
+    }
+  }
+  if (!isRecord(payload) || !isRecord(payload.reply)) {
+    return {
+      providerCode: null,
+      domains: [],
+      message: "NameSilo OTE returned an unrecognized domain-list response.",
+    }
+  }
+
+  const reply = payload.reply
+  const parsedCode = Number(reply.code)
+  const providerCode = Number.isInteger(parsedCode) ? parsedCode : null
+  if (providerCode !== 300) {
+    return {
+      providerCode,
+      domains: [],
+      message: failedReplySummary(
+        providerCode,
+        safeProviderDetail(reply.detail),
+        providerCode === 110
+          ? "NameSilo OTE rejected the API key."
+          : `NameSilo OTE returned response code ${providerCode ?? "unknown"} for the domain-list request.`,
+      ),
+    }
+  }
+
+  const domains = Array.from(new Set(collectDomainEntries(reply.domains))).slice(0, 200)
+  return {
+    providerCode,
+    domains,
+    message: domains.length
+      ? "NameSilo OTE listed the sandbox account's active domains. Only these domains can satisfy an account-scoped domain-info lookup."
+      : "NameSilo OTE accepted the domain-list request and reported no active domains in the sandbox account.",
   }
 }
 
