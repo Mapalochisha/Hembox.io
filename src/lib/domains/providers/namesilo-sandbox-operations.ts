@@ -112,7 +112,7 @@ export function createNameSiloSandboxOperations(dependencies: SandboxDependencie
   }
 
   async function checkAvailability(domainsInput: string[]) {
-    const domains = [...new Set(domainsInput.map(normalizeNameSiloSandboxDomain))]
+    const domains = Array.from(new Set(domainsInput.map(normalizeNameSiloSandboxDomain)))
     if (domains.length < 1 || domains.length > 10) {
       throw new Error("Check between 1 and 10 .com/.net domains in one sandbox request.")
     }
