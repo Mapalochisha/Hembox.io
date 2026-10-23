@@ -2,7 +2,7 @@
 
 > **Purpose:** This is the canonical handoff document for the domain-reselling project. Read it before continuing implementation after a context switch. Update this file as milestones are completed, decisions change, or verification results become available.
 >
-> **Last updated:** 2026-10-23
+> **Last updated:** 2026-10-23 (manual-payment launch strategy)
 > **Repository:** `Mapalochisha/Hembox.io`  
 > **Working branch:** `feature/domain-reselling-platform`  
 > **Pull request:** https://github.com/Mapalochisha/Hembox.io/pull/2  
@@ -131,23 +131,34 @@ Use `[x]` only after the milestone's acceptance criteria have been met and verif
 - The final customer-confirmed amount matches the stored order snapshot.
 - Sensitive customer data is collected only when needed and access is restricted.
 
-### [ ] M5 — Payment gateway
+### [ ] M5 — Manual payment workflow (initial launch)
+
+**Decision (2026-10-23):** Defer payment-gateway integration until HEMBOX.io can fund a custom domain and complete the provider's onboarding requirements. This is a planned deferral, not a claim that payment-gateway work is complete. Keep the gateway visibly deferred in the plan and do not make it a blocker for the initial manual-payment release.
 
 **Scope**
-- Select a gateway that supports the intended ZMW methods and business onboarding requirements.
-- Implement server-side payment initiation, signed webhook verification, idempotent event processing and reconciliation.
-- Handle pending/failed payments, retries, duplicate events, refunds and payment-without-registration outcomes.
-- Keep live payments disabled until approval and sandbox tests are complete.
+- Provide customer-facing instructions for manual payment and a unique order/payment reference.
+- Allow customers to submit a payment claim and optional evidence without treating uploads or screenshots as proof of settled funds.
+- Add an administrator-only review queue to mark a claim as verified, rejected, or needing more information.
+- Record reviewer, timestamp, decision, reason, and immutable audit events; make repeated submissions and repeated decisions idempotent.
+- Keep order state separate from payment-claim state. Only an authorized admin can mark manual payment as verified after checking the actual receiving account/transaction.
+- Require a fresh availability and price check before any registration action; never register based only on a submitted receipt.
+- Clearly disclose manual processing times and a support path. Do not collect payment-card credentials or unnecessary personal data.
 
 **Acceptance criteria**
-- A client-side redirect alone can never mark an order paid.
-- Duplicate/out-of-order webhooks are handled safely.
-- Payment failures and refunds have explicit order-state and support paths.
+- Unverified customer claims cannot transition an order to paid/eligible-for-registration.
+- Only authorized admins can verify/reject claims, with audit history.
+- Duplicate submissions and repeated review actions cannot create duplicate payment confirmations.
+- Evidence is private, access-controlled, size/type limited, and never served publicly; if secure storage cannot be assured, use a reference/notes workflow instead of uploads.
+- Automated tests cover ownership, admin authorization, idempotency, state transitions, and audit records.
+
+**Deferred gateway scope (greyed out / not in initial release)**
+- Provider selection/onboarding, hosted checkout, gateway API calls, signed webhooks, gateway event replay protection, and gateway settlement reconciliation.
+- Revisit only when a custom domain and required gateway onboarding can be funded. Do not create placeholder secrets or imply gateway integration is operational.
 
 ### [ ] M6 — Registration and provisioning
 
 **Scope**
-- Trigger registration only after verified payment and a fresh availability/price check.
+- Trigger registration only after an authorized manual-payment verification (initial launch) and a fresh availability/price check. Gateway-confirmed payment can be added later.
 - Use recoverable jobs or equivalent durable processing.
 - Persist provider references and registration/expiry information.
 - Reconcile ambiguous timeouts before retrying; prevent blind duplicate registration attempts.
@@ -610,3 +621,12 @@ When resuming this project:
 - The report is read-only and does not expose customer contact data, provider secrets, raw webhook payloads, or state-changing controls. It explicitly excludes gateway fees, taxes, refunds, chargebacks, operating costs, and post-quote FX movement; figures are not accounting profit or realized revenue.
 - Added the dashboard to admin navigation. The feature remains on `feature/domain-reselling-platform`; no merge, production migration, payment acceptance, or live registration was performed.
 - **Verification pending:** final CI and Vercel Preview must pass on the exact latest branch head before this change is considered complete.
+
+### 2026-10-23 — Initial launch will use manual payments; gateway deferred
+
+- **Decision:** Because gateway onboarding requires a custom domain that is not currently affordable, defer gateway integration and mark it as postponed in the plan. This does not waive payment safety requirements.
+- **Initial release path:** implement manual payment instructions and order references, customer payment claims, and an admin review/verification workflow with audit history. A receipt or screenshot alone is never proof that funds settled.
+- **Registration guard:** a domain must not be registered based solely on a customer claim. Registration remains gated on authorized admin payment verification, fresh availability/pricing, and verified provider registration/recovery behavior.
+- **Gateway explicitly deferred:** gateway selection/onboarding, hosted checkout, API integration, signed webhooks and gateway-specific reconciliation are out of scope until a custom domain and required onboarding can be funded. Revisit this milestone later.
+- **Launch scope:** continue building provider-independent customer, order, admin, reconciliation, security and staging workflows. Do not enable live payment acceptance or live registration, apply production migrations, or merge without explicit authorization and completed release gates.
+- **Verification:** this is a plan/priority decision; the implementation must receive fresh CI and Vercel checks before being treated as complete.
