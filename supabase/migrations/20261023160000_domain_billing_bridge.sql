@@ -33,13 +33,14 @@ begin
   v_number := 'DOM-' || upper(substr(replace(v_order.id::text,'-',''),1,12));
   v_key := 'domain-order:' || v_order.id::text;
   insert into public.billing_invoices(invoice_number,creation_key,customer_id,status,currency,subtotal_minor,tax_minor,total_minor,issued_at,due_at,source_type,source_id,customer_note,commercial_snapshot)
-  values(v_number,v_key,p_customer_id,'unpaid',v_quote.currency,v_quote.total_due_minor,0,v_quote.total_due_minor,now(),v_quote.expires_at,'domain_registration',v_order.id,
+  values(v_number,v_key,p_customer_id,'draft',v_quote.currency,0,0,0,null,v_quote.expires_at,'domain_registration',v_order.id,
     'Domain quote expires ' || v_quote.expires_at::text,
     jsonb_build_object('domain_name',v_order.domain_name,'quote_id',v_quote.id,'quote_sequence',v_quote.sequence,'pricing_source',v_quote.pricing_source,'pricing_captured_at',v_quote.pricing_captured_at,'quote_expires_at',v_quote.expires_at))
   returning id into v_invoice_id;
   insert into public.billing_invoice_items(invoice_id,description,quantity,unit_amount_minor,source_type,source_id,item_snapshot)
   values(v_invoice_id,'Domain registration — ' || v_order.domain_name,1,v_quote.total_due_minor,'domain_registration',v_order.id,
     jsonb_build_object('domain_name',v_order.domain_name,'term_years',v_quote.term_years,'quote_id',v_quote.id,'quote_sequence',v_quote.sequence));
+  update public.billing_invoices set subtotal_minor=v_quote.total_due_minor,total_minor=v_quote.total_due_minor,status='unpaid',issued_at=now() where id=v_invoice_id;
   update public.domain_orders set billing_invoice_id=v_invoice_id where id=v_order.id;
   insert into public.billing_events(invoice_id,actor_user_id,event_type,idempotency_key,details)
   values(v_invoice_id,p_customer_id,'invoice.issued','billing-domain-invoice-issued:'||v_invoice_id::text,
