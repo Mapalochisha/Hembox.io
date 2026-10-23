@@ -322,7 +322,6 @@ export default function CustomerDomainsPage() {
                     <p className="mt-1 text-sm">Amount: <strong>{money(paymentSessions[quoteResult.order.id].amountMinor, paymentSessions[quoteResult.order.id].currency)}</strong></p>
                   </div>
                 ) : null}
-                </p>
               </div>
             ) : null}
           </section>
