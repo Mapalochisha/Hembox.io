@@ -153,23 +153,22 @@ Use `[x]` only after the milestone's acceptance criteria have been met and verif
 - The initial workflow stores only the transaction reference and optional note; no receipt files are uploaded or served.
 - Automated tests cover ownership, admin authorization, idempotency, state transitions, and audit records.
 
-**Deferred gateway scope (greyed out / not in initial release)**
-- Provider selection/onboarding, hosted checkout, gateway API calls, signed webhooks, gateway event replay protection, and gateway settlement reconciliation.
-- Revisit only when a custom domain and required gateway onboarding can be funded. Do not create placeholder secrets or imply gateway integration is operational.
+**Deferred gateway scope — greyed out and excluded from the initial release**
+- ~~Payment gateway selection/onboarding, hosted checkout, gateway API calls, signed webhooks, gateway event replay protection, and gateway settlement reconciliation.~~
+- ~~Do not implement or enable this until a custom domain and required gateway onboarding can be funded.~~ Keep the gateway disabled and clearly labelled as deferred; do not create placeholder secrets or imply the integration is operational.
 
 ### [ ] M6 — Registration and provisioning
 
 **Scope**
-- Trigger registration only after an authorized manual-payment verification (initial launch) and a fresh availability/price check. Gateway-confirmed payment can be added later.
-- Use recoverable jobs or equivalent durable processing.
-- Persist provider references and registration/expiry information.
-- Reconcile ambiguous timeouts before retrying; prevent blind duplicate registration attempts.
-- Implement failure, manual-review, cancellation and refund/recovery paths.
+- Initial release: an administrator completes registration in the registrar's own console after verified manual payment and a fresh availability/final-price check, then records the actual registrar references and dates through the guarded, audited manual-fulfillment action. HEMBOX must not claim to have registered a domain based only on a payment claim.
+- The manual fulfillment action does not call the registrar and only accepts payment-confirmed orders with a verified manual-payment claim.
+- Automated registrar registration, durable provisioning jobs, provider mutation idempotency, and ambiguous API-timeout recovery remain deferred until state-changing provider operations are verified in a safe environment.
+- Persist real provider references and registration/expiry information; keep failed or ambiguous outcomes in manual review rather than blindly retrying.
 
 **Acceptance criteria**
-- Sandbox end-to-end purchase tests pass.
-- Duplicate/replayed events cannot create duplicate registrations.
-- Every order can be reconciled to payment and provider state.
+- Manual payment-to-manual-fulfillment workflow passes authorization, state, amount, quote-validity, and audit tests.
+- The manual fulfillment record is idempotent and cannot create duplicate registration records.
+- Automated registrar mutation is not enabled until provider sandbox coverage and ambiguous-outcome recovery are verified.
 
 ### [ ] M7 — Customer account and domain dashboard
 
@@ -642,3 +641,12 @@ When resuming this project:
 - Added disposable-PostgreSQL integration assertions for amount mismatch rejection, non-admin rejection, audit history, and successful verification; CI now applies and tests the manual-payment migration.
 - Gateway hosted checkout, gateway credentials, signed webhooks and gateway reconciliation remain deferred. The new workflow requires `DOMAIN_MANUAL_PAYMENT_INSTRUCTIONS` to be configured before customers can begin payment. This configuration has not been populated with real receiving-account details.
 - **Verification status:** implementation changes are still being checked by GitHub Actions and Vercel on the exact latest branch head. Do not call the milestone complete until both are green and the manual-payment workflow has been reviewed in Preview. No production migration, real payment acceptance, live registration, or merge has been performed.
+
+### 2026-10-23 — Guarded manual registrar fulfillment added
+
+- Added an admin-only database function and API endpoint to record a registration that an administrator has already completed in the registrar's own console. The endpoint does not call NameSilo or initiate a registration.
+- The function requires a payment-confirmed order, a verified manual-payment claim, provider identity matching the saved quote, matching domain reference, actual registration/expiry timestamps, and explicit attestations that live availability and final price were rechecked.
+- It transitions the order through the allowed registration lifecycle, stores the actual provider references/dates, writes an audit event, and treats an exact replay as idempotent.
+- Added an admin order-queue form and disposable-PostgreSQL tests for precondition rejection, successful fulfillment, audit history, and replay safety.
+- **Automated registrar registration remains deferred** until state-changing provider operations and ambiguous outcomes are verified. No live registration was performed.
+- **Verification pending:** final CI and Vercel Preview must pass for the final branch head. No production migration or merge was performed.
