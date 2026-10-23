@@ -186,3 +186,12 @@ unverified and out of scope for this investigation.
 - Regression tests cover grouped values and malformed grouping while asserting the raw malformed value is not present in diagnostic output.
 - **Verification for implementation head `b1329b86e38ffab49baaf61bdc1f29df2f186165`:** [GitHub Actions CI passed](https://github.com/Mapalochisha/Hembox.io/actions/runs/39923512370) — Lint & Type Check, Domain schema integration tests, and Production Build all succeeded. The commit's Vercel status is also successful: [Preview deployment](https://vercel.com/mapalochishas-projects/hembox-io/2QSazKr9bwEKniJ2ans16KjRkMrX). Any follow-up documentation commit should still have its own checks inspected.
 - **Safety:** the change only parses the response to a read-only account-balance request. It performs no registration, renewal, transfer, nameserver change, payment or fund-spending operation.
+
+
+## 11. 2026-10-23 — Grouped balance fix verified on Preview
+
+- **Observed result:** the protected Preview's read-only `GET /api/domains/provider-diagnostic?scope=account` returned HTTP 200. NameSilo OTE returned provider code 300 and the parser returned `balance: "5000.00"`, confirming that the grouped-decimal normalization works end to end.
+- **Sandbox-only interpretation:** the provider response identifies this as sandbox account funds, not production funds. Do not treat this as HEMBOX revenue or as an indication of production funding.
+- **Domain list:** code 300 with an empty list again confirmed that the OTE account has no active domains. The account-scoped `getDomainInfo` success path still cannot be proven without an existing sandbox domain. Do not register one just to satisfy the diagnostic.
+- **Verification:** parser/test implementation commit `b1329b86e38ffab49baaf61bdc1f29df2f186165` passed [CI](https://github.com/Mapalochisha/Hembox.io/actions/runs/39923512370) and [Vercel Preview](https://vercel.com/mapalochishas-projects/hembox-io/2QSazKr9bwEKniJ2ans16KjRkMrX). The progress-log commits also passed [CI](https://github.com/Mapalochisha/Hembox.io/actions/runs/39923838731) and their Vercel check. This entry is a new documentation update and requires fresh checks on its resulting commit.
+- **Safety:** this was a read-only account probe. No live endpoint, registration, renewal, transfer, nameserver update, payment, or use of sandbox funds occurred.
