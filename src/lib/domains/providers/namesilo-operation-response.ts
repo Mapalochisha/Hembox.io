@@ -38,6 +38,11 @@ export type NameSiloSandboxAccountBalance = {
   providerCode: number | null
   balance: string | null
   message: string
+  /** Sanitized response shape, emitted only when a successful reply has no usable balance. */
+  responseShape?: {
+    replyFields: string[]
+    balanceFieldType: "missing" | "null" | "number" | "string" | "boolean" | "object" | "array"
+  }
 }
 
 export type NameSiloSandboxDomainList = {
@@ -358,12 +363,28 @@ export function parseNameSiloAccountBalance(
     }
   }
 
-  const balance = textValue(reply.balance)
-  if (!balance || !/^\d+(?:\.\d+)?$/.test(balance)) {
+  const balanceValue = Object.prototype.hasOwnProperty.call(reply, "balance") ? reply.balance : undefined
+  let balanceFieldType: NonNullable<NameSiloSandboxAccountBalance["responseShape"]>["balanceFieldType"]
+  if (balanceValue === undefined) balanceFieldType = "missing"
+  else if (balanceValue === null) balanceFieldType = "null"
+  else if (Array.isArray(balanceValue)) balanceFieldType = "array"
+  else if (typeof balanceValue === "number") balanceFieldType = "number"
+  else if (typeof balanceValue === "string") balanceFieldType = "string"
+  else if (typeof balanceValue === "boolean") balanceFieldType = "boolean"
+  else balanceFieldType = "object"
+
+  const balance = textValue(balanceValue)
+  if (!balance || !/^\\d+(?:\\.\\d+)?$/.test(balance)) {
+    // These diagnostics expose field names and a value type only; never echo
+    // provider response values or the raw response body into the Preview route.
+    const replyFields = Object.keys(reply)
+      .filter((field) => /^[A-Za-z][A-Za-z0-9_]{0,39}$/.test(field))
+      .slice(0, 30)
     return {
       providerCode,
       balance: null,
       message: "NameSilo OTE accepted the account-balance request but did not return a numeric balance.",
+      responseShape: { replyFields, balanceFieldType },
     }
   }
 
