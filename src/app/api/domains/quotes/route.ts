@@ -90,6 +90,20 @@ function quoteResponse(row: SavedQuoteRow, orderStatus: string, now = Date.now()
   }
 }
 
+async function ensureBillingInvoice(db: SupabaseClient, orderId: string, customerId: string) {
+  const { data, error } = await db.rpc("create_domain_billing_invoice", { p_order_id: orderId, p_customer_id: customerId })
+  if (error) {
+    if (error.code === "PGRST202" || error.code === "42883") {
+      console.warn("Billing invoice RPC is not deployed in this database yet; legacy domain quote flow remains available.")
+      return true
+    }
+    console.error("Domain quote billing invoice could not be reconciled:", { code: error.code ?? "unknown" })
+    return false
+  }
+  const row = Array.isArray(data) ? data[0] : data
+  return !!row && typeof row === "object" && "invoice_id" in row
+}
+
 async function getSavedQuote(db: SupabaseClient, orderId: string) {
   const { data, error } = await db
     .from("domain_order_quotes")
@@ -139,6 +153,9 @@ export async function POST(request: Request) {
       const savedQuote = await getSavedQuote(db, existingOrder.id)
       if (!savedQuote) {
         return json({ error: "The saved quote could not be recovered. Please contact support before retrying.", code: "quote_reconciliation_required" }, 503)
+      }
+      if (!(await ensureBillingInvoice(db, existingOrder.id, user.id))) {
+        return json({ error: "The quote exists but its billing invoice could not be reconciled. Contact support before paying.", code: "billing_invoice_reconciliation_required" }, 503)
       }
       return json({ ...quoteResponse(savedQuote, existingOrder.status), idempotentReplay: true })
     }
@@ -235,6 +252,9 @@ export async function POST(request: Request) {
     const persistedQuote = await getSavedQuote(db, persistedOrderId)
     if (!persistedQuote) {
       return json({ error: "The quote was saved but its snapshot could not be read back. Contact support before retrying.", code: "quote_reconciliation_required" }, 503)
+    }
+    if (!(await ensureBillingInvoice(db, persistedOrderId, user.id))) {
+      return json({ error: "The quote was saved but its billing invoice could not be reconciled. Contact support before paying.", code: "billing_invoice_reconciliation_required" }, 503)
     }
 
     const created = (rpcRow as { created?: unknown }).created === true

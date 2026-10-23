@@ -6,10 +6,12 @@ on:
       - main
       - develop
       - feature/domain-reselling-platform
+      - feature/unified-billing-platform
   pull_request:
     branches:
       - main
       - develop
+      - feature/domain-reselling-platform
   workflow_dispatch:
 
 permissions:
@@ -86,8 +88,17 @@ jobs:
           create role authenticated nologin;
           create role service_role nologin bypassrls;
           create schema auth;
+          create schema storage;
+          create table storage.buckets (
+            id text primary key,
+            name text not null,
+            public boolean not null default false,
+            file_size_limit bigint,
+            allowed_mime_types text[]
+          );
           create table auth.users (
-            id uuid primary key default gen_random_uuid()
+            id uuid primary key default gen_random_uuid(),
+            email text
           );
           create table public.profiles (
             id uuid primary key references auth.users(id) on delete cascade,
@@ -131,6 +142,24 @@ jobs:
       - name: Apply manual registration fulfillment migration
         run: psql -v ON_ERROR_STOP=1 -f supabase/migrations/20261023120000_domain_manual_registration.sql
 
+      - name: Apply unified billing foundation migration
+        run: psql -v ON_ERROR_STOP=1 -f supabase/migrations/20261023130000_unified_billing_foundation.sql
+
+      - name: Apply messaging foundation migration
+        run: psql -v ON_ERROR_STOP=1 -f supabase/migrations/20261023135000_messaging_foundation.sql
+
+      - name: Apply billing arrangement workflow migration
+        run: psql -v ON_ERROR_STOP=1 -f supabase/migrations/20261023140000_billing_arrangement_workflow.sql
+
+      - name: Apply private receipt storage migration
+        run: psql -v ON_ERROR_STOP=1 -f supabase/migrations/20261023150000_billing_receipt_storage.sql
+
+      - name: Apply domain billing bridge migration
+        run: psql -v ON_ERROR_STOP=1 -f supabase/migrations/20261023160000_domain_billing_bridge.sql
+
+      - name: Apply audited invoice void migration
+        run: psql -v ON_ERROR_STOP=1 -f supabase/migrations/20261023170000_billing_invoice_void.sql
+
       - name: Assert domain schema constraints and security policies
         run: psql -v ON_ERROR_STOP=1 -f supabase/tests/domain_reselling_foundation.test.sql
 
@@ -157,6 +186,12 @@ jobs:
 
       - name: Assert guarded manual registration fulfillment
         run: psql -v ON_ERROR_STOP=1 -f supabase/tests/domain_manual_registration.test.sql
+
+      - name: Assert unified billing ledger invariants
+        run: psql -v ON_ERROR_STOP=1 -f supabase/tests/unified_billing_foundation.test.sql
+
+      - name: Assert billing arrangements and domain billing bridge
+        run: psql -v ON_ERROR_STOP=1 -f supabase/tests/unified_billing_workflows.test.sql
 
   build:
     name: Production Build
