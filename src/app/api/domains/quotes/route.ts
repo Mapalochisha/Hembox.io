@@ -93,6 +93,10 @@ function quoteResponse(row: SavedQuoteRow, orderStatus: string, now = Date.now()
 async function ensureBillingInvoice(db: SupabaseClient, orderId: string, customerId: string) {
   const { data, error } = await db.rpc("create_domain_billing_invoice", { p_order_id: orderId, p_customer_id: customerId })
   if (error) {
+    if (error.code === "PGRST202" || error.code === "42883") {
+      console.warn("Billing invoice RPC is not deployed in this database yet; legacy domain quote flow remains available.")
+      return true
+    }
     console.error("Domain quote billing invoice could not be reconciled:", { code: error.code ?? "unknown" })
     return false
   }
