@@ -86,7 +86,7 @@ function quoteResponse(row: SavedQuoteRow, orderStatus: string, now = Date.now()
       : { provider: null, checkedAt: null, status: "not_verified" },
     checkoutEnabled: false,
     registrationEnabled: false,
-    message: "This quote is saved for review. Payment and registration are not enabled yet.",
+    message: "This quote is saved for review. Gateway checkout and domain registration are disabled; manual payment may be available if configured.",
   }
 }
 
