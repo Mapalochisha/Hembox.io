@@ -35,12 +35,20 @@ export async function POST(request: Request) {
     const db = createServiceClient() as unknown as SupabaseClient
     const { data: order, error: orderError } = await db
       .from("domain_orders")
-      .select("id,customer_id,status,domain_name,retail_currency")
+      .select("id,customer_id,status,domain_name,retail_currency,billing_invoice_id")
       .eq("id", parsed.data.orderId)
       .eq("customer_id", user.id)
       .maybeSingle()
     if (orderError) throw orderError
     if (!order) return json({ error: "Domain order not found." }, 404)
+
+    if (order.billing_invoice_id) {
+      const { data: allocations, error: allocationError } = await db.from("billing_payment_allocations")
+        .select("amount_minor,allocation_type").eq("invoice_id", order.billing_invoice_id)
+      if (allocationError) throw allocationError
+      const allocated = (allocations ?? []).reduce((sum, row) => sum + (row.allocation_type === "reverse" ? -Number(row.amount_minor) : Number(row.amount_minor)), 0)
+      if (allocated > 0) return json({ error: "A payment has already been allocated to this domain invoice. Continue in Portal → Bills so remaining partial payments are handled in one ledger.", code: "unified_billing_in_use" }, 409)
+    }
 
     const { data: quote, error: quoteError } = await db
       .from("domain_order_quotes")
