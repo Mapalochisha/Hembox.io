@@ -111,6 +111,7 @@ declare
   v_claim public.domain_manual_payment_claims%rowtype;
   v_order public.domain_orders%rowtype;
   v_expected_amount bigint;
+  v_quote_expires_at timestamptz;
   v_now timestamptz := clock_timestamp();
 begin
   if p_decision not in ('verified', 'rejected', 'needs_info') then
@@ -141,12 +142,15 @@ begin
     if v_order.status <> 'awaiting_payment' then
       raise exception 'Order is not awaiting payment verification' using errcode = '23514';
     end if;
-    select q.total_due_minor into v_expected_amount
+    select q.total_due_minor, q.expires_at into v_expected_amount, v_quote_expires_at
     from public.domain_order_quotes q
     where q.order_id = v_order.id
     order by q.sequence desc limit 1;
     if v_expected_amount is null or v_claim.amount_minor <> v_expected_amount then
       raise exception 'Claimed amount does not match the saved quote' using errcode = '23514';
+    end if;
+    if v_quote_expires_at is null or v_claim.created_at > v_quote_expires_at then
+      raise exception 'Payment claim was submitted after the quote expired' using errcode = '23514';
     end if;
     if exists (select 1 from public.domain_manual_payment_claims c
       where c.order_id = v_order.id and c.status = 'verified' and c.id <> v_claim.id) then
