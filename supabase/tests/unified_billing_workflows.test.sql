@@ -33,6 +33,9 @@ begin
   select * into v_result from public.accept_billing_arrangement(v_arrangement,v_customer);
   if v_result.status <> 'accepted' then raise exception 'Customer confirmation should accept arrangement'; end if;
   if (select status from public.billing_invoices where id=v_invoice) <> 'unpaid' then raise exception 'Arrangement must not mark invoice paid'; end if;
+  select * into v_result from public.void_billing_invoice(v_invoice,v_admin,'Customer cancelled before payment');
+  if v_result.status <> 'void' then raise exception 'Unpaid invoice should be voided with an audit record'; end if;
+  if not exists(select 1 from public.billing_events where invoice_id=v_invoice and event_type='invoice.voided') then raise exception 'Invoice void must create an audit event'; end if;
 
   -- Domain quote creates a corresponding immutable billing invoice; fully allocated payment advances only the order state.
   insert into public.domain_orders(id,customer_id,customer_email,customer_contact,domain_name,status,retail_currency,registration_retail_minor,renewal_retail_minor,quote_expires_at)
