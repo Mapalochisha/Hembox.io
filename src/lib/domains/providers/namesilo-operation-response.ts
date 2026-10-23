@@ -42,6 +42,7 @@ export type NameSiloSandboxAccountBalance = {
   responseShape?: {
     replyFields: string[]
     balanceFieldType: "missing" | "null" | "number" | "string" | "boolean" | "object" | "array"
+    balanceStringFormat?: "empty" | "plain-decimal" | "grouped-decimal" | "currency-formatted" | "signed-decimal" | "non-numeric"
   }
 }
 
@@ -322,6 +323,34 @@ function failedReplySummary(
   return detail ? `${summary} Provider detail: ${detail}` : summary
 }
 
+type BalanceStringFormat =
+  | "empty"
+  | "plain-decimal"
+  | "grouped-decimal"
+  | "currency-formatted"
+  | "signed-decimal"
+  | "non-numeric"
+
+/**
+ * Classify only the balance string's format; never return its contents in the
+ * Preview diagnostic. This lets us distinguish an omitted balance from an OTE
+ * placeholder or provider-specific formatting without leaking account funds.
+ */
+function classifyBalanceString(value: unknown): BalanceStringFormat | undefined {
+  if (typeof value !== "string") return undefined
+  const normalized = value.trim()
+  if (!normalized) return "empty"
+  if (/^\d+(?:\.\d+)?$/.test(normalized)) return "plain-decimal"
+  if (/^\d{1,3}(?:,\d{3})+(?:\.\d+)?$/.test(normalized)) return "grouped-decimal"
+  if (/^-\d+(?:\.\d+)?$/.test(normalized)) return "signed-decimal"
+
+  const currencyFormatted =
+    /^(?:[A-Z]{3}\s*)?[$€£¥]\s*\d[\d,]*(?:\.\d+)?(?:\s*[A-Z]{3})?$/i.test(normalized) ||
+    /^\d[\d,]*(?:\.\d+)?\s+[A-Z]{3}$/i.test(normalized) ||
+    /^[A-Z]{3}\s+\d[\d,]*(?:\.\d+)?$/i.test(normalized)
+  return currencyFormatted ? "currency-formatted" : "non-numeric"
+}
+
 /**
  * getAccountBalance validates the OTE key/account without referencing a domain,
  * so it is a better connectivity probe than getDomainInfo on a public name.
@@ -384,7 +413,13 @@ export function parseNameSiloAccountBalance(
       providerCode,
       balance: null,
       message: "NameSilo OTE accepted the account-balance request but did not return a numeric balance.",
-      responseShape: { replyFields, balanceFieldType },
+      responseShape: {
+        replyFields,
+        balanceFieldType,
+        ...(classifyBalanceString(balanceValue)
+          ? { balanceStringFormat: classifyBalanceString(balanceValue) }
+          : {}),
+      },
     }
   }
 

@@ -1,6 +1,6 @@
 # NameSilo OTE investigation: `getDomainInfo` failures
 
-Status as of 2026-10-22. All calls described here are **read-only** against the
+Status as of 2026-10-23. All calls described here are **read-only** against the
 API-only OTE at `https://ote.namesilo.com/api`. No production credential, live
 registrar call, registration, renewal, transfer, nameserver change or payment
 has been made, and no sandbox funds have been spent.
@@ -165,3 +165,15 @@ unverified and out of scope for this investigation.
 - Community mirror of NameSilo response codes (third-party, used only to read
   `114`/`116`/`200`):
   https://github.com/NETLINK/Blesta-Namesilo/blob/master/config/codes.php
+
+## 9. 2026-10-23 — read-only Preview smoke-test results
+
+- **Account scope:** HTTP 200 from the protected Preview; NameSilo OTE returned provider code 300 for both getAccountBalance and listDomains.
+- **Domain list:** OTE returned an empty list. This is a successful listing of an empty sandbox account, not a listing transport failure.
+- **Domain info:** querying github.com returned provider code 200 with the documented detail that the domain is not active or does not belong to this account. This confirms the account-scoped domain-info path without purchasing a domain.
+- **Availability parsing:** example.com and example.net returned unavailable; github.com returned unavailable; a unique probe domain returned available. Every result was marked environment=test, live=false, with null registration/renewal prices. These are OTE-only classifications, not live registry results.
+- **Balance parsing:** OTE returned code 300 and included code, detail and balance in the reply; the balance field's JSON type was string. The parser still rejected its contents as a plain decimal. The current diagnostic deliberately does not expose the value, so the exact format remains unknown.
+- **Corrected regression:** an earlier diagnostic change over-escaped the decimal regex; this was corrected and the fixture test now exercises a numeric balance string. CI passed on commit ef0dea07e47bf137cd89e2f9af1698295ec43817 (lint/type check, domain schema integration, production build).
+- **Next action:** deploy a safe string-format classification (empty, plain/grouped decimal, currency-formatted, signed decimal, or non-numeric), without returning the balance itself. Only adjust the accepted balance format after the OTE response classification is known.
+- **Safety:** no live provider endpoint, registration, renewal, transfer, nameserver mutation, payment, or OTE funds spend was performed.
+

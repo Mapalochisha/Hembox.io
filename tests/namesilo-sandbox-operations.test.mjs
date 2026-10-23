@@ -420,3 +420,19 @@ test("account balance exposes only reply field names and balance value type when
   assert.doesNotMatch(JSON.stringify(balance), /private-value/)
 })
 
+test("account balance classifies an unexpected string without exposing its contents", async () => {
+  const secretLikeValue = "sandbox balance is not set"
+  const api = createNameSiloSandboxOperations({
+    env: env(),
+    fetchImpl: async () => response({
+      reply: { code: 300, detail: "success", balance: secretLikeValue },
+    }),
+  })
+
+  const balance = await api.getAccountBalance()
+  assert.equal(balance.providerCode, 300)
+  assert.equal(balance.balance, null)
+  assert.equal(balance.responseShape?.balanceStringFormat, "non-numeric")
+  assert.doesNotMatch(JSON.stringify(balance), /sandbox balance is not set/)
+})
+

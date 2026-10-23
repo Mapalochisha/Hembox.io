@@ -2,7 +2,7 @@
 
 > **Purpose:** This is the canonical handoff document for the domain-reselling project. Read it before continuing implementation after a context switch. Update this file as milestones are completed, decisions change, or verification results become available.
 >
-> **Last updated:** 2026-10-22
+> **Last updated:** 2026-10-23
 > **Repository:** `Mapalochisha/Hembox.io`  
 > **Working branch:** `feature/domain-reselling-platform`  
 > **Pull request:** https://github.com/Mapalochisha/Hembox.io/pull/2  
@@ -553,3 +553,12 @@ When resuming this project:
 - **Verification:** `npm run test:domains`, `npx tsc --noEmit` and `npm run lint` pass locally on this revision (lint reports only the pre-existing image/effect warnings). CI and Vercel checks must be re-read for the pushed head before treating the revision as green.
 - **Next verification:** On the protected Preview, run `?scope=account` first. If the balance returns `300` and the domain list is empty, stop expecting a successful `getDomainInfo` until a sandbox domain exists; if a domain is listed, query that exact domain. Do not register a sandbox domain solely to make a diagnostic pass, and do not repeat the `namesilo.com` sample.
 - **Safety:** No live API call, registration, renewal, transfer, nameserver change, payment or OTE fund spend. M2 remains incomplete until a `300` domain-info result for an account-listed domain exists, or NameSilo confirms the out-of-account contract and accepts the account probes as readiness evidence.
+
+### 2026-10-23 — NameSilo OTE smoke tests and balance-field diagnosis
+
+- **Verified read-only results:** account-balance and domain-list operations both returned provider code 300; the domain list was empty. A github.com domain-info query returned the documented account-scope code 200.
+- **Availability endpoint:** tested reserved examples, an existing public domain, and a unique probe name. OTE returned both available and unavailable classifications through HEMBOX, with environment=test, live=false, and no fabricated prices. This verifies response parsing only; it does not establish live registry availability.
+- **Balance follow-up:** OTE returned a successful reply with a string-valued balance field that did not match the expected decimal format. A safe classification is being added to identify its format without returning the balance value.
+- **Regression fix:** corrected an over-escaped decimal regex discovered by CI; the string-value unit test covers this case. CI passed for commit ef0dea07e47bf137cd89e2f9af1698295ec43817.
+- **Release status unchanged:** NameSilo prices/funding, live availability, registration, payment and production launch remain unverified or disabled. No provider mutations or fund spends were performed.
+
