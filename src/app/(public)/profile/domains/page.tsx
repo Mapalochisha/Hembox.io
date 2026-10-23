@@ -309,7 +309,7 @@ export default function CustomerDomainsPage() {
                 <p className="mt-2 text-xs leading-5 text-slate-600">
                   {quoteResult.message} Payment is manual-only for the initial release; domain registration remains separately gated.
                 </p>
-                {quoteResult.quote.usable && quoteResult.order.status === "quoted" ? (
+                {quoteResult.quote.usable && quoteResult.order.status === "quoted" && !paymentSessions[quoteResult.order.id] ? (
                   <button type="button" onClick={() => void beginManualPayment(quoteResult.order.id)} disabled={!!paymentBusyOrder} className="mt-4 inline-flex h-11 items-center justify-center rounded-xl bg-navy px-4 text-sm font-bold text-white disabled:opacity-50">
                     {paymentBusyOrder === quoteResult.order.id ? "Loading instructions…" : "Request manual payment instructions"}
                   </button>
