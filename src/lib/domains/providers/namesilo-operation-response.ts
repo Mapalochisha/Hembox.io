@@ -403,7 +403,15 @@ export function parseNameSiloAccountBalance(
   else balanceFieldType = "object"
 
   const balance = textValue(balanceValue)
-  if (!balance || !/^\d+(?:\.\d+)?$/.test(balance)) {
+  const trimmedBalance = typeof balanceValue === "string" ? balanceValue.trim() : null
+  // OTE has returned valid thousands-grouped decimal strings. Normalize only
+  // strict 3-digit comma groups; do not strip separators from arbitrary text.
+  const normalizedBalance = balance && /^\d+(?:\.\d+)?$/.test(balance)
+    ? balance
+    : trimmedBalance && /^\d{1,3}(?:,\d{3})+(?:\.\d+)?$/.test(trimmedBalance)
+      ? trimmedBalance.replace(/,/g, "")
+      : null
+  if (!normalizedBalance) {
     // These diagnostics expose field names and a value type only; never echo
     // provider response values or the raw response body into the Preview route.
     const replyFields = Object.keys(reply)
@@ -425,7 +433,7 @@ export function parseNameSiloAccountBalance(
 
   return {
     providerCode,
-    balance,
+    balance: normalizedBalance,
     message: "NameSilo OTE returned the sandbox account balance. Sandbox funds are not production funds.",
   }
 }
