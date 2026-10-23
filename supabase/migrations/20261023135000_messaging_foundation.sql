@@ -1,4 +1,11 @@
 -- Ensure the existing inquiry/message framework is represented in Supabase migrations.
+create or replace function public.get_user_role(user_id uuid)
+returns text language sql stable security definer set search_path = '' as $
+  select p.role from public.profiles p where p.id=user_id;
+$;
+revoke all on function public.get_user_role(uuid) from public,anon;
+grant execute on function public.get_user_role(uuid) to authenticated,service_role;
+
 -- Existing installations are preserved through IF NOT EXISTS / additive column changes.
 create table if not exists public.inquiries (
   id uuid primary key default gen_random_uuid(),
