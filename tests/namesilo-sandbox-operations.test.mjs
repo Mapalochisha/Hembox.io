@@ -401,3 +401,22 @@ test("domain list distinguishes an empty sandbox account from a listing failure"
   assert.equal(failedResult.providerCode, 210)
   assert.match(failedResult.message, /response code 210/)
 })
+
+test("account balance exposes only reply field names and balance value type when missing", async () => {
+  const api = createNameSiloSandboxOperations({
+    env: env(),
+    fetchImpl: async () => response({
+      reply: { code: 300, detail: "success", accountFunds: "private-value" },
+    }),
+  })
+
+  const balance = await api.getAccountBalance()
+  assert.equal(balance.providerCode, 300)
+  assert.equal(balance.balance, null)
+  assert.deepEqual(balance.responseShape, {
+    replyFields: ["code", "detail", "accountFunds"],
+    balanceFieldType: "missing",
+  })
+  assert.doesNotMatch(JSON.stringify(balance), /private-value/)
+})
+
