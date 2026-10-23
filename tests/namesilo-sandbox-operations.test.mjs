@@ -331,13 +331,13 @@ test("domain-info does not treat an HTML error page as a provider reply", async 
   assert.doesNotMatch(info.message, /Request blocked/)
 })
 
-test("account balance is a key/account probe that does not reference a domain", async () => {
+test("account balance parses a numeric string without referencing a domain", async () => {
   let requestedUrl
   const api = createNameSiloSandboxOperations({
     env: env(),
     fetchImpl: async (url) => {
       requestedUrl = new URL(String(url))
-      return response({ reply: { code: 300, detail: "success", balance: 355.75 } })
+      return response({ reply: { code: 300, detail: "success", balance: "355.75" } })
     },
   })
 
