@@ -1,11 +1,4 @@
 -- Ensure the existing inquiry/message framework is represented in Supabase migrations.
-create or replace function public.get_user_role(user_id uuid)
-returns text language sql stable security definer set search_path = '' as $
-  select p.role from public.profiles p where p.id=user_id;
-$;
-revoke all on function public.get_user_role(uuid) from public,anon;
-grant execute on function public.get_user_role(uuid) to authenticated,service_role;
-
 -- Existing installations are preserved through IF NOT EXISTS / additive column changes.
 create table if not exists public.inquiries (
   id uuid primary key default gen_random_uuid(),
@@ -30,7 +23,7 @@ create index if not exists inquiries_created_at_idx on public.inquiries(created_
 create index if not exists inquiries_email_idx on public.inquiries(email);
 alter table public.inquiries enable row level security;
 drop policy if exists "Admins can view inquiries" on public.inquiries;
-create policy "Admins can view inquiries" on public.inquiries for select to authenticated using (public.get_user_role(auth.uid())='admin');
+create policy "Admins can view inquiries" on public.inquiries for select to authenticated using (exists (select 1 from public.profiles p where p.id=auth.uid() and p.role='admin'));
 drop policy if exists "Admins can update inquiries" on public.inquiries;
 create policy "Admins can update inquiries" on public.inquiries for update to authenticated using (public.get_user_role(auth.uid())='admin') with check (public.get_user_role(auth.uid())='admin');
 
