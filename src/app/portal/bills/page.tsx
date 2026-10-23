@@ -240,7 +240,7 @@ export default function BillsPage() {
     <textarea aria-label="Message HEMBOX about this arrangement" value={messageDrafts[arrangement.conversation_id] ?? ""} onChange={(event) => setMessageDrafts((current) => ({ ...current, [arrangement.conversation_id]: event.target.value }))} maxLength={5000} rows={2} placeholder="Reply in your HEMBOX billing conversation…" className="min-w-0 flex-1 rounded-lg border border-slate-200 p-3 text-sm outline-none focus:border-teal"/>
     <button onClick={() => void sendBillingMessage(arrangement.conversation_id)} disabled={sendingMessage === arrangement.conversation_id || !(messageDrafts[arrangement.conversation_id] ?? "").trim()} className="rounded-lg bg-navy px-4 py-2 text-sm font-semibold text-white disabled:opacity-50">{sendingMessage === arrangement.conversation_id ? "Sending…" : "Send message"}</button>
   </div>
-</div></p></div> })}</div></section>}\n        <section className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
+</div></div></div> })}</div></section>}\n        <section className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
           <div className="border-b border-slate-100 p-4 sm:p-5">
             <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
               <div className="flex flex-wrap gap-1 rounded-xl bg-slate-100 p-1">{tabs.map((item) => <button key={item.key} onClick={() => setTab(item.key)} className={`rounded-lg px-3 py-2 text-sm font-semibold transition ${tab === item.key ? "bg-white text-navy shadow-sm" : "text-slate-500 hover:text-slate-800"}`}>{item.label}</button>)}</div>
