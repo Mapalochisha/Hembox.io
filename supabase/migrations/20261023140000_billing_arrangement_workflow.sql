@@ -17,6 +17,7 @@ declare
   v_invoice public.billing_invoices%rowtype;
   v_existing public.billing_arrangement_requests%rowtype;
   v_id uuid;
+  v_allocated bigint;
 begin
   if p_customer_id is null or p_invoice_id is null or p_conversation_id is null then
     raise exception 'Customer, invoice, and conversation are required' using errcode = '22023';
@@ -32,8 +33,10 @@ begin
   if p_requested_terms is null or length(trim(p_requested_terms)) not between 5 and 3000 then
     raise exception 'Valid requested terms are required' using errcode = '22023';
   end if;
-  if p_requested_amount_minor is not null and (p_requested_amount_minor <= 0 or p_requested_amount_minor > v_invoice.total_minor) then
-    raise exception 'Requested amount must be positive and no greater than the invoice total' using errcode = '22023';
+  select coalesce(sum(case when a.allocation_type='reverse' then -a.amount_minor else a.amount_minor end),0)::bigint
+    into v_allocated from public.billing_payment_allocations a where a.invoice_id=v_invoice.id;
+  if p_requested_amount_minor is not null and (p_requested_amount_minor <= 0 or p_requested_amount_minor > v_invoice.total_minor-v_allocated) then
+    raise exception 'Requested amount must be positive and no greater than the outstanding invoice balance' using errcode = '22023';
   end if;
   if p_requested_method_key is not null and length(trim(p_requested_method_key)) > 40 then
     raise exception 'Invalid requested method' using errcode = '22023';
