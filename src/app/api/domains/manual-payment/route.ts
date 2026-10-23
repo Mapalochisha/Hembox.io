@@ -101,6 +101,23 @@ export async function POST(request: Request) {
       return json({ claim: replay, idempotentReplay: true })
     }
 
+    const { data: activeClaim, error: activeClaimError } = await db
+      .from("domain_manual_payment_claims")
+      .select("id,order_id,customer_id,payment_reference,transaction_reference,amount_minor,currency,status,created_at")
+      .eq("order_id", order.id)
+      .eq("customer_id", user.id)
+      .in("status", ["submitted", "needs_info", "verified"])
+      .order("created_at", { ascending: false })
+      .limit(1)
+      .maybeSingle()
+    if (activeClaimError) throw activeClaimError
+    if (activeClaim?.status === "submitted" || activeClaim?.status === "verified") {
+      if (activeClaim.transaction_reference === parsed.data.transactionReference) {
+        return json({ claim: activeClaim, idempotentReplay: true })
+      }
+      return json({ error: "A payment claim is already awaiting review for this order.", code: "claim_already_active" }, 409)
+    }
+
     const { data: correction, error: correctionError } = await db
       .from("domain_manual_payment_claims")
       .select("id,status")
