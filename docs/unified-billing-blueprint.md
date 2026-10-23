@@ -6,7 +6,7 @@
 > **Repository:** Mapalochisha/Hembox.io  
 > **Working branch:** feature/unified-billing-platform  
 > **Base branch:** feature/domain-reselling-platform  
-> **Status:** Foundation implementation in progress; not merged and not released.
+> **Status:** Financial schema and first customer/admin billing workflows implemented; later workflow phases remain in progress. Not merged or released.
 
 ## 1. Objective
 
@@ -116,12 +116,12 @@ The conversation/message is a communication record, not a financial ledger. Insp
 ### Phase 0 — Blueprint and repository inspection
 - [x] Record decisions and invariants in this document.
 - [x] Inspect existing domain manual-claim/fulfilment implementation and current messaging entry points.
-- [ ] Confirm billing implementation surface and existing test harness.
+- [x] Confirm billing implementation surface and existing test harness.
 
 ### Phase 1 — Financial data foundation
-- [ ] Add additive invoice, invoice-item, payment-method, claim, verified-payment, allocation, arrangement-request, and billing-event schema.
-- [ ] Add RLS, explicit grants, server-only mutation paths, constraints, indexes, and append-only audit protections.
-- [ ] Add SQL integration tests for currency invariants, partial allocation, idempotency, permissions, over-allocation, and invalid transitions.
+- [x] Add additive invoice, invoice-item, payment-method, claim, verified-payment, allocation, arrangement-request, and billing-event schema.
+- [x] Add RLS, explicit grants, server-only mutation paths, constraints, indexes, and append-only audit protections.
+- [x] Add SQL integration tests for currency invariants, partial allocation, idempotency, permissions, over-allocation, invoice issuance, and invalid transitions.
 - [ ] Do not apply migrations to production.
 
 ### Phase 2 — Domain integration
@@ -130,12 +130,12 @@ The conversation/message is a communication record, not a financial ledger. Insp
 - [ ] Keep manual registration/fulfilment separate.
 
 ### Phase 3 — Customer billing
-- [ ] Build /portal/bills, invoice details/download, payment method/instruction selection, secure receipt submission, claim state, and re-submission.
+- [ ] Build /portal/bills, invoice details/download, payment method/instruction selection, secure receipt submission, claim state, and re-submission. (Initial invoice list, line-item view, and manual payment-claim submission are implemented; secure receipt upload, PDF generation, and safe claim re-submission remain.)
 - [ ] Link arrangement requests to the existing in-app messaging model.
 - [ ] Verify authentication, ownership, empty/loading/error states, responsive layout, and no cross-currency aggregation.
 
 ### Phase 4 — Admin operations
-- [ ] Build invoice management, claims review, payment allocation, method/instruction management, arrangement review, reconciliation, and audit history.
+- [ ] Complete invoice management, claims review, payment allocation, method/instruction management, arrangement review, reconciliation, and audit history. (Initial invoice issuance and claim-review screens/APIs are implemented; the remaining operations are still pending.)
 - [ ] Verify admin-only access and atomic/idempotent review behavior.
 
 ### Phase 5 — Product source integrations
@@ -153,3 +153,4 @@ The conversation/message is a communication record, not a financial ledger. Insp
 ## 10. Progress log
 
 - **2026-10-23 — Blueprint recorded.** Confirmed scope, ZMW default / explicit USD choice, launch-time partial payments, and in-portal custom arrangements. Existing domain manual payment claims and manual registration are the integration baseline. No production data or configuration changed.
+- **2026-10-23 — Foundation and first workflows implemented.** Added the unified billing schema, RLS/grants, append-only audit events, atomic claim review/allocation, atomic invoice issuance, SQL tests, customer /portal/bills page and claim submission API, admin invoice issuance, and admin claim review queue. SQL integration tests, lint/type-check, and production build passed for commit 5276f7e400fa0816f9929e6dfdab11cf5b9523ff. Vercel Preview is READY at https://hembox-k524dutj8-mapalochishas-projects.vercel.app for that exact commit. Verification links: CI https://github.com/Mapalochisha/Hembox.io/actions/runs/40005250944; Preview https://vercel.com/mapalochishas-projects/hembox-io/44JMYrNwbk71wzNX6JGkqRuNvPBH. This is a feature-branch milestone only; no merge or production migration occurred.
