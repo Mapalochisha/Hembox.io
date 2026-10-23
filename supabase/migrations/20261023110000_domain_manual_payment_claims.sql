@@ -4,7 +4,7 @@ create table if not exists public.domain_manual_payment_claims (
   id uuid primary key default gen_random_uuid(),
   order_id uuid not null references public.domain_orders(id) on delete restrict,
   customer_id uuid not null references auth.users(id) on delete restrict,
-  payment_reference text not null unique check (length(trim(payment_reference)) between 8 and 80),
+  payment_reference text not null check (length(trim(payment_reference)) between 8 and 80),
   idempotency_key text not null unique check (length(trim(idempotency_key)) between 8 and 120),
   transaction_reference text not null check (length(trim(transaction_reference)) between 3 and 120),
   amount_minor bigint not null check (amount_minor > 0),
@@ -40,11 +40,11 @@ begin
      or new.customer_id is distinct from old.customer_id
      or new.payment_reference is distinct from old.payment_reference
      or new.idempotency_key is distinct from old.idempotency_key
-     or new.transaction_reference is distinct from old.transaction_reference
      or new.amount_minor is distinct from old.amount_minor
      or new.currency is distinct from old.currency
-     or new.customer_note is distinct from old.customer_note
-     or new.created_at is distinct from old.created_at then
+     or new.created_at is distinct from old.created_at
+     or ((new.transaction_reference is distinct from old.transaction_reference or new.customer_note is distinct from old.customer_note)
+         and not (old.status = 'needs_info' and new.status = 'submitted')) then
     raise exception 'Manual payment claim submission is immutable'
       using errcode = '23514';
   end if;
