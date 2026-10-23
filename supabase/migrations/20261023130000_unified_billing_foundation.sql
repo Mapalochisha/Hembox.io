@@ -105,6 +105,15 @@ create table if not exists public.billing_payments (
 );
 create unique index if not exists billing_payments_source_reference_uidx on public.billing_payments(source_type, source_reference);
 
+do $constraints$
+begin
+  if not exists (select 1 from pg_constraint where conname = 'billing_payment_claims_verified_payment_fk' and conrelid = 'public.billing_payment_claims'::regclass) then
+    alter table public.billing_payment_claims add constraint billing_payment_claims_verified_payment_fk
+      foreign key (verified_payment_id) references public.billing_payments(id) on delete restrict;
+  end if;
+end;
+$constraints$;
+
 create table if not exists public.billing_payment_allocations (
   id uuid primary key default gen_random_uuid(),
   payment_id uuid not null references public.billing_payments(id) on delete restrict,
@@ -269,7 +278,7 @@ begin
   end if;
   update public.billing_payment_claims set status=p_decision,review_note=nullif(trim(p_review_note),''),reviewed_by=p_admin_id,reviewed_at=now(),updated_at=now() where id=p_claim_id;
   insert into public.billing_events(invoice_id,claim_id,actor_user_id,event_type,idempotency_key,details)
-  values(v_claim.invoice_id,v_claim.id,p_admin_id,'payment_claim.'||p_decision,'billing-claim-reviewed:'||v_claim.id::text,jsonb_build_object('review_note',nullif(trim(p_review_note),''))) on conflict(idempotency_key) do nothing;
+  values(v_claim.invoice_id,v_claim.id,p_admin_id,'payment_claim.'||p_decision,'billing-claim-reviewed:'||v_claim.id::text||':'||p_decision||':'||clock_timestamp()::text,jsonb_build_object('review_note',nullif(trim(p_review_note),''))) on conflict(idempotency_key) do nothing;
   return query select p_decision,v_invoice.status,null::uuid,0::bigint;
 end;
 $$;
