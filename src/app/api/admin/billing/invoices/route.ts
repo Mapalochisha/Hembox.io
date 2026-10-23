@@ -84,7 +84,7 @@ export async function POST(request: Request) {
       p_source_type: parsed.data.sourceType || null,
       p_source_id: parsed.data.sourceId || null,
       p_customer_note: parsed.data.customerNote || null,
-      p_commercial_snapshot: parsed.data.commercialSnapshot ?? {},
+      p_commercial_snapshot: { ...(parsed.data.commercialSnapshot ?? {}), currency_policy: { default_currency: "ZMW", invoice_currency: parsed.data.currency, client_explicitly_requested_usd: parsed.data.currency === "USD" && parsed.data.usdClientRequested === true } },
       p_items: parsed.data.items.map((item) => ({ description: item.description, quantity: item.quantity, unit_amount_minor: item.unitAmountMinor, source_type: item.sourceType ?? null, source_id: item.sourceId ?? null, item_snapshot: item.itemSnapshot ?? {} })),
       p_creation_key: parsed.data.creationKey,
       p_tax_minor: parsed.data.taxMinor,
