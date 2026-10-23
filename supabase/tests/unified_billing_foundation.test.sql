@@ -20,9 +20,10 @@ begin
   values('test-transfer','Test bank transfer',array['ZMW','USD'],'Use test reference only.',true) returning id into v_method;
 
   insert into public.billing_invoices(invoice_number,customer_id,status,currency,subtotal_minor,tax_minor,total_minor,issued_at,due_at,source_type,commercial_snapshot)
-  values('INV-TEST-0001',v_customer,'unpaid','ZMW',10000,0,10000,now(),now()+interval '7 days','custom_work','{"fixture":true}'::jsonb) returning id into v_invoice;
+  values('INV-TEST-0001',v_customer,'draft','ZMW',10000,0,10000,null,now()+interval '7 days','custom_work','{"fixture":true}'::jsonb) returning id into v_invoice;
   insert into public.billing_invoice_items(invoice_id,description,quantity,unit_amount_minor)
   values(v_invoice,'Test service',1,10000);
+  update public.billing_invoices set status='unpaid',issued_at=now() where id=v_invoice;
 
   insert into public.billing_payment_claims(invoice_id,customer_id,payment_method_id,method_key_snapshot,method_name_snapshot,method_instructions_snapshot,method_version_snapshot,idempotency_key,transaction_reference,claimed_amount_minor,currency)
   values(v_invoice,v_customer,v_method,'test-transfer','Test bank transfer','Use test reference only.',1,'billing-test-claim-0001','BANK-TXN-TEST-1',4000,'ZMW') returning id into v_claim;
