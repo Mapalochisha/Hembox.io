@@ -51,13 +51,23 @@ export async function POST(request: Request) {
 
     const { data: invoice, error: invoiceError } = await db
       .from("billing_invoices")
-      .select("id,customer_id,status,currency,total_minor")
+      .select("id,customer_id,status,currency,total_minor,source_type,source_id")
       .eq("id", input.invoiceId)
       .maybeSingle()
     if (invoiceError) throw invoiceError
     if (!invoice || invoice.customer_id !== user.id) return json({ error: "Invoice not found." }, 404)
     if (!["unpaid", "partially_paid", "overdue"].includes(invoice.status)) {
       return json({ error: "This invoice is not accepting payment claims." }, 409)
+    }
+
+    if (invoice.source_type === "domain_registration" && invoice.source_id) {
+      const { data: quote, error: quoteError } = await db.from("domain_order_quotes")
+        .select("expires_at").eq("order_id", invoice.source_id)
+        .order("sequence", { ascending: false }).limit(1).maybeSingle()
+      if (quoteError) throw quoteError
+      if (!quote || new Date(quote.expires_at).getTime() <= Date.now()) {
+        return json({ error: "This domain quote has expired. Request a fresh quote before submitting payment.", code: "quote_expired" }, 409)
+      }
     }
 
     if (input.receiptObjectKey) {
