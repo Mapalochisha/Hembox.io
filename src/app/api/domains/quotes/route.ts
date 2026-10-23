@@ -82,7 +82,7 @@ function quoteResponse(row: SavedQuoteRow, orderStatus: string, now = Date.now()
       usable: isDomainQuoteUsable(snapshot, now),
     },
     availability: row.provider_id && row.availability_checked_at
-      ? { provider: row.provider_id, checkedAt: row.availability_checked_at, status: "available" }
+      ? { provider: row.provider_id, checkedAt: row.availability_checked_at, status: "available_at_check" }
       : { provider: null, checkedAt: null, status: "not_verified" },
     checkoutEnabled: false,
     registrationEnabled: false,

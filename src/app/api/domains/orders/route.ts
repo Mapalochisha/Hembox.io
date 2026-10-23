@@ -20,9 +20,15 @@ export async function GET() {
       .limit(100)
 
     if (error) throw error
-    return NextResponse.json({ orders: data ?? [] })
+    return NextResponse.json(
+      { orders: data ?? [] },
+      { headers: { "Cache-Control": "no-store" } },
+    )
   } catch (error) {
     console.error("Customer domain orders read failed:", error)
-    return NextResponse.json({ error: "Domain orders are temporarily unavailable." }, { status: 503 })
+    return NextResponse.json(
+      { error: "Domain orders are temporarily unavailable." },
+      { status: 503, headers: { "Cache-Control": "no-store" } },
+    )
   }
 }

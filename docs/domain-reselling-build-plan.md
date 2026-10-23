@@ -591,3 +591,14 @@ When resuming this project:
 - Added unit and disposable-PostgreSQL regression coverage for live-mode gating, TLD/provider identity, freshness, computed-price consistency, exact-domain availability, immutable quote creation, idempotent replay, mismatched-key rejection, stale evidence and RPC permissions.
 - No payment gateway, live registration, customer checkout UI, TLD enablement, production migration or provider mutation was enabled. The OTE account stays read-only. This milestone remains incomplete until commercial cost/funding checks and actual live-provider pricing are verified.
 - **Verification:** inspect the final head's GitHub Actions and Vercel checks before considering this increment complete.
+
+
+### 2026-10-23 — Customer live-quote request surface (M4 continuation)
+
+- Added a signed-in customer quote-request panel to `/profile/domains`, wired to `POST /api/domains/quotes`. It displays registration, annual renewal, total due for the quoted term, expiry, and the provider's availability-check timestamp while explicitly stating that availability is not a reservation and checkout/registration are disabled.
+- The client preserves an idempotency key through a failed request so an uncertain response can recover the same saved quote; a successful response clears the key so a deliberate follow-up request can create a new quote. The API still enforces authenticated ownership and requires a live provider plus current, internally consistent catalogue pricing.
+- Quote response semantics now say `available_at_check` rather than suggesting availability is guaranteed when a saved quote is replayed.
+- Customer order reads use `Cache-Control: no-store` to avoid caching private account data.
+- Corrected the admin pricing form's new-entry provider default from the retired Domain Name API to `namesilo`. Existing catalogue entries are not silently rewritten; old cost data must be verified and re-saved against the correct provider before they can support a quote.
+- **Safety:** no TLD was enabled, no real payment/checkout/registration enabled, no production migration applied, and no live or OTE mutation performed. The quote endpoint remains fail-closed when live provider/pricing gates are unmet.
+- **Verification:** CI and Vercel Preview must be checked for the resulting commit before this increment is treated as complete.

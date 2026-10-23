@@ -21,7 +21,7 @@ type CatalogRow = {
 
 const emptyForm = {
   tld: ".com",
-  providerId: "domainnameapi",
+  providerId: "namesilo",
   wholesaleCurrency: "USD",
   registrationWholesaleMinor: "",
   renewalWholesaleMinor: "",
@@ -117,7 +117,7 @@ export default function AdminDomainsPage() {
         <h2 className="text-lg font-bold text-navy">Add or update a TLD</h2>
         <form onSubmit={handleSubmit} className="mt-5 grid gap-4 sm:grid-cols-2">
           <Field label="TLD" value={form.tld} onChange={(tld) => setForm({ ...form, tld })} placeholder=".com" />
-          <Field label="Provider ID" value={form.providerId} onChange={(providerId) => setForm({ ...form, providerId })} placeholder="domainnameapi" />
+          <Field label="Provider ID" value={form.providerId} onChange={(providerId) => setForm({ ...form, providerId })} placeholder="namesilo" />
           <Field label="Wholesale currency" value={form.wholesaleCurrency} onChange={(wholesaleCurrency) => setForm({ ...form, wholesaleCurrency: wholesaleCurrency.toUpperCase() })} placeholder="USD" />
           <Field label="Registration cost (minor units)" type="number" value={form.registrationWholesaleMinor} onChange={(registrationWholesaleMinor) => setForm({ ...form, registrationWholesaleMinor })} placeholder="Verified cost in minor units" />
           <Field label="Renewal cost (minor units)" type="number" value={form.renewalWholesaleMinor} onChange={(renewalWholesaleMinor) => setForm({ ...form, renewalWholesaleMinor })} placeholder="Verified cost in minor units" />
