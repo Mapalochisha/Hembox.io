@@ -25,8 +25,8 @@ create index if not exists domain_manual_payment_claims_order_created_idx
 create index if not exists domain_manual_payment_claims_review_queue_idx
   on public.domain_manual_payment_claims (status, created_at asc)
   where status in ('submitted', 'needs_info');
-create unique index if not exists domain_manual_payment_claims_one_verified_order_idx
-  on public.domain_manual_payment_claims (order_id) where status = 'verified';
+create unique index if not exists domain_manual_payment_claims_one_active_order_idx
+  on public.domain_manual_payment_claims (order_id) where status in ('submitted', 'needs_info', 'verified');
 
 alter table public.domain_manual_payment_claims enable row level security;
 revoke all on public.domain_manual_payment_claims from anon, authenticated;
