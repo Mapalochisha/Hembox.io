@@ -640,7 +640,7 @@ When resuming this project:
 - No receipt upload is collected. Admins must independently verify actual settled funds; a customer-provided transaction reference is not payment evidence by itself.
 - Added disposable-PostgreSQL integration assertions for amount mismatch rejection, non-admin rejection, audit history, and successful verification; CI now applies and tests the manual-payment migration.
 - Gateway hosted checkout, gateway credentials, signed webhooks and gateway reconciliation remain deferred. The new workflow requires `DOMAIN_MANUAL_PAYMENT_INSTRUCTIONS` to be configured before customers can begin payment. This configuration has not been populated with real receiving-account details.
-- **Verification status:** implementation changes are still being checked by GitHub Actions and Vercel on the exact latest branch head. Do not call the milestone complete until both are green and the manual-payment workflow has been reviewed in Preview. No production migration, real payment acceptance, live registration, or merge has been performed.
+- **Code verification (commit `55831e75a25368bffaed9d65b3f1e7506819e89c`):** [GitHub Actions CI passed](https://github.com/Mapalochisha/Hembox.io/actions/runs/39985581157) — Domain schema integration tests, Lint & Type Check, and Production Build succeeded. [Vercel Preview is READY](https://vercel.com/mapalochishas-projects/hembox-io/8RgtThLn2QoJ6S1P7PqDrFh2FzoV). The manual-payment release milestone remains incomplete until runtime/staging review and approved receiving-account instructions are configured. No production migration, real payment acceptance, live registration, or merge has been performed.
 
 ### 2026-10-23 — Guarded manual registrar fulfillment added
 
@@ -649,4 +649,11 @@ When resuming this project:
 - It transitions the order through the allowed registration lifecycle, stores the actual provider references/dates, writes an audit event, and treats an exact replay as idempotent.
 - Added an admin order-queue form and disposable-PostgreSQL tests for precondition rejection, successful fulfillment, audit history, and replay safety.
 - **Automated registrar registration remains deferred** until state-changing provider operations and ambiguous outcomes are verified. No live registration was performed.
-- **Verification pending:** final CI and Vercel Preview must pass for the final branch head. No production migration or merge was performed.
+- **Code verification (commit `55831e75a25368bffaed9d65b3f1e7506819e89c`):** [GitHub Actions CI passed](https://github.com/Mapalochisha/Hembox.io/actions/runs/39985581157), including the guarded manual-fulfillment PostgreSQL integration test. [Vercel Preview is READY](https://vercel.com/mapalochishas-projects/hembox-io/8RgtThLn2QoJ6S1P7PqDrFh2FzoV). Runtime/staging review and production release gates remain outstanding; no production migration or merge was performed.
+
+### 2026-10-23 — Manual payment and fulfillment code verification
+
+- Exact implementation commit: `55831e75a25368bffaed9d65b3f1e7506819e89c`.
+- GitHub Actions run [39985581157](https://github.com/Mapalochisha/Hembox.io/actions/runs/39985581157) completed successfully: Domain schema integration tests, Lint & Type Check, and Production Build all passed.
+- Vercel Preview deployment [8RgtThLn2QoJ6S1P7PqDrFh2FzoV](https://vercel.com/mapalochishas-projects/hembox-io/8RgtThLn2QoJ6S1P7PqDrFh2FzoV) is `READY` for that exact code commit.
+- This verifies code/build and disposable-PostgreSQL behavior only. The new migrations have not been applied to production; receiving-account instructions are not configured; no real payment or registration has occurred. PR #2 remains open and unmerged.
