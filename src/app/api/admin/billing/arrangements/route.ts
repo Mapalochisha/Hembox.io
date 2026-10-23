@@ -30,8 +30,8 @@ export async function GET() {
       .select("id,invoice_id,customer_id,conversation_id,requested_method_key,requested_terms,requested_currency,requested_amount_minor,status,decision_note,agreed_terms,decided_by,decided_at,customer_confirmed_at,created_at")
       .order("created_at", { ascending: false }).limit(200)
     if (error) throw error
-    const invoiceIds = [...new Set((data ?? []).map((item) => item.invoice_id))]
-    const customerIds = [...new Set((data ?? []).map((item) => item.customer_id))]
+    const invoiceIds = Array.from(new Set((data ?? []).map((item) => item.invoice_id)))
+    const customerIds = Array.from(new Set((data ?? []).map((item) => item.customer_id)))
     const [{ data: invoices, error: invoiceError }, { data: profiles, error: profileError }] = await Promise.all([
       invoiceIds.length ? db.from("billing_invoices").select("id,invoice_number,currency,total_minor,status").in("id", invoiceIds) : Promise.resolve({ data: [], error: null }),
       customerIds.length ? db.from("profiles").select("id,email,full_name").in("id", customerIds) : Promise.resolve({ data: [], error: null }),
