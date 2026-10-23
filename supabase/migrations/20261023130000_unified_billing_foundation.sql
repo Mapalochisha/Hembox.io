@@ -326,7 +326,12 @@ begin
   end if;
   insert into public.billing_invoices(invoice_number,creation_key,customer_id,status,currency,subtotal_minor,tax_minor,total_minor,due_at,source_type,source_id,customer_note,commercial_snapshot,created_by)
   values(trim(p_invoice_number),trim(p_creation_key),p_customer_id,'draft',p_currency,0,0,0,p_due_at,p_source_type,p_source_id,nullif(trim(p_customer_note),''),coalesce(p_commercial_snapshot,'{}'::jsonb),p_admin_id)
-  returning id into v_invoice_id;
+  on conflict (creation_key) do nothing returning id into v_invoice_id;
+  if v_invoice_id is null then
+    select * into v_existing from public.billing_invoices i where i.creation_key = p_creation_key;
+    if found then return query select v_existing.id, v_existing.invoice_number, false; return; end if;
+    raise exception 'Invoice creation was not completed' using errcode = '23505';
+  end if;
   for v_item in select * from jsonb_to_recordset(p_items) as x(description text, quantity integer, unit_amount_minor bigint, source_type text, source_id uuid, item_snapshot jsonb) loop
     v_description := nullif(trim(v_item.description),'');
     v_quantity := coalesce(v_item.quantity,1);
