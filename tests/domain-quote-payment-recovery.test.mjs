@@ -165,3 +165,178 @@ test("expired quotes and inconsistent payment states are flagged conservatively"
     registration: "ambiguous",
   }), "inconsistent_state_review")
 })
+
+
+import {
+  DomainQuotePreparationError,
+  prepareLiveDomainQuote,
+  validateDomainQuotePricing,
+} from "../src/lib/domains/quote-service"
+
+const quotePolicyNow = Date.parse("2026-10-23T10:00:00.000Z")
+
+function quotePolicyProvider(overrides = {}) {
+  return {
+    id: "namesilo",
+    environment: "live",
+    capabilities: {
+      availabilitySearch: true,
+      registration: false,
+      renewal: false,
+      transfers: false,
+      dnsManagement: false,
+      privacyProtection: false,
+    },
+    ...overrides,
+  }
+}
+
+function quotePolicyCatalog(overrides = {}) {
+  return {
+    tld: ".com",
+    enabled: true,
+    provider_id: "namesilo",
+    wholesale_currency: "USD",
+    registration_wholesale_minor: 1000,
+    renewal_wholesale_minor: 1200,
+    retail_currency: "ZMW",
+    registration_retail_minor: 30000,
+    renewal_retail_minor: 36000,
+    wholesale_fx_rate_micros: 25000000,
+    margin_basis_points: 2000,
+    pricing_source: "provider-price-sheet-and-fx-snapshot",
+    price_updated_at: new Date(quotePolicyNow - 60 * 60 * 1000).toISOString(),
+    ...overrides,
+  }
+}
+
+function quotePolicyAvailability(overrides = {}) {
+  return {
+    domain: "example.com",
+    availability: "available",
+    registrationPrice: null,
+    renewalPrice: null,
+    checkedAt: new Date(quotePolicyNow).toISOString(),
+    source: "namesilo",
+    ...overrides,
+  }
+}
+
+test("live quote preparation validates fresh costs and persists a traceable one-year price", () => {
+  const pricing = validateDomainQuotePricing({
+    domainName: " Example.COM ",
+    catalog: quotePolicyCatalog(),
+    provider: quotePolicyProvider(),
+    now: quotePolicyNow,
+  })
+  const prepared = prepareLiveDomainQuote({
+    pricing,
+    availabilityResult: quotePolicyAvailability(),
+    now: quotePolicyNow,
+  })
+
+  assert.equal(prepared.quote.domainName, "example.com")
+  assert.equal(prepared.quote.currency, "ZMW")
+  assert.equal(prepared.quote.registrationPriceMinor, 30000)
+  assert.equal(prepared.quote.renewalPriceMinor, 36000)
+  assert.equal(prepared.quote.totalDueMinor, 30000)
+  assert.equal(prepared.quote.termYears, 1)
+  assert.equal(prepared.providerId, "namesilo")
+  assert.equal(prepared.availabilityCheckedAt, new Date(quotePolicyNow).toISOString())
+  assert.deepEqual(prepared.pricingBasis, {
+    wholesaleCurrency: "USD",
+    registrationWholesaleMinor: 1000,
+    renewalWholesaleMinor: 1200,
+    fxRateMicros: 25000000,
+    marginBasisPoints: 2000,
+  })
+})
+
+test("live quote preparation refuses sandbox and mock providers", () => {
+  assert.throws(() => validateDomainQuotePricing({
+    domainName: "example.com",
+    catalog: quotePolicyCatalog(),
+    provider: quotePolicyProvider({ environment: "test" }),
+    now: quotePolicyNow,
+  }), (error) => error instanceof DomainQuotePreparationError && error.code === "live_provider_required")
+
+  assert.throws(() => validateDomainQuotePricing({
+    domainName: "example.com",
+    catalog: quotePolicyCatalog(),
+    provider: quotePolicyProvider({ environment: "mock" }),
+    now: quotePolicyNow,
+  }), (error) => error instanceof DomainQuotePreparationError && error.code === "live_provider_required")
+})
+
+test("live quote preparation refuses missing, disabled, stale, or mismatched catalogue data", () => {
+  const provider = quotePolicyProvider()
+  assert.throws(() => validateDomainQuotePricing({
+    domainName: "example.com", catalog: null, provider, now: quotePolicyNow,
+  }), (error) => error instanceof DomainQuotePreparationError && error.code === "price_unavailable")
+
+  assert.throws(() => validateDomainQuotePricing({
+    domainName: "example.com", catalog: quotePolicyCatalog({ enabled: false }), provider, now: quotePolicyNow,
+  }), (error) => error instanceof DomainQuotePreparationError && error.code === "price_unavailable")
+
+  assert.throws(() => validateDomainQuotePricing({
+    domainName: "example.com",
+    catalog: quotePolicyCatalog({ price_updated_at: new Date(quotePolicyNow - 25 * 60 * 60 * 1000).toISOString() }),
+    provider,
+    now: quotePolicyNow,
+  }), (error) => error instanceof DomainQuotePreparationError && error.code === "price_stale")
+
+  assert.throws(() => validateDomainQuotePricing({
+    domainName: "example.com", catalog: quotePolicyCatalog({ provider_id: "other-provider" }), provider, now: quotePolicyNow,
+  }), (error) => error instanceof DomainQuotePreparationError && error.code === "provider_price_mismatch")
+
+  assert.throws(() => validateDomainQuotePricing({
+    domainName: "example.net", catalog: quotePolicyCatalog(), provider, now: quotePolicyNow,
+  }), (error) => error instanceof DomainQuotePreparationError && error.code === "catalog_tld_mismatch")
+})
+
+test("live quote preparation recomputes stored retail values from wholesale, FX, and margin", () => {
+  assert.throws(() => validateDomainQuotePricing({
+    domainName: "example.com",
+    catalog: quotePolicyCatalog({ registration_retail_minor: 25000 }),
+    provider: quotePolicyProvider(),
+    now: quotePolicyNow,
+  }), (error) => error instanceof DomainQuotePreparationError && error.code === "price_snapshot_mismatch")
+
+  assert.throws(() => validateDomainQuotePricing({
+    domainName: "example.com",
+    catalog: quotePolicyCatalog({ retail_currency: "USD" }),
+    provider: quotePolicyProvider(),
+    now: quotePolicyNow,
+  }), (error) => error instanceof DomainQuotePreparationError && error.code === "invalid_price_currency")
+})
+
+test("live quote preparation fails closed on unavailable, unknown, mismatched, and stale registrar results", () => {
+  const pricing = validateDomainQuotePricing({
+    domainName: "example.com",
+    catalog: quotePolicyCatalog(),
+    provider: quotePolicyProvider(),
+    now: quotePolicyNow,
+  })
+
+  assert.throws(() => prepareLiveDomainQuote({
+    pricing, availabilityResult: quotePolicyAvailability({ availability: "unavailable" }), now: quotePolicyNow,
+  }), (error) => error instanceof DomainQuotePreparationError && error.code === "domain_unavailable")
+
+  assert.throws(() => prepareLiveDomainQuote({
+    pricing, availabilityResult: quotePolicyAvailability({ availability: "unknown" }), now: quotePolicyNow,
+  }), (error) => error instanceof DomainQuotePreparationError && error.code === "availability_unconfirmed")
+
+  assert.throws(() => prepareLiveDomainQuote({
+    pricing, availabilityResult: quotePolicyAvailability({ domain: "other.com" }), now: quotePolicyNow,
+  }), (error) => error instanceof DomainQuotePreparationError && error.code === "availability_response_mismatch")
+
+  assert.throws(() => prepareLiveDomainQuote({
+    pricing, availabilityResult: quotePolicyAvailability({ source: "mock" }), now: quotePolicyNow,
+  }), (error) => error instanceof DomainQuotePreparationError && error.code === "availability_response_mismatch")
+
+  assert.throws(() => prepareLiveDomainQuote({
+    pricing,
+    availabilityResult: quotePolicyAvailability({ checkedAt: new Date(quotePolicyNow - 61 * 1000).toISOString() }),
+    now: quotePolicyNow,
+  }), (error) => error instanceof DomainQuotePreparationError && error.code === "availability_stale")
+})

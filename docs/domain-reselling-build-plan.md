@@ -580,3 +580,14 @@ When resuming this project:
 - The amount is sandbox account funds only; it is not production balance or revenue. No funds were spent.
 - The same response again reported no active domains. M2's remaining `getDomainInfo` acceptance criterion is unresolved unless NameSilo confirms the out-of-account behavior and accepts the account probes as readiness evidence; do not register a domain merely for diagnosis.
 - Evidence: parser/test implementation CI passed at [run 39923512370](https://github.com/Mapalochisha/Hembox.io/actions/runs/39923512370), and the subsequent progress-document head passed [run 39923838731](https://github.com/Mapalochisha/Hembox.io/actions/runs/39923838731), including lint/type-check, schema integration, production build, and Vercel Preview. The documentation update itself must receive fresh checks.
+
+
+### 2026-10-23 — Atomic live-verified quote foundation (M3/M4)
+
+- Added a server-only quote preparation service that requires live-mode availability capability, a fresh enabled TLD snapshot, matching provider identity, complete wholesale/FX/margin inputs, and retail prices that recompute exactly from those inputs. Unknown, unavailable, mismatched, and stale provider responses cannot produce a quote. The initial endpoint only quotes one-year terms until verified per-term prices exist.
+- Added authenticated POST /api/domains/quotes. It will fail closed in mock/test/sandbox mode and returns no quote unless the selected live provider confirms the exact requested domain available. A fresh enabled, consistent catalogue entry is also required. The response explicitly states that checkout and registration remain disabled.
+- Added an atomic server-only SQL function that writes a quoted order and immutable quote snapshot in one transaction, serializes duplicate idempotency keys, rejects key reuse for a different domain/customer, and records provider availability plus wholesale/FX/margin inputs for later reconciliation and margin traceability.
+- Customers can read quote snapshots only when linked to their own domain order. The creation RPC is executable only by service_role; all quote and order writes remain server-side.
+- Added unit and disposable-PostgreSQL regression coverage for live-mode gating, TLD/provider identity, freshness, computed-price consistency, exact-domain availability, immutable quote creation, idempotent replay, mismatched-key rejection, stale evidence and RPC permissions.
+- No payment gateway, live registration, customer checkout UI, TLD enablement, production migration or provider mutation was enabled. The OTE account stays read-only. This milestone remains incomplete until commercial cost/funding checks and actual live-provider pricing are verified.
+- **Verification:** inspect the final head's GitHub Actions and Vercel checks before considering this increment complete.
