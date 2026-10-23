@@ -88,6 +88,7 @@ create table if not exists public.billing_payment_claims (
 );
 create index if not exists billing_payment_claims_invoice_created_idx on public.billing_payment_claims(invoice_id, created_at desc);
 create index if not exists billing_payment_claims_review_queue_idx on public.billing_payment_claims(status, created_at asc) where status in ('submitted','needs_info');
+create unique index if not exists billing_payment_claims_one_pending_invoice_idx on public.billing_payment_claims(invoice_id) where status in ('submitted','needs_info');
 
 create table if not exists public.billing_payments (
   id uuid primary key default gen_random_uuid(),
