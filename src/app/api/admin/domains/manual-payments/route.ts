@@ -39,7 +39,7 @@ export async function GET() {
       .order("created_at", { ascending: true })
       .limit(100)
     if (error) throw error
-    const orderIds = [...new Set((claims ?? []).map((claim) => claim.order_id))]
+    const orderIds = Array.from(new Set((claims ?? []).map((claim) => claim.order_id)))
     let orders: unknown[] = []
     if (orderIds.length) {
       const { data, error: ordersError } = await db
