@@ -135,7 +135,7 @@ export default function AdminDomainOrdersPage() {
       {selectedFulfillmentOrder ? (
         <section className="rounded-2xl border border-slate-200 bg-white p-5">
           <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
-            <div><p className="text-xs font-bold uppercase tracking-wide text-teal">Manual registrar fulfillment</p><h2 className="mt-1 text-xl font-black text-navy">{selectedFulfillmentOrder.domain_name}</h2><p className="mt-1 text-sm text-slate-600">First register the domain directly in the registrar's console. Only use this form after you have confirmed the successful registration and expiry date.</p></div>
+            <div><p className="text-xs font-bold uppercase tracking-wide text-teal">Manual registrar fulfillment</p><h2 className="mt-1 text-xl font-black text-navy">{selectedFulfillmentOrder.domain_name}</h2><p className="mt-1 text-sm text-slate-600">First register the domain directly in the registrar&apos;s console. Only use this form after you have confirmed the successful registration and expiry date.</p></div>
             <button type="button" onClick={() => setFulfillOrderId("")} className="h-9 rounded-lg border border-slate-200 px-3 text-sm font-bold">Cancel</button>
           </div>
           {fulfillError ? <p role="alert" className="mt-3 rounded-xl border border-amber-200 bg-amber-50 p-3 text-sm text-amber-900">{fulfillError}</p> : null}
