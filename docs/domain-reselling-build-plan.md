@@ -602,3 +602,11 @@ When resuming this project:
 - Corrected the admin pricing form's new-entry provider default from the retired Domain Name API to `namesilo`. Existing catalogue entries are not silently rewritten; old cost data must be verified and re-saved against the correct provider before they can support a quote.
 - **Safety:** no TLD was enabled, no real payment/checkout/registration enabled, no production migration applied, and no live or OTE mutation performed. The quote endpoint remains fail-closed when live provider/pricing gates are unmet.
 - **Verification:** CI and Vercel Preview must be checked for the resulting commit before this increment is treated as complete.
+
+### 2026-10-23 — Provider-independent margin reporting
+
+- Added an administrator-only, no-store margin-report endpoint and a linked admin dashboard.
+- The report uses the most recent saved quote snapshots and their captured wholesale costs, FX inputs, and retail prices. It calculates indicative registration and renewal gross-margin estimates separately, flags incomplete snapshots, shows expired/unexpired quote counts, and labels the 500-record sample boundary.
+- The report is read-only and does not expose customer contact data, provider secrets, raw webhook payloads, or state-changing controls. It explicitly excludes gateway fees, taxes, refunds, chargebacks, operating costs, and post-quote FX movement; figures are not accounting profit or realized revenue.
+- Added the dashboard to admin navigation. The feature remains on `feature/domain-reselling-platform`; no merge, production migration, payment acceptance, or live registration was performed.
+- **Verification pending:** final CI and Vercel Preview must pass on the exact latest branch head before this change is considered complete.
