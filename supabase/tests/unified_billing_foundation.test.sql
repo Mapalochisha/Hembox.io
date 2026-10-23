@@ -76,6 +76,39 @@ begin
   exception when check_violation then v_rejected := true;
   end;
   if not v_rejected then raise exception 'Over-allocation must be rejected'; end if;
+
+  -- Invoice issuance calculates totals from line items and is idempotent.
+  v_rejected := false;
+  begin
+    perform * from public.create_billing_invoice(
+      v_customer,v_customer,'INV-TEST-0003','ZMW',now()+interval '7 days','custom_work',null,'Test note','{}'::jsonb,
+      '[{"description":"Build","quantity":2,"unit_amount_minor":1250},{"description":"Setup","quantity":1,"unit_amount_minor":500}]'::jsonb,
+      'billing-create-test-0001',200
+    );
+  exception when insufficient_privilege then v_rejected := true;
+  end;
+  if not v_rejected then raise exception 'Non-admin must not issue invoices'; end if;
+
+  select * into v_result from public.create_billing_invoice(
+    v_admin,v_customer,'INV-TEST-0003','ZMW',now()+interval '7 days','custom_work',null,'Test note','{}'::jsonb,
+    '[{"description":"Build","quantity":2,"unit_amount_minor":1250},{"description":"Setup","quantity":1,"unit_amount_minor":500}]'::jsonb,
+    'billing-create-test-0001',200
+  );
+  if not v_result.created then raise exception 'First invoice creation should report created=true'; end if;
+  select status into v_status from public.billing_invoices where id=v_result.invoice_id;
+  if v_status <> 'unpaid' then raise exception 'New invoice should be issued as unpaid'; end if;
+  select total_minor into v_allocated from public.billing_invoices where id=v_result.invoice_id;
+  if v_allocated <> 3200 then raise exception 'Invoice total should be item subtotal plus explicit tax, got %',v_allocated; end if;
+
+  select * into v_result from public.create_billing_invoice(
+    v_admin,v_customer,'INV-TEST-0003','ZMW',now()+interval '7 days','custom_work',null,'Test note','{}'::jsonb,
+    '[{"description":"Build","quantity":2,"unit_amount_minor":1250},{"description":"Setup","quantity":1,"unit_amount_minor":500}]'::jsonb,
+    'billing-create-test-0001',200
+  );
+  if v_result.created then raise exception 'Replay of invoice creation must be idempotent'; end if;
+  if (select count(*) from public.billing_invoices where creation_key='billing-create-test-0001') <> 1 then
+    raise exception 'Invoice replay created a duplicate invoice';
+  end if;
 end
 $test$;
 
