@@ -39,6 +39,7 @@ const menuItems = [
   { icon: DollarSign, label: "Manual Payments", href: "/admin/domains/manual-payments" },
   { icon: CreditCard, label: "Billing Invoices", href: "/admin/billing/invoices" },
   { icon: CreditCard, label: "Billing Claims", href: "/admin/billing/payments" },
+  { icon: CreditCard, label: "Payment Arrangements", href: "/admin/billing/arrangements" },
   { icon: BarChart3, label: "Domain Margins", href: "/admin/domains/margins" },
   { icon: Image, label: "Media", href: "/admin/media" },
   { icon: MessageSquare, label: "Messages", href: "/admin/messages" },
