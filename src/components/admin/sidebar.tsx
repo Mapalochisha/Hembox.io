@@ -35,6 +35,7 @@ const menuItems = [
   { icon: DollarSign, label: "Pricing", href: "/admin/pricing" },
   { icon: Globe2, label: "Domains", href: "/admin/domains" },
   { icon: ListChecks, label: "Domain Orders", href: "/admin/domains/orders" },
+  { icon: BarChart3, label: "Domain Margins", href: "/admin/domains/margins" },
   { icon: Image, label: "Media", href: "/admin/media" },
   { icon: MessageSquare, label: "Messages", href: "/admin/messages" },
 ]
