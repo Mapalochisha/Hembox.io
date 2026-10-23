@@ -13,6 +13,9 @@ const schema = z.object({
   transactionReference: z.string().trim().min(3).max(160).regex(/^[A-Za-z0-9 ._:/+-]+$/),
   amountMinor: z.number().int().positive().max(Number.MAX_SAFE_INTEGER),
   customerNote: z.string().trim().max(1000).optional(),
+  receiptObjectKey: z.string().trim().min(1).max(500).optional(),
+  receiptMimeType: z.enum(["image/png","image/jpeg","application/pdf"]).optional(),
+  receiptSizeBytes: z.number().int().positive().max(10485760).optional(),
 }).strict()
 
 function json(body: unknown, status = 200) {
@@ -23,6 +26,8 @@ export async function POST(request: Request) {
   const body = await request.json().catch(() => null)
   const parsed = schema.safeParse(body)
   if (!parsed.success) return json({ error: "Provide a valid invoice and payment claim." }, 400)
+
+  if (!!parsed.data.receiptObjectKey !== !!parsed.data.receiptMimeType || !!parsed.data.receiptObjectKey !== !!parsed.data.receiptSizeBytes) return json({ error: "Receipt metadata is incomplete." }, 400)
 
   try {
     const authClient = createClient()
@@ -53,6 +58,19 @@ export async function POST(request: Request) {
     if (!invoice || invoice.customer_id !== user.id) return json({ error: "Invoice not found." }, 404)
     if (!["unpaid", "partially_paid", "overdue"].includes(invoice.status)) {
       return json({ error: "This invoice is not accepting payment claims." }, 409)
+    }
+
+    if (input.receiptObjectKey) {
+      const prefix = `${user.id}/${invoice.id}/`
+      if (!input.receiptObjectKey.startsWith(prefix) || input.receiptObjectKey.includes("..") || input.receiptObjectKey.includes("://")) return json({ error: "Receipt does not belong to this invoice." }, 400)
+      const objectName = input.receiptObjectKey.slice(prefix.length)
+      if (!/^[0-9a-f-]{36}\.(png|jpg|pdf)$/i.test(objectName)) return json({ error: "Invalid receipt object key." }, 400)
+      const expectedExtension = input.receiptMimeType === "image/png" ? "png" : input.receiptMimeType === "image/jpeg" ? "jpg" : "pdf"
+      if (!objectName.endsWith(`.${expectedExtension}`)) return json({ error: "Receipt file type does not match its metadata." }, 400)
+      const { data: objects, error: storageError } = await db.storage.from("billing-receipts").list(prefix, { search: objectName, limit: 10 })
+      if (storageError) throw storageError
+      const uploaded = (objects ?? []).find((object) => object.name === objectName)
+      if (!uploaded || Number(uploaded.metadata?.size ?? 0) !== input.receiptSizeBytes || String(uploaded.metadata?.mimetype ?? "") !== input.receiptMimeType) return json({ error: "Receipt upload could not be verified. Upload it again." }, 400)
     }
 
     const { data: method, error: methodError } = await db
@@ -104,6 +122,9 @@ export async function POST(request: Request) {
         claimed_amount_minor: input.amountMinor,
         currency: invoice.currency,
         customer_note: input.customerNote?.trim() || null,
+        receipt_object_key: input.receiptObjectKey ?? null,
+        receipt_mime_type: input.receiptMimeType ?? null,
+        receipt_size_bytes: input.receiptSizeBytes ?? null,
         status: "submitted",
       })
       .select("id,status,invoice_id,claimed_amount_minor,currency,created_at")
