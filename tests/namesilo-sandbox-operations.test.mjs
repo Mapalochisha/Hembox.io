@@ -350,6 +350,35 @@ test("account balance parses a numeric string without referencing a domain", asy
   assert.equal(balance.balance, "355.75")
 })
 
+test("account balance normalizes a well-formed grouped decimal string", async () => {
+  const api = createNameSiloSandboxOperations({
+    env: env(),
+    fetchImpl: async () => response({
+      reply: { code: 300, detail: "success", balance: "12,345,678.90" },
+    }),
+  })
+
+  const balance = await api.getAccountBalance()
+  assert.equal(balance.providerCode, 300)
+  assert.equal(balance.balance, "12345678.90")
+  assert.equal(balance.responseShape, undefined)
+})
+
+test("account balance rejects irregular grouping without exposing the value", async () => {
+  const api = createNameSiloSandboxOperations({
+    env: env(),
+    fetchImpl: async () => response({
+      reply: { code: 300, detail: "success", balance: "12,34.56" },
+    }),
+  })
+
+  const balance = await api.getAccountBalance()
+  assert.equal(balance.providerCode, 300)
+  assert.equal(balance.balance, null)
+  assert.equal(balance.responseShape?.balanceStringFormat, "non-numeric")
+  assert.doesNotMatch(JSON.stringify(balance), /12,34\.56/)
+})
+
 test("account balance reports provider rejection without inventing a balance", async () => {
   const api = createNameSiloSandboxOperations({
     env: env(),
