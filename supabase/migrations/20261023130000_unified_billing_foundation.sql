@@ -4,6 +4,7 @@
 create table if not exists public.billing_invoices (
   id uuid primary key default gen_random_uuid(),
   invoice_number text not null unique check (length(trim(invoice_number)) between 4 and 40),
+  creation_key text unique check (creation_key is null or length(trim(creation_key)) between 8 and 160),
   customer_id uuid not null references auth.users(id) on delete restrict,
   status text not null default 'draft' check (status in ('draft','unpaid','partially_paid','paid','overdue','void')),
   currency text not null default 'ZMW' check (currency ~ '^[A-Z]{3}$'),
@@ -285,3 +286,66 @@ end;
 $$;
 revoke all on function public.review_billing_payment_claim(uuid,uuid,text,text) from public, anon, authenticated;
 grant execute on function public.review_billing_payment_claim(uuid,uuid,text,text) to service_role;
+
+-- Issue an invoice atomically from a server-validated item snapshot.
+create or replace function public.create_billing_invoice(
+  p_admin_id uuid, p_customer_id uuid, p_invoice_number text, p_currency text,
+  p_due_at timestamptz, p_source_type text, p_source_id uuid, p_customer_note text,
+  p_commercial_snapshot jsonb, p_items jsonb, p_creation_key text, p_tax_minor bigint default 0
+) returns table(invoice_id uuid, invoice_number text, created boolean)
+language plpgsql security definer set search_path = '' as $$
+declare
+  v_existing public.billing_invoices%rowtype;
+  v_invoice_id uuid;
+  v_subtotal numeric := 0;
+  v_total numeric;
+  v_item record;
+  v_quantity integer;
+  v_unit_minor bigint;
+  v_description text;
+begin
+  if p_admin_id is null or not exists (select 1 from public.profiles p where p.id = p_admin_id and p.role = 'admin') then
+    raise exception 'Administrator required' using errcode = '42501';
+  end if;
+  if p_customer_id is null or not exists (select 1 from auth.users u where u.id = p_customer_id) then
+    raise exception 'Valid invoice customer required' using errcode = '22023';
+  end if;
+  if p_invoice_number is null or length(trim(p_invoice_number)) not between 4 and 40 or p_invoice_number !~ '^[A-Za-z0-9][A-Za-z0-9._/-]+$' then
+    raise exception 'Invalid invoice number' using errcode = '22023';
+  end if;
+  if p_currency not in ('ZMW','USD') then raise exception 'Unsupported invoice currency' using errcode = '22023'; end if;
+  if p_tax_minor is null or p_tax_minor < 0 then raise exception 'Invalid invoice tax amount' using errcode = '22023'; end if;
+  if p_creation_key is null or length(trim(p_creation_key)) not between 8 and 160 then raise exception 'Valid idempotency key required' using errcode = '22023'; end if;
+  if p_items is null or jsonb_typeof(p_items) <> 'array' or jsonb_array_length(p_items) not between 1 and 50 then
+    raise exception 'Invoice must contain between 1 and 50 items' using errcode = '22023';
+  end if;
+  select * into v_existing from public.billing_invoices i where i.creation_key = p_creation_key;
+  if found then return query select v_existing.id, v_existing.invoice_number, false; return; end if;
+  if p_source_type is not null and p_source_type not in ('website_plan','domain_registration','domain_renewal','addon','custom_work','adjustment','other') then
+    raise exception 'Unsupported invoice source type' using errcode = '22023';
+  end if;
+  insert into public.billing_invoices(invoice_number,creation_key,customer_id,status,currency,subtotal_minor,tax_minor,total_minor,due_at,source_type,source_id,customer_note,commercial_snapshot,created_by)
+  values(trim(p_invoice_number),trim(p_creation_key),p_customer_id,'draft',p_currency,0,0,0,p_due_at,p_source_type,p_source_id,nullif(trim(p_customer_note),''),coalesce(p_commercial_snapshot,'{}'::jsonb),p_admin_id)
+  returning id into v_invoice_id;
+  for v_item in select * from jsonb_to_recordset(p_items) as x(description text, quantity integer, unit_amount_minor bigint, source_type text, source_id uuid, item_snapshot jsonb) loop
+    v_description := nullif(trim(v_item.description),'');
+    v_quantity := coalesce(v_item.quantity,1);
+    v_unit_minor := v_item.unit_amount_minor;
+    if v_description is null or length(v_description) > 240 or v_quantity not between 1 and 10000 or v_unit_minor is null or v_unit_minor < 0 then
+      raise exception 'Invalid invoice item' using errcode = '22023';
+    end if;
+    v_subtotal := v_subtotal + v_quantity::numeric * v_unit_minor::numeric;
+    if v_subtotal > 9223372036854775807 then raise exception 'Invoice subtotal is too large' using errcode = '22003'; end if;
+    insert into public.billing_invoice_items(invoice_id,description,quantity,unit_amount_minor,source_type,source_id,item_snapshot)
+    values(v_invoice_id,v_description,v_quantity,v_unit_minor,v_item.source_type,v_item.source_id,coalesce(v_item.item_snapshot,'{}'::jsonb));
+  end loop;
+  v_total := v_subtotal + p_tax_minor::numeric;
+  if v_total > 9223372036854775807 then raise exception 'Invoice total is too large' using errcode = '22003'; end if;
+  update public.billing_invoices set subtotal_minor=v_subtotal::bigint,tax_minor=p_tax_minor,total_minor=v_total::bigint,status='unpaid',issued_at=now() where id=v_invoice_id;
+  insert into public.billing_events(invoice_id,actor_user_id,event_type,idempotency_key,details)
+  values(v_invoice_id,p_admin_id,'invoice.issued','billing-invoice-issued:'||v_invoice_id::text,jsonb_build_object('invoice_number',trim(p_invoice_number),'currency',p_currency,'subtotal_minor',v_subtotal,'tax_minor',p_tax_minor,'total_minor',v_total,'item_count',jsonb_array_length(p_items)));
+  return query select v_invoice_id,trim(p_invoice_number),true;
+end;
+$$;
+revoke all on function public.create_billing_invoice(uuid,uuid,text,text,timestamptz,text,uuid,text,jsonb,jsonb,text,bigint) from public, anon, authenticated;
+grant execute on function public.create_billing_invoice(uuid,uuid,text,text,timestamptz,text,uuid,text,jsonb,jsonb,text,bigint) to service_role;
