@@ -2,7 +2,7 @@
 
 > **Purpose:** This is the canonical handoff document for the domain-reselling project. Read it before continuing implementation after a context switch. Update this file as milestones are completed, decisions change, or verification results become available.
 >
-> **Last updated:** 2026-10-23 (manual-payment launch strategy)
+> **Last updated:** 2026-10-23
 > **Repository:** `Mapalochisha/Hembox.io`  
 > **Working branch:** `feature/domain-reselling-platform`  
 > **Pull request:** https://github.com/Mapalochisha/Hembox.io/pull/2  
@@ -139,7 +139,7 @@ Use `[x]` only after the milestone's acceptance criteria have been met and verif
 
 **Scope**
 - Provide customer-facing instructions for manual payment and a unique order/payment reference.
-- Allow customers to submit a payment claim and optional evidence without treating uploads or screenshots as proof of settled funds.
+- Allow customers to submit a transaction reference and optional note; do not store receipt uploads in the initial release. A reference is a claim, not proof of settled funds.
 - Add an administrator-only review queue to mark a claim as verified, rejected, or needing more information.
 - Record reviewer, timestamp, decision, reason, and immutable audit events; make repeated submissions and repeated decisions idempotent.
 - Keep order state separate from payment-claim state. Only an authorized admin can mark manual payment as verified after checking the actual receiving account/transaction.
@@ -150,7 +150,7 @@ Use `[x]` only after the milestone's acceptance criteria have been met and verif
 - Unverified customer claims cannot transition an order to paid/eligible-for-registration.
 - Only authorized admins can verify/reject claims, with audit history.
 - Duplicate submissions and repeated review actions cannot create duplicate payment confirmations.
-- Evidence is private, access-controlled, size/type limited, and never served publicly; if secure storage cannot be assured, use a reference/notes workflow instead of uploads.
+- The initial workflow stores only the transaction reference and optional note; no receipt files are uploaded or served.
 - Automated tests cover ownership, admin authorization, idempotency, state transitions, and audit records.
 
 **Deferred gateway scope (greyed out / not in initial release)**
@@ -632,3 +632,13 @@ When resuming this project:
 - **Gateway explicitly deferred:** gateway selection/onboarding, hosted checkout, API integration, signed webhooks and gateway-specific reconciliation are out of scope until a custom domain and required onboarding can be funded. Revisit this milestone later.
 - **Launch scope:** continue building provider-independent customer, order, admin, reconciliation, security and staging workflows. Do not enable live payment acceptance or live registration, apply production migrations, or merge without explicit authorization and completed release gates.
 - **Verification:** this is a plan/priority decision; the implementation must receive fresh CI and Vercel checks before being treated as complete.
+
+### 2026-10-23 — Manual payment workflow implementation started
+
+- Added a feature-branch migration for manual payment claims, with customer/admin read policies, server-only writes, an active-claim uniqueness guard, immutable claim identity, and an administrator-only transactional review function.
+- Added customer API actions to request configured manual payment instructions and submit a transaction reference against the current saved quote. Order ownership is checked server-side; quote expiry and exact amount are enforced. Idempotency and duplicate-active-claim protections are included.
+- Added customer dashboard payment instructions/claim status UI, an admin review queue, and an admin review API. Verifying funds requires the signed-in administrator role, a matching saved quote amount, and a claim submitted before quote expiry; it atomically records the review and transitions the order to `payment_confirmed`.
+- No receipt upload is collected. Admins must independently verify actual settled funds; a customer-provided transaction reference is not payment evidence by itself.
+- Added disposable-PostgreSQL integration assertions for amount mismatch rejection, non-admin rejection, audit history, and successful verification; CI now applies and tests the manual-payment migration.
+- Gateway hosted checkout, gateway credentials, signed webhooks and gateway reconciliation remain deferred. The new workflow requires `DOMAIN_MANUAL_PAYMENT_INSTRUCTIONS` to be configured before customers can begin payment. This configuration has not been populated with real receiving-account details.
+- **Verification status:** implementation changes are still being checked by GitHub Actions and Vercel on the exact latest branch head. Do not call the milestone complete until both are green and the manual-payment workflow has been reviewed in Preview. No production migration, real payment acceptance, live registration, or merge has been performed.
