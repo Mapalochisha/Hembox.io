@@ -12,6 +12,7 @@ type Invoice = { id: string; invoice_number: string; status: InvoiceStatus; curr
 type Claim = { id: string; invoice_id: string; status: string; claimed_amount_minor: number; currency: string; transaction_reference: string; review_note: string | null; created_at: string }
 type Allocation = { invoice_id: string; amount_minor: number; currency: string; allocation_type: string }
 type PaymentMethod = { id: string; method_key: string; display_name: string; instructions: string; version: number; supported_currencies: string[] }
+type InvoiceItem = { invoice_id: string; description: string; quantity: number; unit_amount_minor: number; line_total_minor: number }
 type TabKey = "all" | "unpaid" | "under_review" | "paid"
 
 const tabs: { key: TabKey; label: string }[] = [
@@ -48,6 +49,7 @@ export default function BillsPage() {
   const [claims, setClaims] = useState<Claim[]>([])
   const [allocations, setAllocations] = useState<Allocation[]>([])
   const [methods, setMethods] = useState<PaymentMethod[]>([])
+  const [itemsByInvoice, setItemsByInvoice] = useState<Record<string, InvoiceItem[]>>({})
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState("")
   const [notice, setNotice] = useState("")
@@ -75,7 +77,16 @@ export default function BillsPage() {
       console.error("[Billing] Unable to load billing data:", failed)
       setError("We could not load your billing information. Refresh the page or try again shortly.")
     } else {
-      setInvoices((invoiceResult.data ?? []) as Invoice[])
+      const loadedInvoices = (invoiceResult.data ?? []) as Invoice[]
+      const invoiceIds = loadedInvoices.map((invoice) => invoice.id)
+      const itemResult = invoiceIds.length
+        ? await supabase.from("billing_invoice_items").select("invoice_id,description,quantity,unit_amount_minor,line_total_minor").in("invoice_id", invoiceIds)
+        : { data: [], error: null }
+      if (itemResult.error) throw itemResult.error
+      const itemGroups: Record<string, InvoiceItem[]> = {}
+      for (const item of (itemResult.data ?? []) as InvoiceItem[]) itemGroups[item.invoice_id] = [...(itemGroups[item.invoice_id] ?? []), item]
+      setInvoices(loadedInvoices)
+      setItemsByInvoice(itemGroups)
       setClaims((claimResult.data ?? []) as Claim[])
       setAllocations((allocationResult.data ?? []) as Allocation[])
       setMethods((methodResult.data ?? []) as PaymentMethod[])
@@ -182,7 +193,7 @@ export default function BillsPage() {
               const displayStatus = review ? "under_review" : due === 0 ? "paid" : invoice.status === "overdue" ? "overdue" : due < invoice.total_minor ? "partially_paid" : "unpaid"
               return <tr key={invoice.id} className="align-top hover:bg-slate-50/70">
                 <td className="px-5 py-4"><p className="font-semibold text-navy">{invoice.invoice_number}</p><p className="mt-1 text-xs text-slate-500">{invoice.currency}</p></td>
-                <td className="px-5 py-4"><p className="font-medium text-slate-800">{label(invoice.source_type ?? "service")}</p>{invoice.source_id && <p className="mt-1 max-w-[180px] truncate text-xs text-slate-500">{invoice.source_id}</p>}</td>
+                <td className="px-5 py-4"><p className="font-medium text-slate-800">{itemsByInvoice[invoice.id]?.[0]?.description ?? label(invoice.source_type ?? "service")}</p>{(itemsByInvoice[invoice.id]?.length ?? 0) > 1 && <p className="mt-1 text-xs text-slate-500">+ {(itemsByInvoice[invoice.id]?.length ?? 1) - 1} more item(s)</p>}{invoice.source_id && <p className="mt-1 max-w-[180px] truncate text-xs text-slate-500">Ref: {invoice.source_id}</p>}</td>
                 <td className="px-5 py-4 text-slate-600"><p>Issued {formatDate(invoice.issued_at)}</p><p className="mt-1 text-xs">Due {formatDate(invoice.due_at)}</p></td>
                 <td className="px-5 py-4"><p className="font-semibold text-navy">{money(due,invoice.currency)}</p><p className="mt-1 text-xs text-slate-500">of {money(Number(invoice.total_minor),invoice.currency)}</p></td>
                 <td className="px-5 py-4"><span className={`inline-flex rounded-full px-2.5 py-1 text-xs font-semibold ring-1 ring-inset ${statusClass(displayStatus)}`}>{label(displayStatus)}</span>{invoiceClaims.filter((claim) => claim.status === "rejected" || claim.status === "needs_info").slice(0,1).map((claim) => <p key={claim.id} className="mt-2 max-w-[180px] text-xs text-amber-800">{claim.review_note || (claim.status === "needs_info" ? "More information requested" : "Claim rejected")}</p>)}</td>
