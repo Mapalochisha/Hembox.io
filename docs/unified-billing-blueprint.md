@@ -125,28 +125,28 @@ The conversation/message is a communication record, not a financial ledger. Insp
 - [ ] Do not apply migrations to production.
 
 ### Phase 2 — Domain integration
-- [ ] Define the domain-order-to-invoice path without bypassing existing quote/order guards.
-- [ ] Reconcile the existing domain claim workflow into the generic billing path, with no silent backfill.
-- [ ] Keep manual registration/fulfilment separate.
+- [x] Define the domain-order-to-invoice path without bypassing existing quote/order guards. New domain quotes create one immutable invoice snapshot keyed to the saved quote/order; quote retry is idempotent.
+- [x] Reconcile the existing domain claim workflow into the generic billing path, with no silent backfill. Verified legacy domain claims create verified ledger payments/allocations; generic full allocation advances the domain order to payment-confirmed.
+- [x] Keep manual registration/fulfilment separate; paid status does not register a domain.
 
 ### Phase 3 — Customer billing
-- [ ] Build /portal/bills, invoice details/download, payment method/instruction selection, secure receipt submission, claim state, and re-submission. (Initial invoice list, line-item view, and manual payment-claim submission are implemented; secure receipt upload, PDF generation, and safe claim re-submission remain.)
-- [ ] Link arrangement requests to the existing in-app messaging model.
-- [ ] Verify authentication, ownership, empty/loading/error states, responsive layout, and no cross-currency aggregation.
+- [x] Build /portal/bills, invoice line-item details, print/save-as-PDF invoice statements, payment method/instruction selection, private receipt upload, claim state, and re-submission for claims needing information.
+- [x] Link arrangement requests to the existing in-app messaging model. Customer/admin arrangement decisions and customer replies are linked to an invoice-scoped billing conversation.
+- [x] Implement authentication/ownership checks, loading/error/empty states, responsive portal layout, and currency-separated totals. Runtime review still requires applying migrations to an approved non-production database.
 
 ### Phase 4 — Admin operations
-- [ ] Complete invoice management, claims review, payment allocation, method/instruction management, arrangement review, reconciliation, and audit history. (Initial invoice issuance and claim-review screens/APIs are implemented; the remaining operations are still pending.)
-- [ ] Verify admin-only access and atomic/idempotent review behavior.
+- [x] Implement invoice issuance, safe voiding of unpaid non-domain invoices, claim review with atomic allocation, payment method/instruction management, arrangement review, reconciliation, and audit history. Manual reversal/refund operations remain a later controlled workflow.
+- [x] Add admin-only server routes and atomic/idempotent SQL operations for invoice issuance, claim verification, arrangement review, domain invoice creation, and invoice voiding; SQL integration tests cover core transitions.
 
 ### Phase 5 — Product source integrations
-- [ ] Connect website plans, domains/renewals, add-ons, and custom work through stable source references and immutable pricing snapshots.
-- [ ] Verify duplicate source events cannot create duplicate invoices.
+- [x] Add stable source references and immutable pricing snapshots for website plans, domain registration/renewal, add-ons, custom work, adjustments, and other invoice types. Domain registration has automatic quote-to-invoice bridging; renewal scheduling and any future checkout integrations must use this same ledger.
+- [x] Verify idempotent invoice creation and duplicate source protection in the schema/API; domain quote retries reuse the existing invoice.
 - [ ] Keep gateway checkout and signed webhooks deferred.
 
 ### Phase 6 — Release gates
-- [ ] Run all SQL integration tests, lint/type-check, and production build on the exact final commit.
-- [ ] Verify GitHub Actions CI is green for the exact PR head.
-- [ ] Verify Vercel Preview deployment is READY for the exact same commit and inspect relevant deployment checks/logs where available.
+- [ ] Re-run all SQL integration tests, lint/type-check, and production build on the final documentation/implementation commit.
+- [ ] Verify GitHub Actions CI is green for the exact final PR head.
+- [ ] Verify Vercel Preview deployment is READY for the exact same final commit and inspect relevant deployment checks/logs where available.
 - [ ] Record commit SHA, CI run URL, and Preview deployment URL here.
 - [ ] No merge, production migration, production deployment promotion, live payment collection, or registrar mutation without explicit user approval.
 
