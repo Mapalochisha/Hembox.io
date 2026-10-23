@@ -61,6 +61,7 @@ export default function BillsPage() {
   const [amount, setAmount] = useState("")
   const [transactionReference, setTransactionReference] = useState("")
   const [customerNote, setCustomerNote] = useState("")
+  const [receiptFile, setReceiptFile] = useState<File | null>(null)
   const [submitting, setSubmitting] = useState(false)
 
   const load = useCallback(async () => {
@@ -129,7 +130,7 @@ export default function BillsPage() {
     setSelectedInvoice(invoice)
     setMethodId(methods.find((method) => method.supported_currencies.includes(invoice.currency))?.id ?? "")
     setAmount((outstanding(invoice) / 100).toFixed(2))
-    setTransactionReference(""); setCustomerNote(""); setError(""); setNotice("")
+    setTransactionReference(""); setCustomerNote(""); setReceiptFile(null); setError(""); setNotice("")
   }
 
   const submitClaim = async () => {
@@ -140,13 +141,24 @@ export default function BillsPage() {
     if (transactionReference.trim().length < 3) { setError("Enter the transaction reference shown by your bank or mobile-money provider."); return }
     setSubmitting(true); setError(""); setNotice("")
     try {
+      let receipt: { objectKey: string; mimeType: string; sizeBytes: number } | undefined
+      if (receiptFile) {
+        const form = new FormData()
+        form.set("invoiceId", selectedInvoice.id)
+        form.set("receipt", receiptFile)
+        const uploadResponse = await fetch("/api/billing/receipts", { method: "POST", body: form })
+        const uploadResult = await uploadResponse.json()
+        if (!uploadResponse.ok) throw new Error(uploadResult.error || "Unable to upload receipt.")
+        receipt = { objectKey: uploadResult.objectKey, mimeType: uploadResult.mimeType, sizeBytes: uploadResult.sizeBytes }
+      }
       const response = await fetch("/api/billing/claims", {
         method: "POST", headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ invoiceId: selectedInvoice.id, paymentMethodId: methodId, idempotencyKey: `bill-${crypto.randomUUID()}`, transactionReference: transactionReference.trim(), amountMinor, customerNote: customerNote.trim() || undefined }),
+        body: JSON.stringify({ invoiceId: selectedInvoice.id, paymentMethodId: methodId, idempotencyKey: `bill-${crypto.randomUUID()}`, transactionReference: transactionReference.trim(), amountMinor, customerNote: customerNote.trim() || undefined, receiptObjectKey: receipt?.objectKey, receiptMimeType: receipt?.mimeType, receiptSizeBytes: receipt?.sizeBytes }),
       })
       const result = await response.json()
       if (!response.ok) throw new Error(result.error || "Unable to submit payment claim.")
       setSelectedInvoice(null)
+      setReceiptFile(null)
       setNotice("Payment claim submitted. Your invoice balance will change only after the payment is verified.")
       await load()
     } catch (err) { setError(err instanceof Error ? err.message : "Unable to submit payment claim.") }
@@ -217,7 +229,7 @@ export default function BillsPage() {
             <label className="block"><span className="mb-1.5 block text-sm font-semibold text-slate-700">Amount paid ({selectedInvoice.currency})</span><input inputMode="decimal" value={amount} onChange={(event) => setAmount(event.target.value)} className="w-full rounded-xl border border-slate-200 px-3 py-3 text-sm outline-none focus:border-teal" placeholder="0.00" required /><span className="mt-1 block text-xs text-slate-500">Maximum {money(outstanding(selectedInvoice),selectedInvoice.currency)}. Partial payments are accepted.</span></label>
             <label className="block"><span className="mb-1.5 block text-sm font-semibold text-slate-700">Transaction reference</span><input value={transactionReference} onChange={(event) => setTransactionReference(event.target.value)} className="w-full rounded-xl border border-slate-200 px-3 py-3 text-sm outline-none focus:border-teal" placeholder="Reference from your bank or mobile-money receipt" required maxLength={160} /></label>
             <label className="block"><span className="mb-1.5 block text-sm font-semibold text-slate-700">Note (optional)</span><textarea value={customerNote} onChange={(event) => setCustomerNote(event.target.value)} rows={3} maxLength={1000} className="w-full resize-y rounded-xl border border-slate-200 px-3 py-3 text-sm outline-none focus:border-teal" placeholder="Anything the payment reviewer should know" /></label>
-            <p className="text-xs leading-5 text-slate-500">Receipt upload will be enabled with the private evidence-storage step. For now, submit the transaction reference; HEMBOX will verify the actual funds before crediting your invoice.</p>
+            <label className="block"><span className="mb-1.5 block text-sm font-semibold text-slate-700">Receipt evidence (optional)</span><input type="file" accept=".png,.jpg,.jpeg,.pdf,image/png,image/jpeg,application/pdf" onChange={(event) => setReceiptFile(event.target.files?.[0] ?? null)} className="block w-full rounded-xl border border-slate-200 px-3 py-3 text-sm file:mr-3 file:rounded-lg file:border-0 file:bg-slate-100 file:px-3 file:py-2 file:text-xs file:font-semibold" /><span className="mt-1 block text-xs text-slate-500">PNG, JPG/JPEG or PDF, up to 10 MB. Stored privately and available only to authorized reviewers.</span>{receiptFile && <span className="mt-1 block text-xs text-slate-600">Selected: {receiptFile.name} ({(receiptFile.size/1024/1024).toFixed(2)} MB)</span>}</label>
           </div>
           <div className="mt-6 flex flex-col-reverse gap-3 sm:flex-row sm:justify-end"><button onClick={() => setSelectedInvoice(null)} disabled={submitting} className="rounded-xl border border-slate-200 px-4 py-3 text-sm font-semibold text-slate-700">Cancel</button><button onClick={() => void submitClaim()} disabled={submitting || !methodId} className="inline-flex items-center justify-center gap-2 rounded-xl bg-navy px-5 py-3 text-sm font-semibold text-white disabled:cursor-not-allowed disabled:opacity-60">{submitting ? <Loader2 className="h-4 w-4 animate-spin" /> : <CreditCard className="h-4 w-4" />} Submit payment claim</button></div>
         </section>
