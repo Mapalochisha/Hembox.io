@@ -21,6 +21,6 @@ export async function GET(request:Request){
   if(!claim.receipt_object_key)return json({error:"No receipt was attached to this claim."},404)
   const {data:signed,error:signedError}=await db.storage.from("billing-receipts").createSignedUrl(claim.receipt_object_key,60,{download:true})
   if(signedError)throw signedError
-  return json({url:signed.signedUrl,mimeType:claim.receipt_mime_type,expiresInSeconds:60})
+  return NextResponse.redirect(signed.signedUrl, { status: 302, headers: { "Cache-Control": "no-store" } })
  }catch(error){console.error("[Billing admin] Receipt access failed:",error);return json({error:"Unable to securely open this receipt."},500)}
 }
