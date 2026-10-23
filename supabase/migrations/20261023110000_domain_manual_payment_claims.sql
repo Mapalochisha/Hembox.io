@@ -30,7 +30,17 @@ create unique index if not exists domain_manual_payment_claims_one_active_order_
 
 alter table public.domain_manual_payment_claims enable row level security;
 revoke all on public.domain_manual_payment_claims from anon, authenticated;
+grant select on public.domain_manual_payment_claims to authenticated;
 grant all on public.domain_manual_payment_claims to service_role;
+create policy "Customers can read their own manual payment claims"
+  on public.domain_manual_payment_claims for select to authenticated
+  using (customer_id = (select auth.uid()));
+create policy "Admins can read manual payment claims"
+  on public.domain_manual_payment_claims for select to authenticated
+  using (exists (
+    select 1 from public.profiles p
+    where p.id = (select auth.uid()) and p.role = 'admin'
+  ));
 
 create or replace function public.guard_domain_manual_payment_claim_update()
 returns trigger language plpgsql set search_path = ''
