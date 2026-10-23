@@ -65,9 +65,7 @@ begin
   end;
   if not v_rejected then raise exception 'Non-admin must not verify a manual payment'; end if;
 
-  update public.domain_manual_payment_claims
-    set status = 'rejected', reviewed_by = v_admin, reviewed_at = clock_timestamp(), review_note = 'Amount mismatch'
-    where id = v_claim;
+  perform * from public.review_domain_manual_payment_claim(v_claim, v_admin, 'rejected', 'Amount mismatch');
 
   insert into public.domain_manual_payment_claims (
     order_id, customer_id, payment_reference, idempotency_key, transaction_reference, amount_minor
