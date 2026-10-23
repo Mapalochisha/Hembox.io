@@ -20,7 +20,8 @@ import {
   PanelLeftOpen,
   DollarSign,
   Globe2,
-  ListChecks
+  ListChecks,
+  CreditCard
 } from "lucide-react"
 import { useAuth } from "@/components/providers/auth-provider"
 import { useSidebar } from "./sidebar-provider"
@@ -36,6 +37,7 @@ const menuItems = [
   { icon: Globe2, label: "Domains", href: "/admin/domains" },
   { icon: ListChecks, label: "Domain Orders", href: "/admin/domains/orders" },
   { icon: DollarSign, label: "Manual Payments", href: "/admin/domains/manual-payments" },
+  { icon: CreditCard, label: "Billing Claims", href: "/admin/billing/payments" },
   { icon: BarChart3, label: "Domain Margins", href: "/admin/domains/margins" },
   { icon: Image, label: "Media", href: "/admin/media" },
   { icon: MessageSquare, label: "Messages", href: "/admin/messages" },
