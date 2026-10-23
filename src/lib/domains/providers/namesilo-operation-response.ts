@@ -374,7 +374,7 @@ export function parseNameSiloAccountBalance(
   else balanceFieldType = "object"
 
   const balance = textValue(balanceValue)
-  if (!balance || !/^\\d+(?:\\.\\d+)?$/.test(balance)) {
+  if (!balance || !/^\d+(?:\.\d+)?$/.test(balance)) {
     // These diagnostics expose field names and a value type only; never echo
     // provider response values or the raw response body into the Preview route.
     const replyFields = Object.keys(reply)
