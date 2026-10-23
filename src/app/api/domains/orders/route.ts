@@ -20,8 +20,22 @@ export async function GET() {
       .limit(100)
 
     if (error) throw error
+    const orderIds = (data ?? []).map((order) => order.id)
+    let paymentClaims: unknown[] = []
+    if (orderIds.length) {
+      const { data: claims, error: claimsError } = await db
+        .from("domain_manual_payment_claims")
+        .select("id,order_id,payment_reference,transaction_reference,amount_minor,currency,status,review_note,created_at,updated_at")
+        .eq("customer_id", user.id)
+        .in("order_id", orderIds)
+        .order("created_at", { ascending: false })
+        .limit(100)
+      if (claimsError) throw claimsError
+      paymentClaims = claims ?? []
+    }
+
     return NextResponse.json(
-      { orders: data ?? [] },
+      { orders: data ?? [], paymentClaims },
       { headers: { "Cache-Control": "no-store" } },
     )
   } catch (error) {
