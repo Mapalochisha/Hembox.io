@@ -45,6 +45,10 @@ export async function POST(request: Request) {
     if (invoiceError) throw invoiceError
     if (!invoice || invoice.customer_id !== user.id) return json({ error: "Invoice not found." }, 404)
     if (!["unpaid", "partially_paid", "overdue"].includes(invoice.status)) return json({ error: "This invoice cannot accept an arrangement request." }, 409)
+    const { data: existingArrangement, error: existingArrangementError } = await db.from("billing_arrangement_requests")
+      .select("id,status").eq("invoice_id",invoice.id).eq("customer_id",user.id).in("status",["pending","approved"]).limit(1).maybeSingle()
+    if (existingArrangementError) throw existingArrangementError
+    if (existingArrangement) return json({ error: "An arrangement request is already active for this invoice.", arrangement: existingArrangement }, 409)
 
     const { data: inquiry, error: inquiryError } = await db.from("inquiries").insert({
       type: "contact", email: user.email, name: user.user_metadata?.full_name ?? user.user_metadata?.name ?? null,
@@ -69,7 +73,13 @@ export async function POST(request: Request) {
       if (error.code === "23514" || error.code === "22023") return json({ error: error.message }, 409)
       throw error
     }
-    return json({ result: Array.isArray(result) ? result[0] : result, conversationId: inquiry.id }, 201)
+    const row = Array.isArray(result) ? result[0] : result
+    if (row && typeof row === "object" && "created" in row && row.created === false) {
+      const { error: cleanupError } = await db.from("inquiries").delete().eq("id",inquiry.id)
+      if (cleanupError) console.error("[Billing] Could not clean up duplicate arrangement conversation:",cleanupError)
+      return json({ result: row, replayed: true })
+    }
+    return json({ result: row, conversationId: inquiry.id }, 201)
   } catch (error) {
     console.error("[Billing] Failed to request arrangement:", error)
     return json({ error: "Unable to request a payment arrangement right now. Please try again." }, 500)
