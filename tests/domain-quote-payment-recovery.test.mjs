@@ -171,7 +171,7 @@ import {
   DomainQuotePreparationError,
   prepareLiveDomainQuote,
   validateDomainQuotePricing,
-} from "../src/lib/domains/quote-service"
+} from "../src/lib/domains/quote-service.ts"
 
 const quotePolicyNow = Date.parse("2026-10-23T10:00:00.000Z")
 
