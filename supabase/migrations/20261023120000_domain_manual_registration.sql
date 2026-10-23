@@ -35,7 +35,7 @@ begin
   if p_provider_domain_reference is null or length(trim(p_provider_domain_reference)) not between 3 and 253 then
     raise exception 'Provider domain reference is required' using errcode = '22023';
   end if;
-  if p_registered_at is null or p_registered_at > v_now or p_expires_at is null or p_expires_at <= p_registered_at then
+  if p_registered_at is null or p_registered_at > v_now or p_expires_at is null or p_expires_at <= p_registered_at or p_expires_at <= v_now then
     raise exception 'Registration and expiry timestamps are invalid' using errcode = '22023';
   end if;
   if p_availability_rechecked is not true or p_price_rechecked is not true then
