@@ -4,7 +4,7 @@
 
 **Initial launch payment decision (2026-10-23):** Defer the payment gateway until a custom domain and onboarding can be funded. Build an auditable manual-payment claim and administrator verification flow for the initial release. A receipt is a claim, not proof of settlement. Do not mark an order paid or permit registration until an authorized admin confirms the funds in the receiving account. Gateway API/hosted checkout/webhooks are explicitly postponed.
 
-The public `/domains` page remains enquiry-led. Provider-independent pricing policy and catalogue APIs are built around the registrar interface; no TLD is seeded or enabled without verified source costs. **NameSilo is now the selected initial registrar.** A server-only NameSilo adapter supports read-only availability checks using `checkRegisterAvailability`; unknown or malformed provider results remain `unknown`. It intentionally returns no prices and has no registration, renewal, transfer, DNS or privacy-management capability. The explicit `namesilo-sandbox` mode uses NameSilo's OTE endpoint and a separate `NAMESILO_SANDBOX_API_KEY`; the `namesilo` mode uses the production endpoint and `NAMESILO_API_KEY`. Live registration and payment remain disabled. The old Domain Name API adapter is no longer selected by the provider factory.
+The public `/domains` page remains enquiry-led. Provider-independent pricing policy and catalogue APIs are built around the registrar interface; no TLD is seeded or enabled without verified source costs. **NameSilo is now the selected initial registrar.** A server-only NameSilo adapter supports read-only availability checks using `checkRegisterAvailability`; unknown or malformed provider results remain `unknown`. It intentionally returns no prices and has no registration, renewal, transfer, DNS or privacy-management capability. The explicit `namesilo-sandbox` mode uses NameSilo's OTE endpoint and a separate `NAMESILO_SANDBOX_API_KEY`; the `namesilo` mode uses the production endpoint and `NAMESILO_API_KEY`. Gateway checkout remains disabled and live registration remains disabled. An initial manual-payment claim/review workflow is being implemented; it cannot start until approved receiving instructions are configured, and a claim never proves settlement. The old Domain Name API adapter is no longer selected by the provider factory.
 
 The pricing layer now uses integer minor-unit arithmetic, an explicit FX scaling convention, basis-point markup, upward rounding, a 24-hour freshness gate, and restricted price-history snapshots. Admins can maintain a TLD catalogue through role-protected server routes. Public catalogue responses expose retail-only ZMW prices and never imply domain availability. This foundation is not a live quote or checkout.
 
@@ -163,6 +163,10 @@ Batch response parsing accepts NameSilo's nested, array and XML-to-JSON availabi
 
 ## Initial manual-payment release guardrails (2026-10-23)
 
+**Implementation status:** Customer claim submission, server-side order/quote checks, admin review API/UI, and a database review function are now on the feature branch. GitHub CI/Vercel verification is pending on the latest commit. Manual payment instructions are supplied through server-side `DOMAIN_MANUAL_PAYMENT_INSTRUCTIONS`; this variable has not been populated with actual receiving-account details. Do not enable the workflow for real customers until the details are reviewed and configured.
+
+
+
 - Do not collect card numbers, CVVs, PINs, passwords, or banking credentials.
 - Give every quote/order a stable payment reference and clear amount/currency; do not ask customers to pay an unverified or expired quote.
 - Payment claims are not payment confirmations. A screenshot/upload alone never changes an order to paid.
@@ -170,3 +174,11 @@ Batch response parsing accepts NameSilo's nested, array and XML-to-JSON availabi
 - Keep evidence private and access-controlled with strict upload limits if uploads are implemented; otherwise accept a transaction/reference note without storing files.
 - Keep registration disabled until current provider pricing, live availability, registration semantics, and recovery/reconciliation behavior have passed release checks.
 - Payment gateway remains deferred; do not leave a fake/functional-looking checkout button enabled.
+
+### 2026-10-23 — Manual payment workflow implementation
+
+- Added a manual-payment claims table and transactional admin review function. Claims are tied to a customer-owned order and quote amount; verification is blocked for mismatched amounts, claims submitted after quote expiry, and non-admin reviewers.
+- Added customer instructions/transaction-reference submission and customer claim-status display, plus an admin review queue with verify, reject, and needs-more-information actions.
+- The initial implementation stores a transaction reference and optional note only; it does not accept receipt-file uploads.
+- Added SQL integration tests and wired the migration/test into GitHub Actions. Exact-head CI and Vercel verification remain pending.
+- Gateway integration stays postponed until a custom domain and required onboarding can be funded. No production migration, live payment collection, live registration, or merge was performed.
