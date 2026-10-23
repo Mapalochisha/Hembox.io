@@ -163,7 +163,7 @@ Batch response parsing accepts NameSilo's nested, array and XML-to-JSON availabi
 
 ## Initial manual-payment release guardrails (2026-10-23)
 
-**Implementation status:** Customer claim submission, server-side order/quote checks, admin review API/UI, and a database review function are now on the feature branch. GitHub CI/Vercel verification is pending on the latest commit. Manual payment instructions are supplied through server-side `DOMAIN_MANUAL_PAYMENT_INSTRUCTIONS`; this variable has not been populated with actual receiving-account details. Do not enable the workflow for real customers until the details are reviewed and configured.
+**Implementation status:** Customer claim submission, server-side order/quote checks, admin review API/UI, and a database review function are now on the feature branch. Code commit `55831e75a25368bffaed9d65b3f1e7506819e89c` passed [GitHub Actions CI](https://github.com/Mapalochisha/Hembox.io/actions/runs/39985581157) and its [Vercel Preview is READY](https://vercel.com/mapalochishas-projects/hembox-io/8RgtThLn2QoJ6S1P7PqDrFh2FzoV). Manual payment instructions are supplied through server-side `DOMAIN_MANUAL_PAYMENT_INSTRUCTIONS`; this variable has not been populated with actual receiving-account details. Do not enable the workflow for real customers until the details are reviewed and configured.
 
 
 
@@ -180,5 +180,5 @@ Batch response parsing accepts NameSilo's nested, array and XML-to-JSON availabi
 - Added a manual-payment claims table and transactional admin review function. Claims are tied to a customer-owned order and quote amount; verification is blocked for mismatched amounts, claims submitted after quote expiry, and non-admin reviewers.
 - Added customer instructions/transaction-reference submission and customer claim-status display, plus an admin review queue with verify, reject, and needs-more-information actions.
 - The initial implementation stores a transaction reference and optional note only; it does not accept receipt-file uploads.
-- Added SQL integration tests and wired the migration/test into GitHub Actions. Exact-head CI and Vercel verification remain pending.
+- Added SQL integration tests and wired the migration/test into GitHub Actions. Code commit `55831e75a25368bffaed9d65b3f1e7506819e89c` passed [CI](https://github.com/Mapalochisha/Hembox.io/actions/runs/39985581157) and its [Vercel Preview is READY](https://vercel.com/mapalochishas-projects/hembox-io/8RgtThLn2QoJ6S1P7PqDrFh2FzoV); subsequent documentation commits still require their own final checks.
 - Gateway integration stays postponed until a custom domain and required onboarding can be funded. No production migration, live payment collection, live registration, or merge was performed.
