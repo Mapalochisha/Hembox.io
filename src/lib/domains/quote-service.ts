@@ -1,9 +1,9 @@
 import {
   calculateRetailPrice,
   isPricingSnapshotFresh,
-} from "./pricing"
-import { createDomainQuoteSnapshot, type DomainQuoteSnapshot } from "./quotes"
-import type { DomainAvailabilityResult, DomainProvider } from "./types"
+} from "./pricing.ts"
+import { createDomainQuoteSnapshot, type DomainQuoteSnapshot } from "./quotes.ts"
+import type { DomainAvailabilityResult, DomainProvider } from "./types.ts"
 
 const MAX_PRICING_AGE_MS = 24 * 60 * 60 * 1000
 const MAX_AVAILABILITY_AGE_MS = 60 * 1000
