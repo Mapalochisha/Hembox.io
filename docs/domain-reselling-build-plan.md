@@ -562,3 +562,11 @@ When resuming this project:
 - **Regression fix:** corrected an over-escaped decimal regex discovered by CI; the string-value unit test covers this case. CI passed for commit ef0dea07e47bf137cd89e2f9af1698295ec43817.
 - **Release status unchanged:** NameSilo prices/funding, live availability, registration, payment and production launch remain unverified or disabled. No provider mutations or fund spends were performed.
 
+
+
+### 2026-10-23 — NameSilo OTE grouped balance response
+
+- The protected Preview returned provider code 300 for the account-balance request, but the safe response-shape classifier identified the string as `grouped-decimal`. The actual account balance was not exposed in diagnostics.
+- Updated the NameSilo parser to normalize only strict thousands-grouped decimal strings, without using floating-point conversion; malformed grouping remains rejected. Added tests for valid normalization and malformed-group rejection/privacy.
+- This affects only the read-only OTE account probe. No credentials/configuration changed and no sandbox mutation or funds spend occurred.
+- Implementation verification: inspect CI and Preview checks for the final branch head before considering this parser adjustment verified.
