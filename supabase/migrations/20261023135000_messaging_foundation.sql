@@ -25,7 +25,7 @@ alter table public.inquiries enable row level security;
 drop policy if exists "Admins can view inquiries" on public.inquiries;
 create policy "Admins can view inquiries" on public.inquiries for select to authenticated using (exists (select 1 from public.profiles p where p.id=auth.uid() and p.role='admin'));
 drop policy if exists "Admins can update inquiries" on public.inquiries;
-create policy "Admins can update inquiries" on public.inquiries for update to authenticated using (public.get_user_role(auth.uid())='admin') with check (public.get_user_role(auth.uid())='admin');
+create policy "Admins can update inquiries" on public.inquiries for update to authenticated using (exists (select 1 from public.profiles p where p.id=auth.uid() and p.role='admin')) with check (exists (select 1 from public.profiles p where p.id=auth.uid() and p.role='admin'));
 
 create or replace function public.set_inquiries_updated_at()
 returns trigger language plpgsql security definer set search_path = '' as $$
@@ -46,9 +46,9 @@ create table if not exists public.inquiry_messages (
 create index if not exists inquiry_messages_inquiry_created_idx on public.inquiry_messages(inquiry_id,created_at asc);
 alter table public.inquiry_messages enable row level security;
 drop policy if exists "Admins can view inquiry messages" on public.inquiry_messages;
-create policy "Admins can view inquiry messages" on public.inquiry_messages for select to authenticated using (public.get_user_role(auth.uid())='admin');
+create policy "Admins can view inquiry messages" on public.inquiry_messages for select to authenticated using (exists (select 1 from public.profiles p where p.id=auth.uid() and p.role='admin'));
 drop policy if exists "Admins can send inquiry messages" on public.inquiry_messages;
-create policy "Admins can send inquiry messages" on public.inquiry_messages for insert to authenticated with check (public.get_user_role(auth.uid())='admin' and sender_role='admin' and sender_id=auth.uid());
+create policy "Admins can send inquiry messages" on public.inquiry_messages for insert to authenticated with check (exists (select 1 from public.profiles p where p.id=auth.uid() and p.role='admin') and sender_role='admin' and sender_id=auth.uid());
 
 insert into public.inquiry_messages(inquiry_id,sender_role,sender_id,body,created_at)
 select i.id,'customer',null,i.message,i.created_at from public.inquiries i
