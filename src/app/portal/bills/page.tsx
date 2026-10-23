@@ -5,7 +5,7 @@ import { useCallback, useEffect, useMemo, useState } from "react"
 import { Navbar } from "@/components/landing/navbar"
 import { useAuth } from "@/components/providers/auth-provider"
 import { createClient, isSupabaseConfigured } from "@/lib/supabase/client"
-import { AlertCircle, ArrowDownToLine, ArrowUpRight, CheckCircle2, Clock3, CreditCard, FileText, Loader2, RefreshCw, Search, Wallet } from "lucide-react"
+import { AlertCircle, ArrowDownToLine, CheckCircle2, Clock3, CreditCard, FileText, Loader2, RefreshCw, Search, Wallet } from "lucide-react"
 
 type InvoiceStatus = "draft" | "unpaid" | "partially_paid" | "paid" | "overdue" | "void"
 type Invoice = { id: string; invoice_number: string; status: InvoiceStatus; currency: string; subtotal_minor: number; tax_minor: number; total_minor: number; issued_at: string | null; due_at: string | null; source_type: string | null; source_id: string | null; created_at: string }
