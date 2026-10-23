@@ -9,7 +9,7 @@ import { AlertCircle, CheckCircle2, Clock3, CreditCard, FileText, Loader2, Refre
 
 type InvoiceStatus = "draft" | "unpaid" | "partially_paid" | "paid" | "overdue" | "void"
 type Invoice = { id: string; invoice_number: string; status: InvoiceStatus; currency: string; subtotal_minor: number; tax_minor: number; total_minor: number; issued_at: string | null; due_at: string | null; source_type: string | null; source_id: string | null; created_at: string }
-type Claim = { id: string; invoice_id: string; status: string; claimed_amount_minor: number; currency: string; transaction_reference: string; review_note: string | null; created_at: string }
+type Claim = { id: string; invoice_id: string; status: string; claimed_amount_minor: number; currency: string; transaction_reference: string; method_name_snapshot: string; customer_note: string | null; review_note: string | null; created_at: string }
 type Allocation = { invoice_id: string; amount_minor: number; currency: string; allocation_type: string }
 type PaymentMethod = { id: string; method_key: string; display_name: string; instructions: string; version: number; supported_currencies: string[] }
 type InvoiceItem = { invoice_id: string; description: string; quantity: number; unit_amount_minor: number; line_total_minor: number }
@@ -67,6 +67,7 @@ export default function BillsPage() {
   const [tab, setTab] = useState<TabKey>("all")
   const [search, setSearch] = useState("")
   const [selectedInvoice, setSelectedInvoice] = useState<Invoice | null>(null)
+  const [resubmittingClaimId, setResubmittingClaimId] = useState<string | null>(null)
   const [detailsId, setDetailsId] = useState<string | null>(null)
   const [methodId, setMethodId] = useState("")
   const [amount, setAmount] = useState("")
@@ -80,7 +81,7 @@ export default function BillsPage() {
     setLoading(true); setError("")
     const [invoiceResult, claimResult, allocationResult, methodResult] = await Promise.all([
       supabase.from("billing_invoices").select("id,invoice_number,status,currency,subtotal_minor,tax_minor,total_minor,issued_at,due_at,source_type,source_id,created_at").order("created_at", { ascending: false }),
-      supabase.from("billing_payment_claims").select("id,invoice_id,status,claimed_amount_minor,currency,transaction_reference,review_note,created_at").order("created_at", { ascending: false }),
+      supabase.from("billing_payment_claims").select("id,invoice_id,status,claimed_amount_minor,currency,transaction_reference,method_name_snapshot,customer_note,review_note,created_at").order("created_at", { ascending: false }),
       supabase.from("billing_payment_allocations").select("invoice_id,amount_minor,currency,allocation_type"),
       supabase.from("billing_payment_methods").select("id,method_key,display_name,instructions,version,supported_currencies").eq("active", true).order("display_name"),
     ])
@@ -196,10 +197,22 @@ export default function BillsPage() {
   const reviewCount = claims.filter((claim) => claim.status === "submitted" || claim.status === "needs_info").length
 
   const openPayModal = (invoice: Invoice) => {
+    setResubmittingClaimId(null)
     setSelectedInvoice(invoice)
     setMethodId(methods.find((method) => method.supported_currencies.includes(invoice.currency))?.id ?? "")
     setAmount((outstanding(invoice) / 100).toFixed(2))
     setTransactionReference(""); setCustomerNote(""); setReceiptFile(null); setError(""); setNotice("")
+  }
+
+  const openResubmitModal = (invoice: Invoice, claim: Claim) => {
+    setSelectedInvoice(invoice)
+    setResubmittingClaimId(claim.id)
+    setMethodId(methods.find((method) => method.display_name === claim.method_name_snapshot && method.supported_currencies.includes(invoice.currency))?.id ?? methods.find((method) => method.supported_currencies.includes(invoice.currency))?.id ?? "")
+    setAmount((Number(claim.claimed_amount_minor) / 100).toFixed(2))
+    setTransactionReference(claim.transaction_reference)
+    setCustomerNote(claim.customer_note ?? "")
+    setReceiptFile(null)
+    setError(""); setNotice("")
   }
 
   const submitClaim = async () => {
