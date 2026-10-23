@@ -11,7 +11,7 @@ const schema = z.discriminatedUnion("action", [
   z.object({
     action: z.literal("submit"),
     orderId: z.string().uuid(),
-    idempotencyKey: z.string().trim().min(8).max(120).regex(/^[A-Za-z0-9._:-]+$/),
+    idempotencyKey: z.string().trim().min(8).max(60).regex(/^[A-Za-z0-9._:-]+$/),
     transactionReference: z.string().trim().min(3).max(120).regex(/^[A-Za-z0-9 ._:/+-]+$/),
     customerNote: z.string().trim().max(500).optional(),
   }).strict(),
