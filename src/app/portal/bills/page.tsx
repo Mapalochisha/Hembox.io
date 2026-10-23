@@ -234,14 +234,18 @@ export default function BillsPage() {
         receipt = { objectKey: uploadResult.objectKey, mimeType: uploadResult.mimeType, sizeBytes: uploadResult.sizeBytes }
       }
       const response = await fetch("/api/billing/claims", {
-        method: "POST", headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ invoiceId: selectedInvoice.id, paymentMethodId: methodId, idempotencyKey: `bill-${crypto.randomUUID()}`, transactionReference: transactionReference.trim(), amountMinor, customerNote: customerNote.trim() || undefined, receiptObjectKey: receipt?.objectKey, receiptMimeType: receipt?.mimeType, receiptSizeBytes: receipt?.sizeBytes }),
+        method: resubmittingClaimId ? "PATCH" : "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(resubmittingClaimId
+          ? { claimId: resubmittingClaimId, paymentMethodId: methodId, transactionReference: transactionReference.trim(), amountMinor, customerNote: customerNote.trim() || undefined, receiptObjectKey: receipt?.objectKey, receiptMimeType: receipt?.mimeType, receiptSizeBytes: receipt?.sizeBytes }
+          : { invoiceId: selectedInvoice.id, paymentMethodId: methodId, idempotencyKey: `bill-${crypto.randomUUID()}`, transactionReference: transactionReference.trim(), amountMinor, customerNote: customerNote.trim() || undefined, receiptObjectKey: receipt?.objectKey, receiptMimeType: receipt?.mimeType, receiptSizeBytes: receipt?.sizeBytes }),
       })
       const result = await response.json()
       if (!response.ok) throw new Error(result.error || "Unable to submit payment claim.")
       setSelectedInvoice(null)
+      setResubmittingClaimId(null)
       setReceiptFile(null)
-      setNotice("Payment claim submitted. Your invoice balance will change only after the payment is verified.")
+      setNotice(resubmittingClaimId ? "Updated claim resubmitted for review." : "Payment claim submitted. Your invoice balance will change only after the payment is verified.")
       await load()
     } catch (err) { setError(err instanceof Error ? err.message : "Unable to submit payment claim.") }
     finally { setSubmitting(false) }
