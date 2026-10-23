@@ -128,6 +128,9 @@ jobs:
       - name: Apply manual payment claim workflow migration
         run: psql -v ON_ERROR_STOP=1 -f supabase/migrations/20261023110000_domain_manual_payment_claims.sql
 
+      - name: Apply manual registration fulfillment migration
+        run: psql -v ON_ERROR_STOP=1 -f supabase/migrations/20261023120000_domain_manual_registration.sql
+
       - name: Assert domain schema constraints and security policies
         run: psql -v ON_ERROR_STOP=1 -f supabase/tests/domain_reselling_foundation.test.sql
 
@@ -151,6 +154,9 @@ jobs:
 
       - name: Assert manual payment claim verification and authorization
         run: psql -v ON_ERROR_STOP=1 -f supabase/tests/domain_manual_payment_claims.test.sql
+
+      - name: Assert guarded manual registration fulfillment
+        run: psql -v ON_ERROR_STOP=1 -f supabase/tests/domain_manual_registration.test.sql
 
   build:
     name: Production Build
