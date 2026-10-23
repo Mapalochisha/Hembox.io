@@ -46,6 +46,19 @@ export default function AdminBillingInvoicesPage() {
   const subtotal = items.reduce((sum, item) => { const amount = parseMinor(item.unitPrice); const quantity = Number(item.quantity); return amount !== null && Number.isInteger(quantity) && quantity > 0 ? sum + amount * quantity : sum }, 0)
   const updateItem = (index: number, field: keyof ItemDraft, value: string) => setItems((current) => current.map((item, itemIndex) => itemIndex === index ? { ...item, [field]: value } : item))
 
+  const voidInvoice = async (invoice: Invoice) => {
+    const reason = window.prompt(`Why are you voiding invoice ${invoice.invoice_number}?`)
+    if (!reason || reason.trim().length < 5) return
+    setError(""); setNotice("")
+    try {
+      const response = await fetch("/api/admin/billing/invoices", { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ invoiceId: invoice.id, reason: reason.trim() }) })
+      const result = await response.json()
+      if (!response.ok) throw new Error(result.error || "Unable to void invoice.")
+      setNotice(`Invoice ${invoice.invoice_number} voided and audited.`)
+      await load()
+    } catch (err) { setError(err instanceof Error ? err.message : "Unable to void invoice.") }
+  }
+
   const submit = async (event: FormEvent) => {
     event.preventDefault(); setError(""); setNotice("")
     if (!customerId) { setError("Choose a customer."); return }
@@ -91,7 +104,7 @@ export default function AdminBillingInvoicesPage() {
       </form>
     </section>
     <section className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm"><div className="flex items-center justify-between border-b border-slate-100 p-5"><div><h2 className="font-semibold text-navy">Recent invoices</h2><p className="mt-1 text-xs text-slate-500">Issued financial records are immutable except through an audited amendment process.</p></div><FileText className="h-5 w-5 text-slate-400" /></div>
-      {loading ? <div className="flex items-center justify-center gap-3 p-12 text-sm text-slate-500"><Loader2 className="h-5 w-5 animate-spin" /> Loading invoices…</div> : invoices.length === 0 ? <p className="p-12 text-center text-sm text-slate-500">No invoices have been issued yet.</p> : <div className="overflow-x-auto"><table className="w-full min-w-[750px] text-left text-sm"><thead className="bg-slate-50 text-xs uppercase tracking-wider text-slate-500"><tr><th className="px-5 py-3">Invoice</th><th className="px-5 py-3">Customer</th><th className="px-5 py-3">Type</th><th className="px-5 py-3">Issued</th><th className="px-5 py-3">Total</th><th className="px-5 py-3">Status</th></tr></thead><tbody className="divide-y divide-slate-100">{invoices.map((invoice) => <tr key={invoice.id} className="hover:bg-slate-50/70"><td className="px-5 py-4 font-semibold text-navy">{invoice.invoice_number}</td><td className="px-5 py-4"><p className="font-medium text-slate-800">{invoice.customer?.full_name || "Customer"}</p><p className="text-xs text-slate-500">{invoice.customer?.email || invoice.customer_id}</p></td><td className="px-5 py-4 text-slate-600">{title(invoice.source_type ?? "other")}</td><td className="px-5 py-4 text-slate-600">{invoice.issued_at ? new Intl.DateTimeFormat("en-ZM",{dateStyle:"medium"}).format(new Date(invoice.issued_at)) : "Draft"}</td><td className="px-5 py-4 font-semibold text-navy">{money(Number(invoice.total_minor),invoice.currency)}</td><td className="px-5 py-4"><span className="rounded-full bg-slate-100 px-2.5 py-1 text-xs font-semibold text-slate-700">{title(invoice.status)}</span></td></tr>)}</tbody></table></div>}
+      {loading ? <div className="flex items-center justify-center gap-3 p-12 text-sm text-slate-500"><Loader2 className="h-5 w-5 animate-spin" /> Loading invoices…</div> : invoices.length === 0 ? <p className="p-12 text-center text-sm text-slate-500">No invoices have been issued yet.</p> : <div className="overflow-x-auto"><table className="w-full min-w-[750px] text-left text-sm"><thead className="bg-slate-50 text-xs uppercase tracking-wider text-slate-500"><tr><th className="px-5 py-3">Invoice</th><th className="px-5 py-3">Customer</th><th className="px-5 py-3">Type</th><th className="px-5 py-3">Issued</th><th className="px-5 py-3">Total</th><th className="px-5 py-3">Status</th><th className="px-5 py-3">Actions</th></tr></thead><tbody className="divide-y divide-slate-100">{invoices.map((invoice) => <tr key={invoice.id} className="hover:bg-slate-50/70"><td className="px-5 py-4 font-semibold text-navy">{invoice.invoice_number}</td><td className="px-5 py-4"><p className="font-medium text-slate-800">{invoice.customer?.full_name || "Customer"}</p><p className="text-xs text-slate-500">{invoice.customer?.email || invoice.customer_id}</p></td><td className="px-5 py-4 text-slate-600">{title(invoice.source_type ?? "other")}</td><td className="px-5 py-4 text-slate-600">{invoice.issued_at ? new Intl.DateTimeFormat("en-ZM",{dateStyle:"medium"}).format(new Date(invoice.issued_at)) : "Draft"}</td><td className="px-5 py-4 font-semibold text-navy">{money(Number(invoice.total_minor),invoice.currency)}</td><td className="px-5 py-4"><span className="rounded-full bg-slate-100 px-2.5 py-1 text-xs font-semibold text-slate-700">{title(invoice.status)}</span></td><td className="px-5 py-4">{["unpaid","overdue"].includes(invoice.status) && invoice.source_type !== "domain_registration" ? <button onClick={() => void voidInvoice(invoice)} className="rounded-lg border border-rose-200 px-3 py-2 text-xs font-semibold text-rose-700 hover:bg-rose-50">Void</button> : <span className="text-xs text-slate-400">—</span>}</td></tr>)}</tbody></table></div>}
     </section>
   </main>
 }
