@@ -20,6 +20,19 @@ type DomainOrder = {
   created_at: string
 }
 
+type ManualPaymentClaim = {
+  id: string
+  order_id: string
+  payment_reference: string
+  transaction_reference: string
+  amount_minor: number
+  currency: string
+  status: string
+  review_note: string | null
+  created_at: string
+  updated_at: string
+}
+type PaymentSession = { paymentReference: string; amountMinor: number; currency: string; instructions: string }
 type DomainQuoteResponse = {
   order: { id: string; status: string }
   quote: {
@@ -62,6 +75,12 @@ function statusLabel(status: string) {
 export default function CustomerDomainsPage() {
   const { user, isLoading: authLoading } = useAuth()
   const [orders, setOrders] = useState<DomainOrder[]>([])
+  const [paymentClaims, setPaymentClaims] = useState<ManualPaymentClaim[]>([])
+  const [paymentSessions, setPaymentSessions] = useState<Record<string, PaymentSession>>({})
+  const [paymentBusyOrder, setPaymentBusyOrder] = useState("")
+  const [paymentError, setPaymentError] = useState("")
+  const [paymentNotice, setPaymentNotice] = useState("")
+  const paymentRequestKeys = useRef<Record<string, string>>({})
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState("")
   const [quoteDomain, setQuoteDomain] = useState("")
@@ -78,6 +97,7 @@ export default function CustomerDomainsPage() {
       const result = await response.json()
       if (!response.ok) throw new Error(result.error || "Unable to load your domain orders.")
       setOrders(result.orders ?? [])
+      setPaymentClaims(result.paymentClaims ?? [])
     } catch (loadError) {
       setError(loadError instanceof Error ? loadError.message : "Unable to load your domain orders.")
     } finally {
@@ -89,6 +109,51 @@ export default function CustomerDomainsPage() {
     if (!authLoading && user) void loadOrders()
     if (!authLoading && !user) setLoading(false)
   }, [authLoading, user, loadOrders])
+
+  async function beginManualPayment(orderId: string) {
+    setPaymentBusyOrder(orderId); setPaymentError(""); setPaymentNotice("")
+    try {
+      const response = await fetch("/api/domains/manual-payment", {
+        method: "POST", headers: { "Content-Type": "application/json" }, cache: "no-store",
+        body: JSON.stringify({ action: "begin", orderId }),
+      })
+      const result = await response.json()
+      if (!response.ok) throw new Error(result.error || "Manual payment instructions are unavailable.")
+      setPaymentSessions((previous) => ({ ...previous, [orderId]: {
+        paymentReference: result.paymentReference, amountMinor: result.amountMinor,
+        currency: result.currency, instructions: result.instructions,
+      } }))
+      setPaymentNotice("Use the exact order reference in your transfer. Your payment is not confirmed until HEMBOX verifies settled funds.")
+      void loadOrders()
+    } catch (e) {
+      setPaymentError(e instanceof Error ? e.message : "Manual payment instructions are unavailable.")
+    } finally { setPaymentBusyOrder("") }
+  }
+
+  async function submitManualPaymentClaim(event: FormEvent<HTMLFormElement>, orderId: string) {
+    event.preventDefault()
+    const form = event.currentTarget
+    const data = new FormData(form)
+    const transactionReference = String(data.get("transactionReference") || "").trim()
+    const customerNote = String(data.get("customerNote") || "").trim()
+    if (!transactionReference) { setPaymentError("Enter the transaction reference shown by your payment provider."); return }
+    setPaymentBusyOrder(orderId); setPaymentError(""); setPaymentNotice("")
+    if (!paymentRequestKeys.current[orderId]) paymentRequestKeys.current[orderId] = crypto.randomUUID()
+    try {
+      const response = await fetch("/api/domains/manual-payment", {
+        method: "POST", headers: { "Content-Type": "application/json" }, cache: "no-store",
+        body: JSON.stringify({ action: "submit", orderId, idempotencyKey: paymentRequestKeys.current[orderId], transactionReference, customerNote }),
+      })
+      const result = await response.json()
+      if (!response.ok) throw new Error(result.error || "Unable to submit the payment claim.")
+      paymentRequestKeys.current[orderId] = ""
+      setPaymentNotice("Payment claim submitted for review. This is not a payment confirmation.")
+      form.reset()
+      await loadOrders()
+    } catch (e) {
+      setPaymentError(e instanceof Error ? e.message : "Unable to submit the payment claim.")
+    } finally { setPaymentBusyOrder("") }
+  }
 
   async function requestQuote(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
@@ -242,7 +307,21 @@ export default function CustomerDomainsPage() {
                   <p className="mt-4 text-xs leading-5 text-slate-600">A confirmed availability result was not saved with this quote. Contact support before relying on its status.</p>
                 )}
                 <p className="mt-2 text-xs leading-5 text-slate-600">
-                  {quoteResult.message} Checkout and registration remain disabled.
+                  {quoteResult.message} Payment is manual-only for the initial release; domain registration remains separately gated.
+                </p>
+                {quoteResult.quote.usable && quoteResult.order.status === "quoted" ? (
+                  <button type="button" onClick={() => void beginManualPayment(quoteResult.order.id)} disabled={!!paymentBusyOrder} className="mt-4 inline-flex h-11 items-center justify-center rounded-xl bg-navy px-4 text-sm font-bold text-white disabled:opacity-50">
+                    {paymentBusyOrder === quoteResult.order.id ? "Loading instructions…" : "Request manual payment instructions"}
+                  </button>
+                ) : null}
+                {paymentSessions[quoteResult.order.id] ? (
+                  <div className="mt-4 rounded-xl border border-slate-200 bg-white p-4">
+                    <p className="text-sm font-bold text-navy">Manual payment instructions</p>
+                    <p className="mt-2 text-sm leading-6 text-slate-600 whitespace-pre-wrap">{paymentSessions[quoteResult.order.id].instructions}</p>
+                    <p className="mt-3 text-sm">Reference: <strong>{paymentSessions[quoteResult.order.id].paymentReference}</strong></p>
+                    <p className="mt-1 text-sm">Amount: <strong>{money(paymentSessions[quoteResult.order.id].amountMinor, paymentSessions[quoteResult.order.id].currency)}</strong></p>
+                  </div>
+                ) : null}
                 </p>
               </div>
             ) : null}
@@ -258,6 +337,8 @@ export default function CustomerDomainsPage() {
         ) : null}
         {loading && user ? <div className="flex h-48 items-center justify-center"><Loader2 className="h-7 w-7 animate-spin text-teal" /></div> : null}
         {error ? <p role="alert" className="mt-8 rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900">{error}</p> : null}
+        {paymentError ? <p role="alert" className="mt-4 rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900">{paymentError}</p> : null}
+        {paymentNotice ? <p role="status" className="mt-4 rounded-xl border border-teal/30 bg-teal/5 p-4 text-sm text-navy">{paymentNotice}</p> : null}
 
         {!loading && !error && user && orders.length === 0 ? (
           <div className="mt-8 rounded-2xl border border-slate-200 bg-white p-8 text-center">
@@ -282,6 +363,39 @@ export default function CustomerDomainsPage() {
                 <Metric label="Expiry" value={order.expires_at ? new Date(order.expires_at).toLocaleDateString() : "Not confirmed"} />
               </div>
               {order.quote_expires_at ? <p className="mt-4 text-xs text-slate-500">Quote expires: {new Date(order.quote_expires_at).toLocaleString()}</p> : null}
+              {(order.status === "quoted" || order.status === "awaiting_payment") ? (
+                <div className="mt-5 border-t border-slate-100 pt-4">
+                  <div className="flex flex-wrap items-center justify-between gap-3">
+                    <p className="text-sm text-slate-600">Initial payments are handled manually. Use the current quote and wait for payment verification.</p>
+                    <button type="button" onClick={() => void beginManualPayment(order.id)} disabled={!!paymentBusyOrder} className="inline-flex h-10 items-center justify-center rounded-xl border border-slate-200 px-4 text-sm font-bold disabled:opacity-50">
+                      {paymentBusyOrder === order.id ? "Loading…" : "View payment instructions"}
+                    </button>
+                  </div>
+                  {paymentSessions[order.id] ? (
+                    <div className="mt-4 rounded-xl border border-slate-200 bg-slate-50 p-4">
+                      <p className="text-sm font-bold">Payment reference: {paymentSessions[order.id].paymentReference}</p>
+                      <p className="mt-1 text-sm font-bold">Amount: {money(paymentSessions[order.id].amountMinor, paymentSessions[order.id].currency)}</p>
+                      <p className="mt-3 whitespace-pre-wrap text-sm leading-6 text-slate-600">{paymentSessions[order.id].instructions}</p>
+                      {!paymentClaims.some((claim) => claim.order_id === order.id && ["submitted", "verified"].includes(claim.status)) ? (
+                        <form onSubmit={(event) => void submitManualPaymentClaim(event, order.id)} className="mt-4 space-y-3">
+                          <div><label htmlFor={`transaction-${order.id}`} className="block text-xs font-bold text-slate-700">Transfer / transaction reference</label><input id={`transaction-${order.id}`} name="transactionReference" required minLength={3} maxLength={120} autoComplete="off" className="mt-1 h-11 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm" placeholder="Reference from your bank or mobile-money provider" /></div>
+                          <div><label htmlFor={`note-${order.id}`} className="block text-xs font-bold text-slate-700">Optional note</label><textarea id={`note-${order.id}`} name="customerNote" maxLength={500} rows={2} className="mt-1 w-full rounded-xl border border-slate-200 bg-white p-3 text-sm" placeholder="Optional details to help us reconcile the payment" /></div>
+                          <p className="text-xs leading-5 text-slate-500">Do not upload or send PINs, passwords, card details, or banking credentials. A submitted claim is not proof of payment.</p>
+                          <button type="submit" disabled={!!paymentBusyOrder} className="inline-flex h-10 items-center justify-center rounded-xl bg-navy px-4 text-sm font-bold text-white disabled:opacity-50">{paymentBusyOrder === order.id ? "Submitting…" : "Submit payment claim"}</button>
+                        </form>
+                      ) : null}
+                    </div>
+                  ) : null}
+                  {paymentClaims.filter((claim) => claim.order_id === order.id).map((claim) => (
+                    <div key={claim.id} className="mt-3 rounded-xl border border-slate-200 bg-white p-3 text-sm">
+                      <p className="font-bold">Payment claim: {statusLabel(claim.status)}</p>
+                      <p className="mt-1 text-xs text-slate-500">Reference {claim.payment_reference} · Transaction {claim.transaction_reference}</p>
+                      {claim.review_note ? <p className="mt-2 text-slate-600">Review note: {claim.review_note}</p> : null}
+                      {claim.status === "verified" ? <p className="mt-2 text-xs text-teal">Funds were verified by HEMBOX. This does not mean the domain has been registered.</p> : null}
+                    </div>
+                  ))}
+                </div>
+              ) : null}
             </article>
           ))}
         </div>
