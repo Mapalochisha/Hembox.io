@@ -101,3 +101,28 @@ export async function POST(request: Request) {
     return json({ error: "Unable to issue this invoice right now. Please review the details and try again." }, 500)
   }
 }
+
+
+const voidSchema = z.object({ invoiceId: z.string().uuid(), reason: z.string().trim().min(5).max(1000) }).strict()
+
+export async function PATCH(request: Request) {
+  const body = await request.json().catch(() => null)
+  const parsed = voidSchema.safeParse(body)
+  if (!parsed.success) return json({ error: "Provide an invoice and a clear void reason." }, 400)
+  try {
+    const auth = await requireAdmin()
+    if (auth.status !== 200) return json({ error: auth.status === 401 ? "Authentication required." : auth.status === 403 ? "Administrator access required." : "Unable to verify administrator access." }, auth.status)
+    const db = createServiceClient() as unknown as SupabaseClient
+    const { data, error } = await db.rpc("void_billing_invoice", { p_invoice_id: parsed.data.invoiceId, p_admin_id: auth.userId, p_reason: parsed.data.reason.trim() })
+    if (error) {
+      if (error.code === "42501") return json({ error: "Administrator access is required." }, 403)
+      if (error.code === "P0002") return json({ error: "Invoice not found." }, 404)
+      if (error.code === "23514" || error.code === "22023") return json({ error: error.message }, 409)
+      throw error
+    }
+    return json({ result: Array.isArray(data) ? data[0] : data })
+  } catch (error) {
+    console.error("[Billing admin] Failed to void invoice:", error)
+    return json({ error: "Unable to void this invoice right now." }, 500)
+  }
+}
