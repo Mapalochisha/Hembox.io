@@ -570,3 +570,11 @@ When resuming this project:
 - Updated the NameSilo parser to normalize only strict thousands-grouped decimal strings, without using floating-point conversion; malformed grouping remains rejected. Added tests for valid normalization and malformed-group rejection/privacy.
 - This affects only the read-only OTE account probe. No credentials/configuration changed and no sandbox mutation or funds spend occurred.
 - Implementation commit `b1329b86e38ffab49baaf61bdc1f29df2f186165` passed [GitHub Actions CI](https://github.com/Mapalochisha/Hembox.io/actions/runs/39923512370) (Lint & Type Check, Domain schema integration tests, Production Build); its Vercel Preview check also passed ([deployment](https://vercel.com/mapalochishas-projects/hembox-io/2QSazKr9bwEKniJ2ans16KjRkMrX)). The follow-up progress-document commits have fresh checks pending verification.
+
+
+### 2026-10-23 — Grouped balance parsing confirmed against OTE
+
+- Re-ran the protected Preview's read-only account probe after the grouped-decimal parser update. It returned provider code 300 and a normalized `balance: "5000.00"`, confirming the parser fix works end to end.
+- The amount is sandbox account funds only; it is not production balance or revenue. No funds were spent.
+- The same response again reported no active domains. M2's remaining `getDomainInfo` acceptance criterion is unresolved unless NameSilo confirms the out-of-account behavior and accepts the account probes as readiness evidence; do not register a domain merely for diagnosis.
+- Evidence: parser/test implementation CI passed at [run 39923512370](https://github.com/Mapalochisha/Hembox.io/actions/runs/39923512370), and the subsequent progress-document head passed [run 39923838731](https://github.com/Mapalochisha/Hembox.io/actions/runs/39923838731), including lint/type-check, schema integration, production build, and Vercel Preview. The documentation update itself must receive fresh checks.
