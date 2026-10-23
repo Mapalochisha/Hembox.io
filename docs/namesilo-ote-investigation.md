@@ -172,8 +172,17 @@ unverified and out of scope for this investigation.
 - **Domain list:** OTE returned an empty list. This is a successful listing of an empty sandbox account, not a listing transport failure.
 - **Domain info:** querying github.com returned provider code 200 with the documented detail that the domain is not active or does not belong to this account. This confirms the account-scoped domain-info path without purchasing a domain.
 - **Availability parsing:** example.com and example.net returned unavailable; github.com returned unavailable; a unique probe domain returned available. Every result was marked environment=test, live=false, with null registration/renewal prices. These are OTE-only classifications, not live registry results.
-- **Balance parsing:** OTE returned code 300 and included code, detail and balance in the reply; the balance field's JSON type was string. The parser still rejected its contents as a plain decimal. The current diagnostic deliberately does not expose the value, so the exact format remains unknown.
-- **Corrected regression:** an earlier diagnostic change over-escaped the decimal regex; this was corrected and the fixture test now exercises a numeric balance string. CI passed on commit ef0dea07e47bf137cd89e2f9af1698295ec43817 (lint/type check, domain schema integration, production build).
-- **Next action:** deploy a safe string-format classification (empty, plain/grouped decimal, currency-formatted, signed decimal, or non-numeric), without returning the balance itself. Only adjust the accepted balance format after the OTE response classification is known.
+- **Balance parsing:** OTE returned code 300 and included a string-valued balance. The Preview's value-safe format classifier reported `grouped-decimal`; the raw value remains intentionally undisclosed.
+- **Regression fix:** strict thousands grouping (for example, `12,345.67`) is normalized by removing only correctly placed grouping commas, yielding a canonical decimal string. Plain decimals remain supported; irregular comma grouping and other non-numeric formats are rejected. This does not use floating-point conversion and does not expose the balance in diagnostics.
+- **Tests added:** valid grouped decimal normalizes successfully; malformed grouping remains null and its raw contents are not returned. The official API reference shows a plain numeric example (`355.75`), so this OTE-only formatting difference remains a provider-specific observation rather than a documented general format. See [NameSilo getAccountBalance documentation](https://www.namesilo.com/api-reference/pages?uid=account%2Fget-account-balance).
 - **Safety:** no live provider endpoint, registration, renewal, transfer, nameserver mutation, payment, or OTE funds spend was performed.
 
+
+
+## 10. 2026-10-23 — Normalize the observed OTE grouped-decimal balance
+
+- The protected Preview reported `balanceStringFormat: grouped-decimal`, with provider code 300. The diagnostic intentionally does not return the balance value.
+- The parser now accepts only strict decimal strings or strict comma-grouped decimals; correctly placed grouping commas are removed to produce a canonical decimal string. Malformed grouping remains unparsed. No JavaScript floating-point conversion is used.
+- Regression tests cover grouped values and malformed grouping while asserting the raw malformed value is not present in diagnostic output.
+- **Verification:** check GitHub Actions CI and Vercel Preview for the latest branch head before treating this parser change as complete.
+- **Safety:** the change only parses the response to a read-only account-balance request. It performs no registration, renewal, transfer, nameserver change, payment or fund-spending operation.
