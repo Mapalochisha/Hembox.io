@@ -13,6 +13,7 @@ type Claim = { id: string; invoice_id: string; status: string; claimed_amount_mi
 type Allocation = { invoice_id: string; amount_minor: number; currency: string; allocation_type: string }
 type PaymentMethod = { id: string; method_key: string; display_name: string; instructions: string; version: number; supported_currencies: string[] }
 type InvoiceItem = { invoice_id: string; description: string; quantity: number; unit_amount_minor: number; line_total_minor: number }\ntype Arrangement = { id: string; invoice_id: string; conversation_id: string; requested_terms: string; requested_currency: string; requested_amount_minor: number | null; status: string; agreed_terms: string | null; decision_note: string | null; created_at: string }
+type BillingMessage = { id: string; inquiry_id: string; sender_role: "customer" | "admin"; body: string; created_at: string }
 type TabKey = "all" | "unpaid" | "under_review" | "paid"
 
 const tabs: { key: TabKey; label: string }[] = [
@@ -49,7 +50,10 @@ export default function BillsPage() {
   const [claims, setClaims] = useState<Claim[]>([])
   const [allocations, setAllocations] = useState<Allocation[]>([])
   const [methods, setMethods] = useState<PaymentMethod[]>([])
-  const [itemsByInvoice, setItemsByInvoice] = useState<Record<string, InvoiceItem[]>>({})\n  const [arrangements, setArrangements] = useState<Arrangement[]>([])\n  const [arrangementInvoice, setArrangementInvoice] = useState<Invoice | null>(null)\n  const [arrangementTerms, setArrangementTerms] = useState("")\n  const [arrangementAmount, setArrangementAmount] = useState("")\n  const [arrangementMethod, setArrangementMethod] = useState("")\n  const [arrangementSubmitting, setArrangementSubmitting] = useState(false)
+  const [itemsByInvoice, setItemsByInvoice] = useState<Record<string, InvoiceItem[]>>({})\n  const [arrangements, setArrangements] = useState<Arrangement[]>([])
+  const [billingMessages, setBillingMessages] = useState<Record<string, BillingMessage[]>>({})
+  const [messageDrafts, setMessageDrafts] = useState<Record<string, string>>({})
+  const [sendingMessage, setSendingMessage] = useState<string | null>(null)\n  const [arrangementInvoice, setArrangementInvoice] = useState<Invoice | null>(null)\n  const [arrangementTerms, setArrangementTerms] = useState("")\n  const [arrangementAmount, setArrangementAmount] = useState("")\n  const [arrangementMethod, setArrangementMethod] = useState("")\n  const [arrangementSubmitting, setArrangementSubmitting] = useState(false)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState("")
   const [notice, setNotice] = useState("")
@@ -95,7 +99,43 @@ export default function BillsPage() {
     setLoading(false)
   }, [supabase, user])
 
-  useEffect(() => { if (!authLoading) void load() }, [authLoading, load])\n\n  const loadArrangements = useCallback(async () => {\n    if (!user) return\n    try { const response = await fetch("/api/billing/arrangements", { cache: "no-store" }); const result = await response.json(); if (response.ok) setArrangements(result.arrangements ?? []) } catch (err) { console.error("[Billing] Failed to load arrangements:", err) }\n  }, [user])\n  useEffect(() => { if (!authLoading && user) void loadArrangements() }, [authLoading, loadArrangements, user])\n\n  const requestArrangement = async () => {\n    if (!arrangementInvoice || arrangementTerms.trim().length < 5) { setError("Describe the payment arrangement you are requesting."); return }\n    const requestedAmountMinor = arrangementAmount.trim() ? parseMinor(arrangementAmount) : null\n    if (arrangementAmount.trim() && (requestedAmountMinor === null || requestedAmountMinor > outstanding(arrangementInvoice))) { setError("Enter a valid requested amount that does not exceed the outstanding balance."); return }\n    setArrangementSubmitting(true); setError(""); setNotice("")\n    try {\n      const response = await fetch("/api/billing/arrangements", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ invoiceId: arrangementInvoice.id, requestedTerms: arrangementTerms.trim(), requestedAmountMinor: requestedAmountMinor ?? undefined, requestedMethodKey: arrangementMethod.trim() || undefined }) })\n      const result = await response.json(); if (!response.ok) throw new Error(result.error || "Unable to request an arrangement.")\n      setArrangementInvoice(null); setArrangementTerms(""); setArrangementAmount(""); setArrangementMethod(""); setNotice("Your arrangement request has been sent to HEMBOX messaging. It is not a payment or confirmation of settlement."); await loadArrangements()\n    } catch (err) { setError(err instanceof Error ? err.message : "Unable to request an arrangement.") } finally { setArrangementSubmitting(false) }\n  }\n\n  const acceptArrangement = async (arrangement: Arrangement) => {\n    setError(""); try { const response = await fetch("/api/billing/arrangements", { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ arrangementId: arrangement.id }) }); const result = await response.json(); if (!response.ok) throw new Error(result.error || "Unable to accept terms."); setNotice("Arrangement accepted. Payments still require the normal verification process."); await loadArrangements() } catch (err) { setError(err instanceof Error ? err.message : "Unable to accept terms.") }\n  }
+  useEffect(() => { if (!authLoading) void load() }, [authLoading, load])\n\n  const loadArrangements = useCallback(async () => {\n    if (!user) return\n    try { const response = await fetch("/api/billing/arrangements", { cache: "no-store" }); const result = await response.json(); if (response.ok) setArrangements(result.arrangements ?? []) } catch (err) { console.error("[Billing] Failed to load arrangements:", err) }\n  }, [user])\n  useEffect(() => { if (!authLoading && user) void loadArrangements() }, [authLoading, loadArrangements, user])
+
+  useEffect(() => {
+    if (!arrangements.length) return
+    let active = true
+    void Promise.all(arrangements.map(async (item) => {
+      try {
+        const response = await fetch("/api/billing/conversations?conversationId=" + encodeURIComponent(item.conversation_id), { cache: "no-store" })
+        const result = await response.json()
+        return response.ok ? [item.conversation_id, result.messages ?? []] as const : null
+      } catch { return null }
+    })).then((rows) => {
+      if (!active) return
+      setBillingMessages((current) => {
+        const next = { ...current }
+        for (const row of rows) if (row) next[row[0]] = row[1]
+        return next
+      })
+    })
+    return () => { active = false }
+  }, [arrangements])
+
+  const sendBillingMessage = async (conversationId: string) => {
+    const body = (messageDrafts[conversationId] ?? "").trim()
+    if (!body) return
+    setSendingMessage(conversationId); setError("")
+    try {
+      const response = await fetch("/api/billing/conversations", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ conversationId, body }) })
+      const result = await response.json()
+      if (!response.ok) throw new Error(result.error || "Unable to send message.")
+      setMessageDrafts((current) => ({ ...current, [conversationId]: "" }))
+      const refresh = await fetch("/api/billing/conversations?conversationId=" + encodeURIComponent(conversationId), { cache: "no-store" })
+      const messages = await refresh.json()
+      if (refresh.ok) setBillingMessages((current) => ({ ...current, [conversationId]: messages.messages ?? [] }))
+    } catch (err) { setError(err instanceof Error ? err.message : "Unable to send message.") }
+    finally { setSendingMessage(null) }
+  }\n\n  const requestArrangement = async () => {\n    if (!arrangementInvoice || arrangementTerms.trim().length < 5) { setError("Describe the payment arrangement you are requesting."); return }\n    const requestedAmountMinor = arrangementAmount.trim() ? parseMinor(arrangementAmount) : null\n    if (arrangementAmount.trim() && (requestedAmountMinor === null || requestedAmountMinor > outstanding(arrangementInvoice))) { setError("Enter a valid requested amount that does not exceed the outstanding balance."); return }\n    setArrangementSubmitting(true); setError(""); setNotice("")\n    try {\n      const response = await fetch("/api/billing/arrangements", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ invoiceId: arrangementInvoice.id, requestedTerms: arrangementTerms.trim(), requestedAmountMinor: requestedAmountMinor ?? undefined, requestedMethodKey: arrangementMethod.trim() || undefined }) })\n      const result = await response.json(); if (!response.ok) throw new Error(result.error || "Unable to request an arrangement.")\n      setArrangementInvoice(null); setArrangementTerms(""); setArrangementAmount(""); setArrangementMethod(""); setNotice("Your arrangement request has been sent to HEMBOX messaging. It is not a payment or confirmation of settlement."); await loadArrangements()\n    } catch (err) { setError(err instanceof Error ? err.message : "Unable to request an arrangement.") } finally { setArrangementSubmitting(false) }\n  }\n\n  const acceptArrangement = async (arrangement: Arrangement) => {\n    setError(""); try { const response = await fetch("/api/billing/arrangements", { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ arrangementId: arrangement.id }) }); const result = await response.json(); if (!response.ok) throw new Error(result.error || "Unable to accept terms."); setNotice("Arrangement accepted. Payments still require the normal verification process."); await loadArrangements() } catch (err) { setError(err instanceof Error ? err.message : "Unable to accept terms.") }\n  }
 
   const claimsByInvoice = useMemo(() => {
     const map = new Map<string, Claim[]>()
