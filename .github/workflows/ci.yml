@@ -97,7 +97,8 @@ jobs:
             allowed_mime_types text[]
           );
           create table auth.users (
-            id uuid primary key default gen_random_uuid()
+            id uuid primary key default gen_random_uuid(),
+            email text
           );
           create table public.profiles (
             id uuid primary key references auth.users(id) on delete cascade,
@@ -185,6 +186,9 @@ jobs:
 
       - name: Assert unified billing ledger invariants
         run: psql -v ON_ERROR_STOP=1 -f supabase/tests/unified_billing_foundation.test.sql
+
+      - name: Assert billing arrangements and domain billing bridge
+        run: psql -v ON_ERROR_STOP=1 -f supabase/tests/unified_billing_workflows.test.sql
 
   build:
     name: Production Build
