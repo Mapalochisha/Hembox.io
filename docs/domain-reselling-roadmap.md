@@ -2,6 +2,8 @@
 
 ## Current stage
 
+**Initial launch payment decision (2026-10-23):** Defer the payment gateway until a custom domain and onboarding can be funded. Build an auditable manual-payment claim and administrator verification flow for the initial release. A receipt is a claim, not proof of settlement. Do not mark an order paid or permit registration until an authorized admin confirms the funds in the receiving account. Gateway API/hosted checkout/webhooks are explicitly postponed.
+
 The public `/domains` page remains enquiry-led. Provider-independent pricing policy and catalogue APIs are built around the registrar interface; no TLD is seeded or enabled without verified source costs. **NameSilo is now the selected initial registrar.** A server-only NameSilo adapter supports read-only availability checks using `checkRegisterAvailability`; unknown or malformed provider results remain `unknown`. It intentionally returns no prices and has no registration, renewal, transfer, DNS or privacy-management capability. The explicit `namesilo-sandbox` mode uses NameSilo's OTE endpoint and a separate `NAMESILO_SANDBOX_API_KEY`; the `namesilo` mode uses the production endpoint and `NAMESILO_API_KEY`. Live registration and payment remain disabled. The old Domain Name API adapter is no longer selected by the provider factory.
 
 The pricing layer now uses integer minor-unit arithmetic, an explicit FX scaling convention, basis-point markup, upward rounding, a 24-hour freshness gate, and restricted price-history snapshots. Admins can maintain a TLD catalogue through role-protected server routes. Public catalogue responses expose retail-only ZMW prices and never imply domain availability. This foundation is not a live quote or checkout.
@@ -25,8 +27,8 @@ The pricing layer now uses integer minor-unit arithmetic, an explicit FX scaling
 1. **Foundation:** registrar interface, provider capability flags, input validation, explicit disabled/mock modes, domain-order data model and audit requirements.
 2. **Provider verification:** configure the separate server-side NameSilo sandbox key and `DOMAIN_PROVIDER_MODE=namesilo-sandbox` in Preview; run read-only `.com`/`.net` availability checks and confirm response shape and fail-closed behavior. Sandbox availability is not live registry truth. State-changing operations are not implemented; do not enable them until provider-backed idempotency/reconciliation, sandbox coverage, and explicit release approval exist.
 3. **Quotes and orders:** server-calculated ZMW retail quotes, separately stored wholesale costs, expiry on quotes, idempotent order creation, and recoverable order states.
-4. **Payments:** add a gateway only after its onboarding/approval and webhook verification are complete. Never trust a browser redirect as proof of payment.
-5. **Live registration:** only after confirmed payment, re-check availability, register idempotently where supported, and reconcile ambiguous provider timeouts without blind failover.
+4. **Initial manual payments:** customer-facing payment instructions/reference, private optional evidence or transaction reference, admin verification/rejection, idempotency and audit trail. Keep unverified claims separate from paid order state. **Deferred:** gateway selection/onboarding, hosted checkout, API integration, signed webhooks and gateway reconciliation until custom-domain funding is available. Never trust a browser redirect as proof of payment.
+5. **Registration:** initially only after authorized manual-payment verification and a fresh availability/price check; implement provider-backed idempotency and ambiguous-outcome recovery. Gateway-confirmed payment can replace the manual verification gate later, after gateway launch criteria pass.
 6. **Customer domain area:** domain status, registration/expiry dates, renewal reminders and later DNS controls.
 7. **Operations console:** provider health, failed orders, renewals, margin reporting, reconciliation and immutable audit events.
 
@@ -158,3 +160,13 @@ A local `npm run namesilo:ote -- ...` CLI now supports OTE domain-info and avail
 ## 2026-10-22 — Vercel-first NameSilo diagnostics
 
 Batch response parsing accepts NameSilo's nested, array and XML-to-JSON availability forms while failing conservatively on missing/conflicting entries. A read-only `GET /api/domains/provider-diagnostic?domain=...` endpoint is available only on a protected Vercel Preview configured with `namesilo-sandbox`. It returns normalized domain-info results and safe provider detail, and has no mutation capabilities. Use `vercel curl` for remote tests rather than requiring local npm setup.
+
+## Initial manual-payment release guardrails (2026-10-23)
+
+- Do not collect card numbers, CVVs, PINs, passwords, or banking credentials.
+- Give every quote/order a stable payment reference and clear amount/currency; do not ask customers to pay an unverified or expired quote.
+- Payment claims are not payment confirmations. A screenshot/upload alone never changes an order to paid.
+- Only admins can verify funds against the actual receiving account/transaction. Record actor, timestamp, decision, reason/reference and an audit event.
+- Keep evidence private and access-controlled with strict upload limits if uploads are implemented; otherwise accept a transaction/reference note without storing files.
+- Keep registration disabled until current provider pricing, live availability, registration semantics, and recovery/reconciliation behavior have passed release checks.
+- Payment gateway remains deferred; do not leave a fake/functional-looking checkout button enabled.
