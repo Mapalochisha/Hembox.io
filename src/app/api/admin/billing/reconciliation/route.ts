@@ -19,7 +19,7 @@ export async function GET(){
    db.from("billing_events").select("id,invoice_id,payment_id,claim_id,arrangement_request_id,actor_user_id,event_type,details,created_at").order("created_at",{ascending:false}).limit(300),
   ])
   for(const result of [invoiceResult,paymentResult,allocationResult,eventResult])if(result.error)throw result.error
-  const ids=[...new Set([...(invoiceResult.data??[]).map(x=>x.customer_id),...(paymentResult.data??[]).map(x=>x.customer_id)])]
+  const ids=Array.from(new Set([...(invoiceResult.data??[]).map(x=>x.customer_id),...(paymentResult.data??[]).map(x=>x.customer_id)]))
   const {data:profiles,error:profileError}=ids.length?await db.from("profiles").select("id,email,full_name").in("id",ids):{data:[],error:null}
   if(profileError)throw profileError
   return json({invoices:invoiceResult.data??[],payments:paymentResult.data??[],allocations:allocationResult.data??[],events:eventResult.data??[],profiles:profiles??[]})
