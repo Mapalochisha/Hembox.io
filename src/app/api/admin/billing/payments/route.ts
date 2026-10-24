@@ -2,7 +2,6 @@ import { NextResponse } from "next/server"
 import { z } from "zod"
 import type { SupabaseClient } from "@supabase/supabase-js"
 import { createClient } from "@/lib/supabase/server"
-import { createServiceClient } from "@/lib/supabase/service"
 
 export const dynamic = "force-dynamic"
 
@@ -30,7 +29,7 @@ export async function GET() {
   try {
     const auth = await requireAdmin()
     if (auth.status !== 200) return json({ error: auth.status === 401 ? "Authentication required." : auth.status === 403 ? "Administrator access required." : "Unable to verify administrator access." }, auth.status)
-    const db = createServiceClient() as unknown as SupabaseClient
+    const db = createClient() as unknown as SupabaseClient
     const { data: claims, error } = await db.from("billing_payment_claims")
       .select("id,invoice_id,customer_id,method_key_snapshot,method_name_snapshot,transaction_reference,claimed_amount_minor,currency,customer_note,receipt_object_key,receipt_mime_type,receipt_size_bytes,status,review_note,reviewed_by,reviewed_at,created_at")
       .order("created_at", { ascending: true }).limit(200)
@@ -58,10 +57,9 @@ export async function POST(request: Request) {
   try {
     const auth = await requireAdmin()
     if (auth.status !== 200) return json({ error: auth.status === 401 ? "Authentication required." : auth.status === 403 ? "Administrator access required." : "Unable to verify administrator access." }, auth.status)
-    const db = createServiceClient() as unknown as SupabaseClient
-    const { data, error } = await db.rpc("review_billing_payment_claim", {
+    const db = createClient() as unknown as SupabaseClient
+    const { data, error } = await db.rpc("authenticated_review_billing_payment_claim", {
       p_claim_id: parsed.data.claimId,
-      p_admin_id: auth.userId,
       p_decision: parsed.data.decision,
       p_review_note: parsed.data.reviewNote?.trim() || null,
     })
