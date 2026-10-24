@@ -96,6 +96,19 @@ jobs:
             file_size_limit bigint,
             allowed_mime_types text[]
           );
+          create table storage.objects (
+            id uuid primary key default gen_random_uuid(),
+            bucket_id text not null,
+            name text not null,
+            owner_id uuid,
+            metadata jsonb,
+            created_at timestamptz not null default now(),
+            updated_at timestamptz not null default now(),
+            unique(bucket_id, name)
+          );
+          create function storage.foldername(name text) returns text[]
+          language sql immutable
+          as $ select string_to_array(name, '/') $;
           create table auth.users (
             id uuid primary key default gen_random_uuid(),
             email text
@@ -159,6 +172,9 @@ jobs:
 
       - name: Apply audited invoice void migration
         run: psql -v ON_ERROR_STOP=1 -f supabase/migrations/20261023170000_billing_invoice_void.sql
+
+      - name: Apply authenticated billing runtime migration
+        run: psql -v ON_ERROR_STOP=1 -f supabase/migrations/20261025090000_billing_authenticated_runtime.sql
 
       - name: Assert domain schema constraints and security policies
         run: psql -v ON_ERROR_STOP=1 -f supabase/tests/domain_reselling_foundation.test.sql
