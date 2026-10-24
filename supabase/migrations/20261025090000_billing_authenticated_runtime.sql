@@ -277,21 +277,3 @@ create policy billing_customer_message_insert on public.inquiry_messages for ins
   with check (sender_id = (select auth.uid()) and sender_role = 'customer'
     and exists (select 1 from public.inquiries i where i.id = inquiry_id and i.customer_id = (select auth.uid())));
 
-alter table storage.objects enable row level security;
-grant select, insert on storage.objects to authenticated;
-drop policy if exists billing_receipts_customer_upload on storage.objects;
-create policy billing_receipts_customer_upload on storage.objects for insert to authenticated
-  with check (bucket_id = 'billing-receipts'
-    and split_part(name, '/', 1) = (select auth.uid())::text
-    and exists (select 1 from public.billing_invoices i
-      where i.id::text = split_part(name, '/', 2) and i.customer_id = (select auth.uid())
-        and i.status in ('unpaid','partially_paid','overdue')));
-drop policy if exists billing_receipts_customer_read on storage.objects;
-create policy billing_receipts_customer_read on storage.objects for select to authenticated
-  using (bucket_id = 'billing-receipts' and (
-    exists (select 1 from public.profiles p where p.id = (select auth.uid()) and p.role = 'admin')
-    or (split_part(name, '/', 1) = (select auth.uid())::text
-      and exists (select 1 from public.billing_invoices i
-        where i.id::text = split_part(name, '/', 2) and i.customer_id = (select auth.uid()))
-    )
-  ));
