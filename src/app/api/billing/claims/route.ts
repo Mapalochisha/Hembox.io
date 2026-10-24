@@ -2,6 +2,7 @@ import { NextResponse } from "next/server"
 import { z } from "zod"
 import type { SupabaseClient } from "@supabase/supabase-js"
 import { createClient } from "@/lib/supabase/server"
+import { createServiceClient } from "@/lib/supabase/service"
 
 export const dynamic = "force-dynamic"
 
@@ -76,7 +77,8 @@ export async function POST(request: Request) {
       if (!/^[0-9a-f-]{36}\.(png|jpg|pdf)$/i.test(objectName)) return json({ error: "Invalid receipt object key." }, 400)
       const expectedExtension = input.receiptMimeType === "image/png" ? "png" : input.receiptMimeType === "image/jpeg" ? "jpg" : "pdf"
       if (!objectName.endsWith(`.${expectedExtension}`)) return json({ error: "Receipt file type does not match its metadata." }, 400)
-      const { data: objects, error: storageError } = await db.storage.from("billing-receipts").list(prefix, { search: objectName, limit: 10 })
+      const storageDb = createServiceClient() as unknown as SupabaseClient
+      const { data: objects, error: storageError } = await storageDb.storage.from("billing-receipts").list(prefix, { search: objectName, limit: 10 })
       if (storageError) throw storageError
       const uploaded = (objects ?? []).find((object) => object.name === objectName)
       if (!uploaded || Number(uploaded.metadata?.size ?? 0) !== input.receiptSizeBytes || String(uploaded.metadata?.mimetype ?? "") !== input.receiptMimeType) return json({ error: "Receipt upload could not be verified. Upload it again." }, 400)
@@ -206,7 +208,8 @@ export async function PATCH(request: Request) {
       if (!/^[0-9a-f-]{36}\.(png|jpg|pdf)$/i.test(name)) return json({error:"Invalid receipt object key."},400)
       const ext=parsed.data.receiptMimeType==="image/png"?"png":parsed.data.receiptMimeType==="image/jpeg"?"jpg":"pdf"
       if(!name.endsWith("."+ext))return json({error:"Receipt file type does not match its metadata."},400)
-      const {data:objects,error}=await db.storage.from("billing-receipts").list(prefix,{search:name,limit:10})
+      const storageDb=createServiceClient() as unknown as SupabaseClient
+      const {data:objects,error}=await storageDb.storage.from("billing-receipts").list(prefix,{search:name,limit:10})
       if(error)throw error
       const uploaded=(objects??[]).find(object=>object.name===name)
       if(!uploaded||Number(uploaded.metadata?.size??0)!==parsed.data.receiptSizeBytes||String(uploaded.metadata?.mimetype??"")!==parsed.data.receiptMimeType)return json({error:"Receipt upload could not be verified. Upload it again."},400)
