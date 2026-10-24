@@ -11,8 +11,8 @@ async function currentCustomer(){
  if(error||!user||!user.email)return null
  return user
 }
-async function ownedConversation(db:SupabaseClient,conversationId:string,email:string){
- const {data,error}=await db.from("inquiries").select("id,email,source,customer_id").eq("id",conversationId).eq("source","billing").eq("customer_id",(await db.auth.getUser()).data.user?.id).maybeSingle()
+async function ownedConversation(db:SupabaseClient,conversationId:string,customerId:string){
+ const {data,error}=await db.from("inquiries").select("id,email,source,customer_id").eq("id",conversationId).eq("source","billing").eq("customer_id",customerId).maybeSingle()
  if(error)throw error
  return data
 }
@@ -23,7 +23,7 @@ export async function GET(request:Request){
   const id=new URL(request.url).searchParams.get("conversationId")
   if(!id||!/^[0-9a-f-]{36}$/i.test(id))return json({error:"Provide a valid conversation."},400)
   const db=createClient() as unknown as SupabaseClient
-  const conversation=await ownedConversation(db,id,user.email!)
+  const conversation=await ownedConversation(db,id,user.id)
   if(!conversation)return json({error:"Conversation not found."},404)
   const {data,error}=await db.from("inquiry_messages").select("id,inquiry_id,sender_role,body,created_at").eq("inquiry_id",id).order("created_at",{ascending:true}).limit(200)
   if(error)throw error
@@ -38,7 +38,7 @@ export async function POST(request:Request){
   const user=await currentCustomer()
   if(!user)return json({error:"Sign in to send a message."},401)
   const db=createClient() as unknown as SupabaseClient
-  const conversation=await ownedConversation(db,parsed.data.conversationId,user.email!)
+  const conversation=await ownedConversation(db,parsed.data.conversationId,user.id)
   if(!conversation)return json({error:"Conversation not found."},404)
   const {data,error}=await db.from("inquiry_messages").insert({inquiry_id:conversation.id,sender_role:"customer",sender_id:user.id,body:parsed.data.body.trim()}).select("id,inquiry_id,sender_role,body,created_at").single()
   if(error)throw error
