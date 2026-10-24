@@ -141,16 +141,6 @@ export async function POST(request: Request) {
     if (claimError?.code === "23505") return json({ error: "A matching claim was submitted concurrently. Refresh the invoice before trying again." }, 409)
     if (claimError) throw claimError
 
-    const { error: eventError } = await db.from("billing_events").insert({
-      invoice_id: invoice.id,
-      claim_id: claim.id,
-      actor_user_id: user.id,
-      event_type: "payment_claim.submitted",
-      idempotency_key: `billing-claim-submitted:${claim.id}`,
-      details: { amount_minor: input.amountMinor, currency: invoice.currency, method_key: method.method_key },
-    })
-    if (eventError) throw eventError
-
     return json({ claim }, 201)
   } catch (error) {
     console.error("[Billing] Failed to submit payment claim:", error)
@@ -231,12 +221,6 @@ export async function PATCH(request: Request) {
     }).eq("id",claim.id).eq("status","needs_info").select("id,status,invoice_id,claimed_amount_minor,currency,created_at").maybeSingle()
     if(updateError)throw updateError
     if(!updated)return json({error:"The claim changed while you were editing it. Refresh and try again."},409)
-    const {error:eventError}=await db.from("billing_events").insert({
-      invoice_id:invoice.id,claim_id:claim.id,actor_user_id:user.id,event_type:"payment_claim.resubmitted",
-      idempotency_key:"billing-claim-resubmitted:"+claim.id+":"+crypto.randomUUID(),
-      details:{previous_review_note:claim.review_note,amount_minor:parsed.data.amountMinor,currency:invoice.currency,method_key:method.method_key},
-    })
-    if(eventError)throw eventError
     return json({claim:updated})
   } catch(error) {
     console.error("[Billing] Failed to resubmit payment claim:",error)
