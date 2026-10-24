@@ -121,9 +121,13 @@ create policy billing_claim_customer_resubmit on public.billing_payment_claims
 
 create or replace function public.guard_customer_billing_claim_mutation()
 returns trigger language plpgsql security definer set search_path = '' as $$
-declare v_invoice public.billing_invoices%rowtype; v_method public.billing_payment_methods%rowtype; v_allocated bigint;
+declare
+  v_invoice public.billing_invoices%rowtype;
+  v_method public.billing_payment_methods%rowtype;
+  v_allocated bigint;
 begin
   if auth.uid() is null then return new; end if;
+
   if tg_op = 'INSERT' then
     if new.customer_id is distinct from auth.uid() or new.status <> 'submitted'
       or new.reviewed_by is not null or new.reviewed_at is not null or new.verified_payment_id is not null then
@@ -133,7 +137,9 @@ begin
     if not found or v_invoice.customer_id <> auth.uid() or v_invoice.status not in ('unpaid','partially_paid','overdue') then
       raise exception 'Invoice is not accepting payment claims' using errcode = '23514';
     end if;
-    if new.currency <> v_invoice.currency then raise exception 'Claim currency must match invoice currency' using errcode = '23514'; end if;
+    if new.currency <> v_invoice.currency then
+      raise exception 'Claim currency must match invoice currency' using errcode = '23514';
+    end if;
     select * into v_method from public.billing_payment_methods where id = new.payment_method_id and active for share;
     if not found or not (v_invoice.currency = any(v_method.supported_currencies))
       or new.method_key_snapshot is distinct from v_method.method_key
@@ -142,8 +148,19 @@ begin
       or new.method_version_snapshot is distinct from v_method.version then
       raise exception 'Payment method snapshot is invalid for this invoice currency' using errcode = '23514';
     end if;
-    if new.receipt_object_key is not null then
-      if new.receipt_object_key !~ ('^' || auth.uid()::text || '/' || v_invoice.id::text || '/[0-9a-f-]{36}[.](png|jpg|pdf)
+    if new.receipt_object_key is not null and (
+      new.receipt_object_key !~ ('^' || auth.uid()::text || '/' || v_invoice.id::text || '/[0-9a-f-]{36}[.](png|jpg|pdf)$')
+      or not exists (
+        select 1 from storage.objects o where o.bucket_id = 'billing-receipts'
+          and o.name = new.receipt_object_key
+          and (o.metadata->>'size')::bigint = new.receipt_size_bytes
+          and o.metadata->>'mimetype' = new.receipt_mime_type
+      )
+    ) then
+      raise exception 'Receipt object or metadata is invalid' using errcode = '23514';
+    end if;
+    select coalesce(sum(case when a.allocation_type = 'allocate' then a.amount_minor else -a.amount_minor end),0)::bigint
+      into v_allocated from public.billing_payment_allocations a where a.invoice_id = v_invoice.id;
     if new.claimed_amount_minor <= 0 or new.claimed_amount_minor > v_invoice.total_minor - v_allocated then
       raise exception 'Claim exceeds invoice outstanding balance' using errcode = '23514';
     end if;
@@ -157,7 +174,9 @@ begin
     end if;
     select * into v_invoice from public.billing_invoices where id = new.invoice_id for update;
     if not found or v_invoice.customer_id <> auth.uid() or v_invoice.status not in ('unpaid','partially_paid','overdue')
-      or v_invoice.currency <> new.currency then raise exception 'Invoice is not accepting this claim' using errcode = '23514'; end if;
+      or v_invoice.currency <> new.currency then
+      raise exception 'Invoice is not accepting this claim' using errcode = '23514';
+    end if;
     select * into v_method from public.billing_payment_methods where id = new.payment_method_id and active for share;
     if not found or not (v_invoice.currency = any(v_method.supported_currencies))
       or new.method_key_snapshot is distinct from v_method.method_key
@@ -166,8 +185,19 @@ begin
       or new.method_version_snapshot is distinct from v_method.version then
       raise exception 'Payment method snapshot is invalid for this invoice currency' using errcode = '23514';
     end if;
-    if new.receipt_object_key is not null then
-      if new.receipt_object_key !~ ('^' || auth.uid()::text || '/' || v_invoice.id::text || '/[0-9a-f-]{36}[.](png|jpg|pdf)
+    if new.receipt_object_key is not null and (
+      new.receipt_object_key !~ ('^' || auth.uid()::text || '/' || v_invoice.id::text || '/[0-9a-f-]{36}[.](png|jpg|pdf)$')
+      or not exists (
+        select 1 from storage.objects o where o.bucket_id = 'billing-receipts'
+          and o.name = new.receipt_object_key
+          and (o.metadata->>'size')::bigint = new.receipt_size_bytes
+          and o.metadata->>'mimetype' = new.receipt_mime_type
+      )
+    ) then
+      raise exception 'Receipt object or metadata is invalid' using errcode = '23514';
+    end if;
+    select coalesce(sum(case when a.allocation_type = 'allocate' then a.amount_minor else -a.amount_minor end),0)::bigint
+      into v_allocated from public.billing_payment_allocations a where a.invoice_id = v_invoice.id;
     if new.claimed_amount_minor <= 0 or new.claimed_amount_minor > v_invoice.total_minor - v_allocated then
       raise exception 'Claim exceeds invoice outstanding balance' using errcode = '23514';
     end if;
