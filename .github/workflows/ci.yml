@@ -106,9 +106,6 @@ jobs:
             updated_at timestamptz not null default now(),
             unique(bucket_id, name)
           );
-          create function storage.foldername(name text) returns text[]
-          language sql immutable
-          as $ select string_to_array(name, '/') $;
           create table auth.users (
             id uuid primary key default gen_random_uuid(),
             email text
