@@ -1,7 +1,6 @@
 import { NextResponse } from "next/server"
 import type { SupabaseClient } from "@supabase/supabase-js"
 import { createClient } from "@/lib/supabase/server"
-import { createServiceClient } from "@/lib/supabase/service"
 export const dynamic="force-dynamic"
 function json(body:unknown,status=200){return NextResponse.json(body,{status,headers:{"Cache-Control":"no-store"}})}
 export async function GET(){
@@ -11,7 +10,7 @@ export async function GET(){
   const {data:role,error:roleError}=await authClient.rpc("get_user_role",{user_id:user.id})
   if(roleError)return json({error:"Unable to verify administrator access."},503)
   if(role!=="admin")return json({error:"Administrator access required."},403)
-  const db=createServiceClient() as unknown as SupabaseClient
+  const db=createClient() as unknown as SupabaseClient
   const [invoiceResult,paymentResult,allocationResult,eventResult]=await Promise.all([
    db.from("billing_invoices").select("id,invoice_number,customer_id,status,currency,total_minor,issued_at,due_at,source_type,source_id,created_at").order("created_at",{ascending:false}).limit(300),
    db.from("billing_payments").select("id,customer_id,currency,amount_minor,status,source_type,source_reference,verified_by,verified_at,idempotency_key,created_at").order("verified_at",{ascending:false}).limit(300),
