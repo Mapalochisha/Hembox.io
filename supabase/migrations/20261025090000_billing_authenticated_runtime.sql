@@ -226,9 +226,9 @@ grant select, insert on storage.objects to authenticated;
 drop policy if exists billing_receipts_customer_upload on storage.objects;
 create policy billing_receipts_customer_upload on storage.objects for insert to authenticated
   with check (bucket_id = 'billing-receipts'
-    and (storage.foldername(name))[1] = (select auth.uid())::text
+    and split_part(name, '/', 1) = (select auth.uid())::text
     and exists (select 1 from public.billing_invoices i
-      where i.id::text = (storage.foldername(name))[2] and i.customer_id = (select auth.uid())
+      where i.id::text = split_part(name, '/', 2) and i.customer_id = (select auth.uid())
         and i.status in ('unpaid','partially_paid','overdue')));
 drop policy if exists billing_receipts_customer_read on storage.objects;
 create policy billing_receipts_customer_read on storage.objects for select to authenticated
