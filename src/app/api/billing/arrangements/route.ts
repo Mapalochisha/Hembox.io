@@ -2,7 +2,6 @@ import { NextResponse } from "next/server"
 import { z } from "zod"
 import type { SupabaseClient } from "@supabase/supabase-js"
 import { createClient } from "@/lib/supabase/server"
-import { createServiceClient } from "@/lib/supabase/service"
 
 export const dynamic = "force-dynamic"
 const createSchema = z.object({
@@ -19,7 +18,7 @@ export async function GET() {
     const authClient = createClient()
     const { data: { user }, error: authError } = await authClient.auth.getUser()
     if (authError || !user) return json({ error: "Sign in to view payment arrangements." }, 401)
-    const db = createServiceClient() as unknown as SupabaseClient
+    const db = createClient() as unknown as SupabaseClient
     const { data, error } = await db.from("billing_arrangement_requests")
       .select("id,invoice_id,conversation_id,requested_method_key,requested_terms,requested_currency,requested_amount_minor,status,decision_note,agreed_terms,decided_at,customer_confirmed_at,created_at")
       .eq("customer_id", user.id).order("created_at", { ascending: false }).limit(100)
@@ -39,7 +38,7 @@ export async function POST(request: Request) {
     const authClient = createClient()
     const { data: { user }, error: authError } = await authClient.auth.getUser()
     if (authError || !user || !user.email) return json({ error: "Sign in with an email address to request an arrangement." }, 401)
-    const db = createServiceClient() as unknown as SupabaseClient
+    const db = createClient() as unknown as SupabaseClient
     const { data: invoice, error: invoiceError } = await db.from("billing_invoices")
       .select("id,invoice_number,customer_id,currency,total_minor,status").eq("id", parsed.data.invoiceId).maybeSingle()
     if (invoiceError) throw invoiceError
@@ -51,7 +50,7 @@ export async function POST(request: Request) {
     if (existingArrangement) return json({ error: "An arrangement request is already active for this invoice.", arrangement: existingArrangement }, 409)
 
     const { data: inquiry, error: inquiryError } = await db.from("inquiries").insert({
-      type: "contact", email: user.email, name: user.user_metadata?.full_name ?? user.user_metadata?.name ?? null,
+      type: "contact", email: user.email, customer_id: user.id, name: user.user_metadata?.full_name ?? user.user_metadata?.name ?? null,
       message: `Billing arrangement request for invoice ${invoice.invoice_number}\n\n${parsed.data.requestedTerms.trim()}`,
       source: "billing", status: "new",
     }).select("id").single()
@@ -61,8 +60,8 @@ export async function POST(request: Request) {
       body: `Payment arrangement request for invoice ${invoice.invoice_number} (${invoice.currency}).\n\nRequested terms: ${parsed.data.requestedTerms.trim()}${parsed.data.requestedAmountMinor ? `\nRequested payment amount: ${parsed.data.requestedAmountMinor} minor units` : ""}${parsed.data.requestedMethodKey ? `\nPreferred method: ${parsed.data.requestedMethodKey}` : ""}`,
     })
     if (messageError) throw messageError
-    const { data: result, error } = await db.rpc("request_billing_arrangement", {
-      p_customer_id: user.id, p_invoice_id: invoice.id, p_conversation_id: inquiry.id,
+    const { data: result, error } = await db.rpc("authenticated_request_billing_arrangement", {
+      p_invoice_id: invoice.id, p_conversation_id: inquiry.id,
       p_requested_terms: parsed.data.requestedTerms.trim(),
       p_requested_amount_minor: parsed.data.requestedAmountMinor ?? null,
       p_requested_method_key: parsed.data.requestedMethodKey ?? null,
@@ -94,8 +93,8 @@ export async function PATCH(request: Request) {
     const authClient = createClient()
     const { data: { user }, error: authError } = await authClient.auth.getUser()
     if (authError || !user) return json({ error: "Sign in to accept an arrangement." }, 401)
-    const db = createServiceClient() as unknown as SupabaseClient
-    const { data, error } = await db.rpc("accept_billing_arrangement", { p_arrangement_id: parsed.data.arrangementId, p_customer_id: user.id })
+    const db = createClient() as unknown as SupabaseClient
+    const { data, error } = await db.rpc("authenticated_accept_billing_arrangement", { p_arrangement_id: parsed.data.arrangementId })
     if (error) {
       if (error.code === "P0002") return json({ error: "Arrangement request not found." }, 404)
       if (error.code === "23514") return json({ error: error.message }, 409)
