@@ -2,7 +2,6 @@ import { NextResponse } from "next/server"
 import { z } from "zod"
 import type { SupabaseClient } from "@supabase/supabase-js"
 import { createClient } from "@/lib/supabase/server"
-import { createServiceClient } from "@/lib/supabase/service"
 
 export const dynamic = "force-dynamic"
 const schema = z.object({
@@ -25,7 +24,7 @@ export async function GET() {
   try {
     const auth = await requireAdmin()
     if (auth.status !== 200) return json({ error: auth.status === 401 ? "Authentication required." : auth.status === 403 ? "Administrator access required." : "Unable to verify administrator access." }, auth.status)
-    const db = createServiceClient() as unknown as SupabaseClient
+    const db = createClient() as unknown as SupabaseClient
     const { data, error } = await db.from("billing_arrangement_requests")
       .select("id,invoice_id,customer_id,conversation_id,requested_method_key,requested_terms,requested_currency,requested_amount_minor,status,decision_note,agreed_terms,decided_by,decided_at,customer_confirmed_at,created_at")
       .order("created_at", { ascending: false }).limit(200)
@@ -54,9 +53,9 @@ export async function POST(request: Request) {
   try {
     const auth = await requireAdmin()
     if (auth.status !== 200) return json({ error: auth.status === 401 ? "Authentication required." : auth.status === 403 ? "Administrator access required." : "Unable to verify administrator access." }, auth.status)
-    const db = createServiceClient() as unknown as SupabaseClient
-    const { data, error } = await db.rpc("review_billing_arrangement", {
-      p_arrangement_id: parsed.data.arrangementId, p_admin_id: auth.userId,
+    const db = createClient() as unknown as SupabaseClient
+    const { data, error } = await db.rpc("authenticated_review_billing_arrangement", {
+      p_arrangement_id: parsed.data.arrangementId,
       p_decision: parsed.data.decision, p_decision_note: parsed.data.decisionNote?.trim() || null,
       p_agreed_terms: parsed.data.decision === "approved" ? parsed.data.agreedTerms?.trim() : null,
     })
