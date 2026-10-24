@@ -209,6 +209,9 @@ jobs:
       - name: Assert billing arrangements and domain billing bridge
         run: psql -v ON_ERROR_STOP=1 -f supabase/tests/unified_billing_workflows.test.sql
 
+      - name: Assert authenticated billing runtime authorization
+        run: psql -v ON_ERROR_STOP=1 -f supabase/tests/billing_authenticated_runtime.test.sql
+
   build:
     name: Production Build
     runs-on: ubuntu-latest
