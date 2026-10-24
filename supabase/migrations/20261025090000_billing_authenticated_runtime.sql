@@ -39,8 +39,8 @@ grant execute on function public.authenticated_create_billing_invoice(uuid,text,
 
 create or replace function public.authenticated_void_billing_invoice(
   p_invoice_id uuid, p_reason text
-) returns table(invoice_id uuid, invoice_number text, status text)
-language plpgsql security definer set search_path = '' as $$
+) returns table(invoice_id uuid, status text)
+language plpgsql security definer set search_path = '' as $
 declare v_user_id uuid := auth.uid();
 begin
   if v_user_id is null or not exists (
