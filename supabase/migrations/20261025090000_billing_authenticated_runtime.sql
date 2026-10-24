@@ -109,7 +109,7 @@ create policy billing_claim_customer_insert on public.billing_payment_claims
     and exists (
       select 1 from public.billing_invoices i
       where i.id = invoice_id and i.customer_id = (select auth.uid())
-        and i.status in ('unpaid','partially_paid','overdue') and i.currency = currency
+        and i.status in ('unpaid','partially_paid','overdue') and i.currency = billing_payment_claims.currency
     )
   );
 drop policy if exists billing_claim_customer_resubmit on public.billing_payment_claims;
@@ -222,6 +222,7 @@ create policy billing_customer_message_insert on public.inquiry_messages for ins
 
 -- Private receipt uploads and signed downloads are scoped to the invoice owner or an admin.
 alter table storage.objects enable row level security;
+grant select, insert on storage.objects to authenticated;
 drop policy if exists billing_receipts_customer_upload on storage.objects;
 create policy billing_receipts_customer_upload on storage.objects for insert to authenticated
   with check (bucket_id = 'billing-receipts'
