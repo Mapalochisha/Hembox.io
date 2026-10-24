@@ -2,7 +2,6 @@ import { NextResponse } from "next/server"
 import { z } from "zod"
 import type { SupabaseClient } from "@supabase/supabase-js"
 import { createClient } from "@/lib/supabase/server"
-import { createServiceClient } from "@/lib/supabase/service"
 
 export const dynamic = "force-dynamic"
 
@@ -44,7 +43,7 @@ export async function GET() {
   try {
     const auth = await requireAdmin()
     if (auth.status !== 200) return json({ error: auth.status === 401 ? "Authentication required." : auth.status === 403 ? "Administrator access required." : "Unable to verify administrator access." }, auth.status)
-    const db = createServiceClient() as unknown as SupabaseClient
+    const db = createClient() as unknown as SupabaseClient
     const [{ data: invoices, error }, { data: profiles, error: profilesError }] = await Promise.all([
       db.from("billing_invoices").select("id,invoice_number,customer_id,status,currency,subtotal_minor,tax_minor,total_minor,issued_at,due_at,source_type,source_id,created_at").order("created_at", { ascending: false }).limit(200),
       db.from("profiles").select("id,email,full_name").order("full_name", { ascending: true }).limit(1000),
@@ -74,9 +73,8 @@ export async function POST(request: Request) {
   try {
     const auth = await requireAdmin()
     if (auth.status !== 200) return json({ error: auth.status === 401 ? "Authentication required." : auth.status === 403 ? "Administrator access required." : "Unable to verify administrator access." }, auth.status)
-    const db = createServiceClient() as unknown as SupabaseClient
-    const { data, error } = await db.rpc("create_billing_invoice", {
-      p_admin_id: auth.userId,
+    const db = createClient() as unknown as SupabaseClient
+    const { data, error } = await db.rpc("authenticated_create_billing_invoice", {
       p_customer_id: parsed.data.customerId,
       p_invoice_number: parsed.data.invoiceNumber,
       p_currency: parsed.data.currency,
@@ -112,8 +110,8 @@ export async function PATCH(request: Request) {
   try {
     const auth = await requireAdmin()
     if (auth.status !== 200) return json({ error: auth.status === 401 ? "Authentication required." : auth.status === 403 ? "Administrator access required." : "Unable to verify administrator access." }, auth.status)
-    const db = createServiceClient() as unknown as SupabaseClient
-    const { data, error } = await db.rpc("void_billing_invoice", { p_invoice_id: parsed.data.invoiceId, p_admin_id: auth.userId, p_reason: parsed.data.reason.trim() })
+    const db = createClient() as unknown as SupabaseClient
+    const { data, error } = await db.rpc("authenticated_void_billing_invoice", { p_invoice_id: parsed.data.invoiceId, p_reason: parsed.data.reason.trim() })
     if (error) {
       if (error.code === "42501") return json({ error: "Administrator access is required." }, 403)
       if (error.code === "P0002") return json({ error: "Invoice not found." }, 404)
