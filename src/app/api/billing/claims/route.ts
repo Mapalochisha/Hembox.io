@@ -2,7 +2,6 @@ import { NextResponse } from "next/server"
 import { z } from "zod"
 import type { SupabaseClient } from "@supabase/supabase-js"
 import { createClient } from "@/lib/supabase/server"
-import { createServiceClient } from "@/lib/supabase/service"
 
 export const dynamic = "force-dynamic"
 
@@ -34,7 +33,7 @@ export async function POST(request: Request) {
     const { data: { user }, error: authError } = await authClient.auth.getUser()
     if (authError || !user) return json({ error: "Sign in to submit a payment claim." }, 401)
 
-    const db = createServiceClient() as unknown as SupabaseClient
+    const db = createClient() as unknown as SupabaseClient
     const input = parsed.data
     const { data: existing, error: existingError } = await db
       .from("billing_payment_claims")
@@ -180,7 +179,7 @@ export async function PATCH(request: Request) {
     const authClient = createClient()
     const { data: { user }, error: authError } = await authClient.auth.getUser()
     if (authError || !user) return json({ error: "Sign in to update this claim." }, 401)
-    const db = createServiceClient() as unknown as SupabaseClient
+    const db = createClient() as unknown as SupabaseClient
     const { data: claim, error: claimError } = await db.from("billing_payment_claims")
       .select("id,invoice_id,customer_id,status,review_note,receipt_object_key,receipt_mime_type,receipt_size_bytes")
       .eq("id", parsed.data.claimId).eq("customer_id", user.id).maybeSingle()
