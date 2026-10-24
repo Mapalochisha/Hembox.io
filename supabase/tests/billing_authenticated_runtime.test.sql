@@ -5,10 +5,10 @@ insert into auth.users(id,email) values
   ('88888888-8888-4888-8888-888888888881','runtime-customer@example.test'),
   ('88888888-8888-4888-8888-888888888882','runtime-admin@example.test')
 on conflict (id) do update set email=excluded.email;
-insert into public.profiles(id,role) values
-  ('88888888-8888-4888-8888-888888888881','user'),
-  ('88888888-8888-4888-8888-888888888882','admin')
-on conflict (id) do update set role=excluded.role;
+insert into public.profiles(id,email,role) values
+  ('88888888-8888-4888-8888-888888888881','runtime-customer@example.test','user'),
+  ('88888888-8888-4888-8888-888888888882','runtime-admin@example.test','admin')
+on conflict (id) do update set email=excluded.email, role=excluded.role;
 
 -- Authenticated non-admins may execute the wrapper but cannot invoke the privileged operation.
 select set_config('request.jwt.claim.sub','88888888-8888-4888-8888-888888888881',true);
