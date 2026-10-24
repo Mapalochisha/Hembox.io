@@ -143,7 +143,7 @@ begin
       raise exception 'Payment method snapshot is invalid for this invoice currency' using errcode = '23514';
     end if;
     if new.receipt_object_key is not null then
-      if new.receipt_object_key !~ ('^' || auth.uid()::text || '/' || v_invoice.id::text || '/[0-9a-f-]{36}\\.(png|jpg|pdf)
+      if new.receipt_object_key !~ ('^' || auth.uid()::text || '/' || v_invoice.id::text || '/[0-9a-f-]{36}[.](png|jpg|pdf)
     if new.claimed_amount_minor <= 0 or new.claimed_amount_minor > v_invoice.total_minor - v_allocated then
       raise exception 'Claim exceeds invoice outstanding balance' using errcode = '23514';
     end if;
@@ -167,7 +167,7 @@ begin
       raise exception 'Payment method snapshot is invalid for this invoice currency' using errcode = '23514';
     end if;
     if new.receipt_object_key is not null then
-      if new.receipt_object_key !~ ('^' || auth.uid()::text || '/' || v_invoice.id::text || '/[0-9a-f-]{36}\\.(png|jpg|pdf)
+      if new.receipt_object_key !~ ('^' || auth.uid()::text || '/' || v_invoice.id::text || '/[0-9a-f-]{36}[.](png|jpg|pdf)
     if new.claimed_amount_minor <= 0 or new.claimed_amount_minor > v_invoice.total_minor - v_allocated then
       raise exception 'Claim exceeds invoice outstanding balance' using errcode = '23514';
     end if;
@@ -184,13 +184,9 @@ grant insert on public.billing_events to authenticated;
 drop policy if exists billing_event_authenticated_insert on public.billing_events;
 create policy billing_event_authenticated_insert on public.billing_events
   for insert to authenticated with check (
-    actor_user_id = (select auth.uid()) and (
-      (event_type in ('payment_claim.submitted','payment_claim.resubmitted')
-        and exists (select 1 from public.billing_payment_claims c
-          where c.id = claim_id and c.customer_id = (select auth.uid()) and c.invoice_id = billing_events.invoice_id))
-      or (event_type = 'payment_method.saved'
-        and exists (select 1 from public.profiles p where p.id = (select auth.uid()) and p.role = 'admin'))
-    )
+    actor_user_id = (select auth.uid())
+    and event_type = 'payment_method.saved'
+    and exists (select 1 from public.profiles p where p.id = (select auth.uid()) and p.role = 'admin')
   );
 
 -- Payment-method writes are admin-only and the audit event is separately constrained above.
