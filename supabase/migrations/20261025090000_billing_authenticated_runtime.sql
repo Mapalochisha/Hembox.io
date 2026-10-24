@@ -40,7 +40,7 @@ grant execute on function public.authenticated_create_billing_invoice(uuid,text,
 create or replace function public.authenticated_void_billing_invoice(
   p_invoice_id uuid, p_reason text
 ) returns table(invoice_id uuid, status text)
-language plpgsql security definer set search_path = '' as $
+language plpgsql security definer set search_path = '' as $void_fn$
 declare v_user_id uuid := auth.uid();
 begin
   if v_user_id is null or not exists (
@@ -48,7 +48,7 @@ begin
   ) then raise exception 'Administrator required' using errcode = '42501'; end if;
   return query select * from public.void_billing_invoice(p_invoice_id, v_user_id, p_reason);
 end;
-$$;
+$void_fn$;
 revoke all on function public.authenticated_void_billing_invoice(uuid,text) from public, anon;
 grant execute on function public.authenticated_void_billing_invoice(uuid,text) to authenticated;
 
