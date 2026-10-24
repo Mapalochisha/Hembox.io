@@ -112,6 +112,7 @@ jobs:
           );
           create table public.profiles (
             id uuid primary key references auth.users(id) on delete cascade,
+            email text not null default 'test@example.test',
             role text not null default 'user'
           );
           create function auth.uid() returns uuid
