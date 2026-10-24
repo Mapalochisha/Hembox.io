@@ -1,7 +1,6 @@
 import { NextResponse } from "next/server"
 import type { SupabaseClient } from "@supabase/supabase-js"
 import { createClient } from "@/lib/supabase/server"
-import { createServiceClient } from "@/lib/supabase/service"
 export const dynamic = "force-dynamic"
 function json(body: unknown,status=200){return NextResponse.json(body,{status,headers:{"Cache-Control":"no-store"}})}
 export async function GET(request:Request){
@@ -14,7 +13,7 @@ export async function GET(request:Request){
   if(role!=="admin")return json({error:"Administrator access required."},403)
   const claimId=new URL(request.url).searchParams.get("claimId")
   if(!claimId||!/^[0-9a-f-]{36}$/i.test(claimId))return json({error:"Provide a valid claim ID."},400)
-  const db=createServiceClient() as unknown as SupabaseClient
+  const db=createClient() as unknown as SupabaseClient
   const {data:claim,error}=await db.from("billing_payment_claims").select("id,receipt_object_key,receipt_mime_type").eq("id",claimId).maybeSingle()
   if(error)throw error
   if(!claim)return json({error:"Payment claim not found."},404)
