@@ -1,7 +1,6 @@
 import { NextResponse } from "next/server"
 import type { SupabaseClient } from "@supabase/supabase-js"
 import { createClient } from "@/lib/supabase/server"
-import { createServiceClient } from "@/lib/supabase/service"
 
 export const dynamic = "force-dynamic"
 const MAX_SIZE = 10 * 1024 * 1024
@@ -28,7 +27,7 @@ export async function POST(request: Request) {
     if (!(file.type==="image/png"&&isPng) && !(file.type==="image/jpeg"&&isJpeg) && !(file.type==="application/pdf"&&isPdf)) {
       return json({ error: "The file content does not match its declared receipt type." }, 400)
     }
-    const db = createServiceClient() as unknown as SupabaseClient
+    const db = createClient() as unknown as SupabaseClient
     const { data: invoice, error } = await db.from("billing_invoices").select("id,customer_id,status").eq("id",invoiceId).maybeSingle()
     if (error) throw error
     if (!invoice || invoice.customer_id !== user.id) return json({ error: "Invoice not found." }, 404)
