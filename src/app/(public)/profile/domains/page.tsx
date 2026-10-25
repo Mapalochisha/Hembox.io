@@ -151,7 +151,13 @@ export default function CustomerDomainsPage() {
         body: JSON.stringify({ action: "submit", orderId, idempotencyKey: paymentRequestKeys.current[orderId], transactionReference, customerNote }),
       })
       const result = await response.json()
-      if (!response.ok) throw new Error(result.error || "Unable to submit the payment claim.")
+      if (!response.ok) {
+        if (result.code === "unified_billing_in_use") {
+          window.location.assign("/portal/bills")
+          return
+        }
+        throw new Error(result.error || "Unable to submit the payment claim.")
+      }
       paymentRequestKeys.current[orderId] = ""
       setPaymentNotice("Payment claim submitted for review. This is not a payment confirmation.")
       form.reset()
