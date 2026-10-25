@@ -1,7 +1,7 @@
 "use client"
 
-import { useState, useEffect } from "react"
-import { createClient } from "@/lib/supabase/client"
+import { useState, useEffect, useMemo } from "react"
+import { createClient, isSupabaseConfigured } from "@/lib/supabase/client"
 import { ArrowUpRight } from "lucide-react"
 import { ProjectModal } from "./project-modal"
 
@@ -18,20 +18,26 @@ interface PortfolioItem {
 export function PortfolioSection() {
   const [projects, setProjects] = useState<PortfolioItem[]>([])
   const [selectedProject, setSelectedProject] = useState<PortfolioItem | null>(null)
-  const supabase = createClient()
+  const supabase = useMemo(() => isSupabaseConfigured() ? createClient() : null, [])
 
   useEffect(() => {
+    if (!supabase) return
+
     const fetchPortfolio = async () => {
-      const { data } = await supabase
+      try {
+        const { data } = await supabase
         .from('portfolio_items')
         .select('*')
         .order('sort_order', { ascending: true })
       
-      if (data) setProjects(data)
+        if (data) setProjects(data)
+      } catch (error) {
+        console.warn("Unable to load portfolio projects:", error)
+      }
     }
 
-    fetchPortfolio()
-  }, [])
+    void fetchPortfolio()
+  }, [supabase])
 
   if (projects.length === 0) return null
 
