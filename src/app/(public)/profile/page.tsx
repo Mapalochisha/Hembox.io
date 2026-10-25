@@ -1,5 +1,6 @@
 "use client"
 
+import Link from "next/link"
 import { useAuth } from "@/components/providers/auth-provider"
 import { Navbar } from "@/components/landing/navbar"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
@@ -90,6 +91,7 @@ export default function ProfilePage() {
                 >
                   {isAdmin ? "Go to Dashboard" : "Back to Home"}
                 </Button>
+                <Link href="/profile/domains" className="inline-flex h-12 items-center justify-center rounded-xl border border-teal/30 px-6 text-sm font-semibold text-navy transition hover:bg-teal/10">My domains & orders</Link>
                 <Button 
                   variant="destructive" 
                   className="rounded-xl h-12 px-6 font-semibold gap-2"

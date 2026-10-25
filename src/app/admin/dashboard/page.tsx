@@ -1,10 +1,10 @@
-import { createServiceClient } from "@/lib/supabase/service"
+import { createClient } from "@/lib/supabase/server"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Users, FolderKanban, DollarSign, TrendingUp } from "lucide-react"
 import { cn } from "@/lib/utils"
 
 async function getStats() {
-  const supabase = createServiceClient()
+  const supabase = createClient()
 
   const [
     { count: totalClients },

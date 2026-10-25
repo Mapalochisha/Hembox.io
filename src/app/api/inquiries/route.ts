@@ -1,6 +1,9 @@
 import { NextResponse } from "next/server"
 import { z } from "zod"
+import type { SupabaseClient } from "@supabase/supabase-js"
 import { createServiceClient } from "@/lib/supabase/service"
+import { createClient as createAuthClient } from "@/lib/supabase/server"
+import { parseDomainSearchRequest } from "@/lib/domains/validation"
 
 // This handler depends on Supabase at request time. Never attempt to
 // prerender/evaluate it as a static route during the Vercel build.
@@ -14,6 +17,8 @@ const inquirySchema = z.object({
   product: z.string().trim().max(120).optional(),
   service: z.string().trim().max(120).optional(),
   source: z.string().trim().max(120).optional().default("website"),
+  domain: z.string().trim().max(253).optional(),
+  idempotencyKey: z.string().uuid().optional(),
   honeypot: z.string().optional().default(""),
 })
 
@@ -89,6 +94,42 @@ export async function POST(request: Request) {
     if (error) throw error
 
     const inserted = data as { id: string }
+
+    // Domain enquiries also get a durable order record when the domain schema
+    // is deployed. This is best-effort so a pending migration never breaks the
+    // established public inquiry form. The order remains enquiry-only.
+    if (parsed.data.source === "domain-storefront" && parsed.data.domain) {
+      const parsedDomain = parseDomainSearchRequest({ domains: [parsed.data.domain] })
+      if (parsedDomain.success && parsedDomain.data.domains.length === 1) {
+        try {
+          let customerId: string | null = null
+          try {
+            const authClient = createAuthClient()
+            const { data: { user } } = await authClient.auth.getUser()
+            customerId = user?.id ?? null
+          } catch {
+            // Guest enquiries are valid; no account association is inferred.
+          }
+
+          const domainDb = supabase as unknown as SupabaseClient
+          const { error: orderError } = await domainDb
+            .from("domain_orders")
+            .upsert({
+              customer_id: customerId,
+              customer_email: contactIsEmail ? parsed.data.contact : null,
+              customer_contact: parsed.data.contact,
+              customer_name: parsed.data.name || null,
+              domain_name: parsedDomain.data.domains[0],
+              status: "enquiry",
+              idempotency_key: parsed.data.idempotencyKey || inserted.id,
+            }, { onConflict: "idempotency_key", ignoreDuplicates: true })
+
+          if (orderError) throw orderError
+        } catch (orderError) {
+          console.warn("Inquiry saved, but the durable domain order could not be created:", orderError)
+        }
+      }
+    }
 
     // The inquiry remains the source of truth, so a missing messaging migration
     // must not break the public inquiry form. Once the migration is applied,

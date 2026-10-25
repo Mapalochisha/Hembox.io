@@ -1,7 +1,7 @@
 "use client"
 
-import { useState } from "react"
-import { createClient } from "@/lib/supabase/client"
+import { useMemo, useState } from "react"
+import { createClient, isSupabaseConfigured } from "@/lib/supabase/client"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -13,11 +13,15 @@ export function PhoneAuthForm() {
   const [otp, setOtp] = useState("")
   const [step, setStep] = useState<"phone" | "otp">("phone")
   const [isLoading, setIsLoading] = useState(false)
-  const supabase = createClient()
+  const supabase = useMemo(() => isSupabaseConfigured() ? createClient() : null, [])
   const { toast } = useToast()
 
   const sendOTP = async (e: React.FormEvent) => {
     e.preventDefault()
+    if (!supabase) {
+      toast({ title: "Phone sign-in unavailable", description: "Authentication is not configured for this deployment. Please contact support.", variant: "destructive" })
+      return
+    }
     setIsLoading(true)
 
     try {
@@ -47,6 +51,10 @@ export function PhoneAuthForm() {
 
   const verifyOTP = async (e: React.FormEvent) => {
     e.preventDefault()
+    if (!supabase) {
+      toast({ title: "Phone sign-in unavailable", description: "Authentication is not configured for this deployment. Please contact support.", variant: "destructive" })
+      return
+    }
     setIsLoading(true)
 
     try {

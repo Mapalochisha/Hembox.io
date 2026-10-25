@@ -1,9 +1,9 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useMemo } from "react"
 import { Navbar } from "@/components/landing/navbar"
 import { Footer } from "@/components/landing/footer"
-import { createClient } from "@/lib/supabase/client"
+import { createClient, isSupabaseConfigured } from "@/lib/supabase/client"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Check, ArrowRight, Loader2, Sparkles } from "lucide-react"
@@ -23,9 +23,14 @@ interface PricingPackage {
 export default function PricingPage() {
   const [packages, setPackages] = useState<PricingPackage[]>([])
   const [isLoading, setIsLoading] = useState(true)
-  const supabase = createClient()
+  const supabase = useMemo(() => isSupabaseConfigured() ? createClient() : null, [])
 
   useEffect(() => {
+    if (!supabase) {
+      setIsLoading(false)
+      return
+    }
+
     const fetchPricing = async () => {
       try {
         const { data } = await supabase
@@ -35,13 +40,15 @@ export default function PricingPage() {
           .order('sort_order', { ascending: true })
         
         if (data) setPackages(data)
+      } catch (error) {
+        console.warn("Unable to load pricing packages:", error)
       } finally {
         setIsLoading(false)
       }
     }
 
-    fetchPricing()
-  }, [])
+    void fetchPricing()
+  }, [supabase])
 
   return (
     <div className="relative min-h-screen isolate overflow-hidden bg-white">
