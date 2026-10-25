@@ -118,7 +118,13 @@ export default function CustomerDomainsPage() {
         body: JSON.stringify({ action: "begin", orderId }),
       })
       const result = await response.json()
-      if (!response.ok) throw new Error(result.error || "Manual payment instructions are unavailable.")
+      if (!response.ok) {
+        if (result.code === "unified_billing_in_use") {
+          window.location.assign("/portal/bills")
+          return
+        }
+        throw new Error(result.error || "Manual payment instructions are unavailable.")
+      }
       setPaymentSessions((previous) => ({ ...previous, [orderId]: {
         paymentReference: result.paymentReference, amountMinor: result.amountMinor,
         currency: result.currency, instructions: result.instructions,
