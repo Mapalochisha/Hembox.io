@@ -3,8 +3,6 @@
 import { useState } from "react"
 import Link from "next/link"
 import { useAuth } from "@/components/providers/auth-provider"
-import { useAgency } from "@/components/providers/agency-provider"
-import { Button } from "@/components/ui/button"
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -17,42 +15,59 @@ import { Menu, X, User, LogOut, LayoutDashboard } from "lucide-react"
 export function Navbar() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
   const { user, isAdmin, signOut } = useAuth()
-  const { agency_name } = useAgency()
+
+  const closeMobileMenu = () => setMobileMenuOpen(false)
 
   return (
-    <header className="fixed top-0 w-full z-50 border-b border-black/[0.05] bg-white/70 backdrop-blur-xl">
-      <div className="max-w-[1200px] mx-auto px-6 lg:px-8">
-        <div className="flex h-[72px] items-center justify-between">
-          <Link href="/" className="flex items-center gap-2.5 group">
-            <div className="relative w-9 h-9 rounded-xl bg-navy flex items-center justify-center overflow-hidden group-hover:scale-105 transition">
-              <div className="absolute inset-0 bg-gradient-to-br from-teal to-coral opacity-0 group-hover:opacity-100 transition-opacity" />
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" className="relative z-10">
-                <path d="M4 4h7v7H4zM13 4h7v4h-7zM4 13h4v7H4zM13 11h7v9h-7z" fill="white" />
-              </svg>
-            </div>
-            <span className="text-[19px] font-[800] tracking-tight">{agency_name}</span>
+    <header className="fixed top-0 z-50 w-full border-b border-black/[0.05] bg-white/90 backdrop-blur-xl">
+      <div className="mx-auto max-w-[1200px] px-4 sm:px-6 lg:px-8">
+        <div className="flex h-16 items-center justify-between sm:h-[72px]">
+          <Link
+            href="/"
+            aria-label="HEMBOX.io home"
+            onClick={closeMobileMenu}
+            className="group inline-flex shrink-0 items-center"
+          >
+            <span
+              aria-hidden="true"
+              className="h-7 w-[158px] shrink-0 bg-navy transition-colors duration-200 group-hover:bg-gradient-to-r group-hover:from-teal group-hover:to-coral sm:h-9 sm:w-[203px]"
+              style={{
+                maskImage: "url('/hembox-logo.svg')",
+                maskRepeat: "no-repeat",
+                maskPosition: "left center",
+                maskSize: "contain",
+                WebkitMaskImage: "url('/hembox-logo.svg')",
+                WebkitMaskRepeat: "no-repeat",
+                WebkitMaskPosition: "left center",
+                WebkitMaskSize: "contain",
+              }}
+            />
           </Link>
 
-          <nav className="hidden md:flex items-center gap-8">
-            <a href="/#services" className="text-[14.5px] font-medium text-gray-600 hover:text-navy transition">Services</a>
-            <a href="/#work" className="text-[14.5px] font-medium text-gray-600 hover:text-navy transition">Work</a>
-            <Link href="/pricing" className="text-[14.5px] font-medium text-gray-600 hover:text-navy transition">Pricing</Link>
-            <Link href="/domains" className="text-[14.5px] font-medium text-gray-600 hover:text-navy transition">Domains</Link>
-            <a href="/#contact" className="text-[14.5px] font-medium text-gray-600 hover:text-navy transition">Contact</a>
+          <nav aria-label="Main navigation" className="hidden items-center gap-8 md:flex">
+            <a href="/#services" className="text-[14.5px] font-medium text-gray-600 transition hover:text-navy">Services</a>
+            <a href="/#work" className="text-[14.5px] font-medium text-gray-600 transition hover:text-navy">Work</a>
+            <Link href="/pricing" className="text-[14.5px] font-medium text-gray-600 transition hover:text-navy">Pricing</Link>
+            <Link href="/domains" className="text-[14.5px] font-medium text-gray-600 transition hover:text-navy">Domains</Link>
+            <a href="/#contact" className="text-[14.5px] font-medium text-gray-600 transition hover:text-navy">Contact</a>
           </nav>
 
-          <div className="flex items-center gap-2 sm:gap-3">
+          <div className="flex shrink-0 items-center gap-2 sm:gap-3">
             {user ? (
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                  <button className="w-9 h-9 sm:w-10 sm:h-10 rounded-full bg-navy text-white flex items-center justify-center text-sm font-bold hover:bg-navy/90 transition shadow-lg shadow-navy/10 shrink-0">
+                  <button
+                    type="button"
+                    aria-label="Open account menu"
+                    className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-navy text-sm font-bold text-white shadow-lg shadow-navy/10 transition hover:bg-navy/90 sm:h-10 sm:w-10"
+                  >
                     {user.full_name?.charAt(0) || user.email?.charAt(0) || "U"}
                   </button>
                 </DropdownMenuTrigger>
-                <DropdownMenuContent align="end" className="w-56 mt-2">
+                <DropdownMenuContent align="end" className="mt-2 w-56">
                   <div className="px-3 py-2">
-                    <p className="text-sm font-medium truncate">{user.full_name || user.email}</p>
-                    <p className="text-xs text-gray-500 truncate">{user.email}</p>
+                    <p className="truncate text-sm font-medium">{user.full_name || user.email}</p>
+                    <p className="truncate text-xs text-gray-500">{user.email}</p>
                   </div>
                   <DropdownMenuSeparator />
                   {isAdmin && (
@@ -80,13 +95,13 @@ export function Navbar() {
               <>
                 <Link
                   href="/login"
-                  className="hidden sm:inline-flex h-9 px-4 items-center rounded-full border border-gray-200 text-[13.5px] font-semibold hover:bg-gray-50 transition"
+                  className="hidden h-9 items-center rounded-full border border-gray-200 px-4 text-[13.5px] font-semibold transition hover:bg-gray-50 md:inline-flex"
                 >
                   Sign in
                 </Link>
                 <Link
                   href="/register"
-                  className="inline-flex h-9 px-4 items-center rounded-full bg-navy text-white text-[13.5px] font-semibold hover:bg-navy/90 transition"
+                  className="hidden h-9 items-center rounded-full bg-navy px-4 text-[13.5px] font-semibold text-white transition hover:bg-navy/90 md:inline-flex"
                 >
                   Get started
                 </Link>
@@ -94,31 +109,49 @@ export function Navbar() {
             )}
 
             <button
-              onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-              className="md:hidden w-9 h-9 grid place-items-center rounded-xl hover:bg-gray-100 transition border border-black/5"
+              type="button"
+              aria-label={mobileMenuOpen ? "Close navigation menu" : "Open navigation menu"}
+              aria-expanded={mobileMenuOpen}
+              aria-controls="mobile-navigation"
+              onClick={() => setMobileMenuOpen((open) => !open)}
+              className="grid h-10 w-10 place-items-center rounded-xl border border-black/10 transition hover:bg-gray-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-teal md:hidden"
             >
-              {mobileMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
+              {mobileMenuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
             </button>
           </div>
         </div>
       </div>
 
-      {/* Mobile menu */}
       {mobileMenuOpen && (
-        <div className="md:hidden border-t border-black/5 bg-white">
-          <div className="px-6 py-4 flex flex-col gap-3">
-            <a href="/#services" className="py-2 text-[15px] font-medium" onClick={() => setMobileMenuOpen(false)}>Services</a>
-            <a href="/#work" className="py-2 text-[15px] font-medium" onClick={() => setMobileMenuOpen(false)}>Work</a>
-            <Link href="/pricing" className="py-2 text-[15px] font-medium" onClick={() => setMobileMenuOpen(false)}>Pricing</Link>
-            <Link href="/domains" className="py-2 text-[15px] font-medium" onClick={() => setMobileMenuOpen(false)}>Domains</Link>
-            <a href="/#contact" className="py-2 text-[15px] font-medium" onClick={() => setMobileMenuOpen(false)}>Contact</a>
+        <div
+          id="mobile-navigation"
+          className="max-h-[calc(100dvh-4rem)] overflow-y-auto border-t border-black/5 bg-white shadow-lg md:hidden"
+        >
+          <nav aria-label="Mobile navigation" className="mx-auto flex max-w-[1200px] flex-col gap-1 px-4 py-3 sm:px-6">
+            <a href="/#services" onClick={closeMobileMenu} className="rounded-xl px-3 py-3 text-[15px] font-medium text-gray-700 transition hover:bg-gray-50 hover:text-navy">Services</a>
+            <a href="/#work" onClick={closeMobileMenu} className="rounded-xl px-3 py-3 text-[15px] font-medium text-gray-700 transition hover:bg-gray-50 hover:text-navy">Work</a>
+            <Link href="/pricing" onClick={closeMobileMenu} className="rounded-xl px-3 py-3 text-[15px] font-medium text-gray-700 transition hover:bg-gray-50 hover:text-navy">Pricing</Link>
+            <Link href="/domains" onClick={closeMobileMenu} className="rounded-xl px-3 py-3 text-[15px] font-medium text-gray-700 transition hover:bg-gray-50 hover:text-navy">Domains</Link>
+            <a href="/#contact" onClick={closeMobileMenu} className="rounded-xl px-3 py-3 text-[15px] font-medium text-gray-700 transition hover:bg-gray-50 hover:text-navy">Contact</a>
             {!user && (
-              <>
-                <Link href="/login" className="py-2 text-[15px] font-medium text-teal">Sign in</Link>
-                <Link href="/register" className="py-2 text-[15px] font-medium text-teal">Get started</Link>
-              </>
+              <div className="mt-2 grid grid-cols-2 gap-3 border-t border-gray-100 pt-4">
+                <Link
+                  href="/login"
+                  onClick={closeMobileMenu}
+                  className="inline-flex h-11 items-center justify-center rounded-full border border-gray-200 px-4 text-sm font-semibold transition hover:bg-gray-50"
+                >
+                  Sign in
+                </Link>
+                <Link
+                  href="/register"
+                  onClick={closeMobileMenu}
+                  className="inline-flex h-11 items-center justify-center rounded-full bg-navy px-4 text-sm font-semibold text-white transition hover:bg-navy/90"
+                >
+                  Get started
+                </Link>
+              </div>
             )}
-          </div>
+          </nav>
         </div>
       )}
     </header>
