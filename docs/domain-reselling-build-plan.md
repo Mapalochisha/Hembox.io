@@ -2,7 +2,7 @@
 
 > **Purpose:** This is the canonical handoff document for the domain-reselling project. Read it before continuing implementation after a context switch. Update this file as milestones are completed, decisions change, or verification results become available.
 >
-> **Last updated:** 2026-10-23
+> **Last updated:** 2026-10-25
 > **Repository:** `Mapalochisha/Hembox.io`  
 > **Working branch:** `feature/domain-reselling-platform`  
 > **Pull request:** https://github.com/Mapalochisha/Hembox.io/pull/2  
@@ -680,3 +680,12 @@ When resuming this project:
 - `GET /api/domains/search?domain=github.com` returned HTTP 405, which is expected for this POST-only search endpoint; this GET probe does not validate the search request contract. A valid POST search smoke test and authenticated customer/admin E2E checks remain to be completed.
 - Anonymous `GET /portal/bills` returned HTTP 200 and rendered the client-side loading shell; this confirms page delivery only, not authenticated billing functionality.
 - No CI configuration change was made because workflow triggers are functioning. Continue with valid read-only/isolated tests; do not enable live registration, real payment processing, or production mutations during diagnostics.
+
+
+### 2026-10-25 — Keep domain payments on the unified billing ledger
+
+- **Changes:** Updated `POST /api/domains/manual-payment` so a domain order already linked to a unified billing invoice cannot create or review a separate legacy payment claim. The endpoint now returns a stable `unified_billing_in_use` response directing the authenticated owner to Portal → Bills, regardless of whether the invoice has an allocation yet.
+- **Customer experience:** The domain dashboard now redirects to `/portal/bills` both when a customer begins manual payment and if a previously open legacy claim form is submitted after the unified invoice is linked. This keeps partial payments, payment claims, verified allocations, reconciliation, and invoice status in one ledger.
+- **Verification:** Code commit `aa32c807a97b17d924983f048751adde4e400175` passed [GitHub Actions CI run 40149889697](https://github.com/Mapalochisha/Hembox.io/actions/runs/40149889697): Lint & Type Check (including domain/provider tests), Domain schema integration tests, and Production Build all succeeded. The exact commit's Vercel Preview is [READY](https://vercel.com/mapalochishas-projects/hembox-io/HndiSq8vXJvBE9cViFrAT7w32a6n).
+- **Safety:** No database migration, production environment, payment instruction, live payment, or registrar mutation was changed. Live registration and gateway processing remain disabled. PR #2 remains open and unmerged.
+- **Remaining handoff:** Configure approved payment methods/instructions in the unified billing admin UI before accepting customer claims. Authenticated customer/admin smoke tests against the real Preview session and commercial verification of NameSilo costs remain release gates; do not claim launch readiness from CI alone.
