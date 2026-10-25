@@ -689,3 +689,12 @@ When resuming this project:
 - **Verification:** Code commit `aa32c807a97b17d924983f048751adde4e400175` passed [GitHub Actions CI run 40149889697](https://github.com/Mapalochisha/Hembox.io/actions/runs/40149889697): Lint & Type Check (including domain/provider tests), Domain schema integration tests, and Production Build all succeeded. The exact commit's Vercel Preview is [READY](https://vercel.com/mapalochishas-projects/hembox-io/HndiSq8vXJvBE9cViFrAT7w32a6n).
 - **Safety:** No database migration, production environment, payment instruction, live payment, or registrar mutation was changed. Live registration and gateway processing remain disabled. PR #2 remains open and unmerged.
 - **Remaining handoff:** Configure approved payment methods/instructions in the unified billing admin UI before accepting customer claims. Authenticated customer/admin smoke tests against the real Preview session and commercial verification of NameSilo costs remain release gates; do not claim launch readiness from CI alone.
+
+
+### 2026-10-25 — Initial unified-billing payment instructions seeded
+
+- Added an idempotent migration that seeds three active ZMW manual-payment methods: MTN Mobile Money (+260969868508), Airtel Money (+260772448274), and Zamtel Kwacha (+260953780272), each naming Mapalo Chisha as the recipient/account holder.
+- Added a bank-transfer method with clearly marked placeholders and Mapalo Chisha as account holder. It remains inactive so customers cannot accidentally transfer funds using fabricated bank details; enable it only after the real bank details have replaced every placeholder.
+- Instructions require the customer to pay the exact invoice amount, use the invoice number as a reference where supported, submit the transaction reference and amount through Portal → Bills, and wait for HEMBOX verification. A claim is explicitly not proof of settled funds. Mobile money methods support ZMW only; bank transfer is configured for ZMW/USD but inactive.
+- Migration uses `ON CONFLICT (method_key) DO NOTHING` to avoid overwriting any existing admin-edited methods when applied.
+- **Safety boundary:** this commit adds the seed migration to the feature branch only. It does not apply a migration to production or enable live domain registration/payment-gateway processing. Confirm CI and the exact-commit Vercel Preview before treating the code change as complete.
