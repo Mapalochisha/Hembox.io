@@ -174,6 +174,9 @@ jobs:
       - name: Apply authenticated billing runtime migration
         run: psql -v ON_ERROR_STOP=1 -f supabase/migrations/20261025090000_billing_authenticated_runtime.sql
 
+      - name: Seed default manual payment methods
+        run: psql -v ON_ERROR_STOP=1 -f supabase/migrations/20261025110000_billing_default_payment_methods.sql
+
       - name: Assert domain schema constraints and security policies
         run: psql -v ON_ERROR_STOP=1 -f supabase/tests/domain_reselling_foundation.test.sql
 
@@ -209,6 +212,9 @@ jobs:
 
       - name: Assert authenticated billing runtime authorization
         run: psql -v ON_ERROR_STOP=1 -f supabase/tests/billing_authenticated_runtime.test.sql
+
+      - name: Assert default manual payment methods and safe bank placeholders
+        run: psql -v ON_ERROR_STOP=1 -f supabase/tests/billing_default_payment_methods.test.sql
 
   build:
     name: Production Build
