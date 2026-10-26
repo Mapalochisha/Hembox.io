@@ -19,14 +19,20 @@ export async function GET() {
     // session. Every customer-data query is explicitly scoped to that user or
     // to client records owned by that user; never accept an owner ID from input.
     const db = createServiceClient() as unknown as SupabaseClient
-    const [clientResult, invoiceResult, domainResult, conversationResult] = await Promise.all([
+    const [clientResult, invoiceResult, domainResult, conversationResult, serviceResult] = await Promise.all([
       db.from("clients").select("id,company_name,status").eq("user_id", user.id).limit(20),
       db.from("billing_invoices").select("id,invoice_number,status,currency,total_minor,due_at,created_at").eq("customer_id", user.id).in("status", ["unpaid", "partially_paid", "overdue"]).order("created_at", { ascending: false }).limit(100),
       db.from("domain_orders").select("id,domain_name,status,expires_at,created_at").eq("customer_id", user.id).order("created_at", { ascending: false }).limit(100),
       db.from("inquiries").select("id,type,status,source,message,created_at").eq("customer_id", user.id).order("created_at", { ascending: false }).limit(100),
+      db.from("client_services").select("id,status").eq("customer_id", user.id).limit(200),
     ])
 
-    const failure = clientResult.error || invoiceResult.error || domainResult.error || conversationResult.error
+    const serviceTableMissing = Boolean(serviceResult.error && (
+      serviceResult.error.code === "PGRST205" ||
+      serviceResult.error.code === "42P01" ||
+      String(serviceResult.error.message || "").toLowerCase().includes("client_services")
+    ))
+    const failure = clientResult.error || invoiceResult.error || domainResult.error || conversationResult.error || (serviceTableMissing ? null : serviceResult.error)
     if (failure) {
       console.error("[Portal] Summary query failed:", failure)
       return json({ error: "Your workspace summary is temporarily unavailable." }, 503)
@@ -79,14 +85,10 @@ export async function GET() {
       id: invoice.id, invoice_number: invoice.invoice_number, status: invoice.status,
       currency: invoice.currency, total_minor: invoice.total_minor, due_minor: balanceByInvoice[invoice.id] ?? Number(invoice.total_minor || 0), due_at: invoice.due_at,
     }))
-    const recentDomains = domains.slice(0, 3).map((domain) => ({
-      id: domain.id, domain_name: domain.domain_name, status: domain.status, expires_at: domain.expires_at,
-    }))
-
     return json({
       client: clients[0] ?? null,
       projects: { active: activeProjects.length, total: projects.length, recent: recentProjects },
-      services: { tracked: false, active: null },
+      services: { tracked: !serviceTableMissing, active: serviceTableMissing ? null : (serviceResult.data ?? []).filter((service) => service.status === "active").length },
       billing: { outstanding_by_currency: dueByCurrency, invoices: recentInvoices, outstanding_count: outstandingInvoices.length },
       domains: { count: domains.length, recent: recentDomains },
       conversations: { count: conversations.length },
