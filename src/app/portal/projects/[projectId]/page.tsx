@@ -1,0 +1,23 @@
+"use client"
+
+import Link from "next/link"
+import { useParams } from "next/navigation"
+import { useEffect, useState } from "react"
+import { PortalShell } from "@/components/portal/portal-shell"
+import { ArrowLeft, CalendarClock, FolderKanban, MessageSquare, ShieldCheck } from "lucide-react"
+
+type Project = { id: string; name: string; description: string | null; status: string; deadline: string | null; updated_at: string | null }
+export default function ProjectDetailPage() {
+  const params = useParams<{ projectId: string }>()
+  const [project, setProject] = useState<Project | null>(null)
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState("")
+  useEffect(() => { let active = true; void (async () => { try { const response = await fetch("/api/portal/projects?projectId=" + encodeURIComponent(params.projectId), { cache: "no-store" }); const result = await response.json(); if (!response.ok) throw new Error(result.error || "Project not found."); if (active) setProject(result.projects?.[0] ?? null) } catch (e) { if (active) setError(e instanceof Error ? e.message : "Project details are unavailable.") } finally { if (active) setLoading(false) } })(); return () => { active = false } }, [params.projectId])
+  return <PortalShell title="Project details">
+    <Link href="/portal/projects" className="inline-flex items-center gap-2 text-xs font-semibold text-slate-500 hover:text-[#16867b]"><ArrowLeft className="h-3.5 w-3.5"/> All projects</Link>
+    {loading ? <div className="mt-5 h-56 animate-pulse rounded-2xl bg-white ring-1 ring-slate-200"/> : error || !project ? <div role="alert" className="mt-5 rounded-2xl border border-rose-200 bg-rose-50 p-5 text-sm text-rose-800">{error || "Project not found."}</div> : <>
+      <div className="mt-5 rounded-3xl border border-slate-200 bg-white p-6 sm:p-8"><div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between"><div className="flex items-start gap-4"><span className="grid h-12 w-12 shrink-0 place-items-center rounded-2xl bg-[#e9f8f5] text-[#16867b]"><FolderKanban className="h-6 w-6"/></span><div><p className="text-[10px] font-bold tracking-[0.17em] text-[#15877d]">PROJECT WORKSPACE</p><h2 className="mt-2 text-2xl font-extrabold tracking-tight text-[#172338] sm:text-3xl">{project.name}</h2><p className="mt-2 text-xs text-slate-500">Last updated {project.updated_at ? new Date(project.updated_at).toLocaleDateString("en-ZM",{dateStyle:"medium"}) : "not recorded"}</p></div></div><span className="self-start rounded-full bg-slate-100 px-3 py-1.5 text-xs font-bold text-slate-700">{project.status.replaceAll("_"," ").replace(/\b\w/g,(letter)=>letter.toUpperCase())}</span></div><p className="mt-6 max-w-3xl whitespace-pre-wrap text-sm leading-7 text-slate-600">{project.description || "Your HEMBOX team will add the project brief and next steps here as they become available."}</p><div className="mt-6 grid gap-3 sm:grid-cols-2"><div className="flex items-start gap-3 rounded-xl border border-slate-200 p-4"><CalendarClock className="mt-0.5 h-4 w-4 text-slate-500"/><div><p className="text-xs font-bold text-slate-800">Target date</p><p className="mt-1 text-xs text-slate-500">{project.deadline ? new Date(project.deadline).toLocaleDateString("en-ZM",{dateStyle:"long"}) : "No deadline recorded"}</p></div></div><div className="flex items-start gap-3 rounded-xl border border-slate-200 p-4"><ShieldCheck className="mt-0.5 h-4 w-4 text-slate-500"/><div><p className="text-xs font-bold text-slate-800">Project access</p><p className="mt-1 text-xs text-slate-500">Visible only through your authenticated client account.</p></div></div></div></div>
+      <div className="mt-5 grid gap-4 md:grid-cols-2"><section className="rounded-2xl border border-slate-200 bg-white p-5"><h3 className="text-sm font-bold text-slate-800">Deliverables & milestones</h3><p className="mt-2 text-xs leading-5 text-slate-500">The current project record does not yet include structured deliverable versions or milestone records. Those will be added as the collaboration model is implemented.</p></section><section className="rounded-2xl border border-slate-200 bg-white p-5"><h3 className="text-sm font-bold text-slate-800">Project conversation</h3><p className="mt-2 text-xs leading-5 text-slate-500">Keep project questions and decisions in your HEMBOX inbox while project-specific threads are being connected.</p><Link href="/portal/messages" className="mt-4 inline-flex items-center gap-2 text-xs font-bold text-[#16867b] hover:underline"><MessageSquare className="h-3.5 w-3.5"/> Open messages</Link></section></div>
+    </>}
+  </PortalShell>
+}
