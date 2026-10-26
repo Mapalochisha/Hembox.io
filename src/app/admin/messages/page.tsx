@@ -27,7 +27,6 @@ type SenderRole = "customer" | "admin"
 
 type Inquiry = {
   id: string
-  customer_id?: string | null
   type: InquiryType
   contact: string | null
   email: string | null
@@ -243,19 +242,6 @@ export default function MessagesPage() {
     } else if (data) {
       setMessages((current) => [...current, data as InquiryMessage])
       setDraft("")
-      if (selected.customer_id) {
-        void fetch("/api/admin/client-workspace/notifications", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            customerId: selected.customer_id,
-            category: "message",
-            title: "New reply from HEMBOX",
-            body: "Your HEMBOX team replied to a conversation.",
-            href: "/portal/messages",
-          }),
-        }).catch((notificationError) => console.error("Client notification could not be created:", notificationError))
-      }
       await updateInquiry(selected.id, {
         status: selected.status === "new" ? "contacted" : selected.status,
         is_read: true,
