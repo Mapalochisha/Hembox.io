@@ -48,12 +48,15 @@ export async function GET() {
     const clientIds = clients.map((client) => client.id)
     let projects: Array<{ id: string; name: string; description: string | null; category: string; status: string; deadline: string | null; updated_at: string | null }> = []
     if (clientIds.length) {
-      const { data, error } = await db.from("projects").select("id,name,description,category,status,deadline,updated_at,client_id").in("client_id", clientIds).order("updated_at", { ascending: false }).limit(100)
-      if (error) {
-        console.error("[Portal] Project summary query failed:", error)
+      let result = await db.from("projects").select("id,name,description,category,status,deadline,updated_at,client_id").in("client_id", clientIds).order("updated_at", { ascending: false }).limit(100)
+      if (result.error && (result.error.code === "PGRST204" || result.error.code === "42703" || String(result.error.message || "").toLowerCase().includes("category"))) {
+        result = await db.from("projects").select("id,name,description,status,deadline,updated_at,client_id").in("client_id", clientIds).order("updated_at", { ascending: false }).limit(100)
+      }
+      if (result.error) {
+        console.error("[Portal] Project summary query failed:", result.error)
         return json({ error: "Project information is temporarily unavailable." }, 503)
       }
-      projects = data ?? []
+      projects = (result.data ?? []).map((project) => ({ ...project, category: project.category || "custom" }))
     }
 
     const invoices = invoiceResult.data ?? []
