@@ -3,7 +3,7 @@
 import Link from "next/link"
 import { useAuth } from "@/components/providers/auth-provider"
 import { PortalShell } from "@/components/portal/portal-shell"
-import { ArrowRight, Bell, LockKeyhole, Mail, ShieldCheck, UserRound } from "lucide-react"
+import { ArrowRight, Bell, LockKeyhole, Mail, UserRound } from "lucide-react"
 
 export default function PortalSettingsPage() {
   const { user } = useAuth()
