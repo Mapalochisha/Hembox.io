@@ -45,14 +45,30 @@ export async function GET() {
     }
 
     const invoices = invoiceResult.data ?? []
+    const invoiceIds = invoices.map((invoice) => invoice.id)
+    const { data: allocations, error: allocationsError } = invoiceIds.length
+      ? await db.from("billing_payment_allocations").select("invoice_id,amount_minor,allocation_type").in("invoice_id", invoiceIds)
+      : { data: [], error: null }
+    if (allocationsError) {
+      console.error("[Portal] Invoice allocation query failed:", allocationsError)
+      return json({ error: "Billing information is temporarily unavailable." }, 503)
+    }
+    const allocatedByInvoice: Record<string, number> = {}
+    for (const allocation of allocations ?? []) {
+      const amount = Number(allocation.amount_minor || 0) * (allocation.allocation_type === "reverse" ? -1 : 1)
+      allocatedByInvoice[allocation.invoice_id] = (allocatedByInvoice[allocation.invoice_id] ?? 0) + amount
+    }
     const dueByCurrency: Record<string, number> = {}
+    const balanceByInvoice: Record<string, number> = {}
     for (const invoice of invoices) {
       const currency = invoice.currency || "ZMW"
-      dueByCurrency[currency] = (dueByCurrency[currency] ?? 0) + Number(invoice.total_minor || 0)
+      const balance = Math.max(0, Number(invoice.total_minor || 0) - (allocatedByInvoice[invoice.id] ?? 0))
+      balanceByInvoice[invoice.id] = balance
+      dueByCurrency[currency] = (dueByCurrency[currency] ?? 0) + balance
     }
 
     const domains = domainResult.data ?? []
-    const conversations = (conversationResult.data ?? []).filter((item) => item.source === "billing" || item.type === "contact")
+    const conversations = (conversationResult.data ?? []).filter((item) => item.source === "billing" || item.source === "client-portal" || item.type === "contact")
     const activeProjects = projects.filter((project) => ["in_progress", "review"].includes(project.status))
     const recentProjects = projects.slice(0, 4).map((project) => ({
       id: project.id, name: project.name, description: project.description,
@@ -60,7 +76,7 @@ export async function GET() {
     }))
     const recentInvoices = invoices.slice(0, 3).map((invoice) => ({
       id: invoice.id, invoice_number: invoice.invoice_number, status: invoice.status,
-      currency: invoice.currency, total_minor: invoice.total_minor, due_at: invoice.due_at,
+      currency: invoice.currency, total_minor: invoice.total_minor, due_minor: balanceByInvoice[invoice.id] ?? Number(invoice.total_minor || 0), due_at: invoice.due_at,
     }))
     const recentDomains = domains.slice(0, 3).map((domain) => ({
       id: domain.id, domain_name: domain.domain_name, status: domain.status, expires_at: domain.expires_at,
