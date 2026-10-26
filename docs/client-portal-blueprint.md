@@ -320,34 +320,37 @@ Sequence may change after the audit reveals dependencies. No phase should bypass
 
 ### Implemented on `feature/client-portal-workspace`
 
-- [x] Responsive client workspace shell with desktop sidebar and mobile drawer.
-- [x] Overview page with data-driven project, billing, domain, conversation and activity summaries.
-- [x] Server-side overview endpoint using verified Supabase Auth identity and user-scoped customer queries.
-- [x] Ownership-scoped project list endpoint and client project list/detail views.
-- [x] Service catalogue covering brand/creative, websites/digital experiences, apps/software, infrastructure, product/strategy, and custom work.
-- [x] Guided service request form and authenticated request submission to the existing inquiry/message foundation.
-- [x] Client conversation inbox and reply endpoint, with ownership checks for every conversation.
-- [x] Initial service inventory, files, and account settings views with honest states for capabilities that do not yet have underlying data models.
-- [x] Existing domain customer workflow exposed from the new workspace navigation without replacing its existing route.
-- [x] Existing unified billing page placed inside the new workspace shell.
+- [x] Responsive client workspace shell with desktop sidebar, mobile navigation, account menu, and notification badge.
+- [x] Data-driven overview for projects, outstanding balances net of signed payment allocations, services (when schema exists), domains, conversations, activity, and unread notifications.
+- [x] Server-side authenticated overview and project APIs; legacy project schemas without the new category column remain readable until the migration is applied.
+- [x] Project category support for branding, graphic design, websites, web applications, mobile apps, software, UI/UX, and custom engagements.
+- [x] Client project list/detail views with search, status filters, milestones, deliverables, client approvals, change requests, and activity display.
+- [x] Service catalogue and guided request flow; new requests are stored against the authenticated customer in the existing inquiry/message framework and do not automatically confirm a quote or project.
+- [x] Client messaging inbox and replies with ownership checks.
+- [x] Private file library UI, authenticated reference uploads, ownership-checked downloads, and short-lived signed URLs.
+- [x] Persistent notification preferences UI and notification centre with read/mark-all-read actions.
+- [x] Existing billing page integrated into the workspace shell without replacing the unified invoice/payment workflow.
+- [x] Existing domain route exposed through a compatibility redirect.
+- [x] Admin Client Workspace page to link an existing customer account, create projects, assign services, add milestones, share private deliverables, and review change requests.
+- [x] Additive Supabase migration for service inventory, project milestones, deliverables, change requests, activity, private file metadata, notifications, notification preferences, and project categories.
+- [x] SQL integration test for workspace schema, RLS, cross-customer isolation, service/client ownership integrity, and message-notification preferences.
+- [x] CI workflow updated to apply and test the portal migration in the ephemeral CI database and to run checks on this feature branch.
 
-### Explicitly incomplete
+### Release / environment boundaries
 
-- [ ] CI / TypeScript / lint / database integration tests for the exact latest PR commit.
-- [ ] Vercel preview deployment for the exact latest PR commit.
-- [ ] End-to-end authenticated client tests using a test account.
-- [ ] Additive schema and policy design for structured project milestones, deliverables, approvals, change requests, and audit events.
-- [ ] General-purpose private client deliverables storage and file library.
-- [ ] Persistent service inventory model and lifecycle.
-- [ ] Project-linked conversations and notification/read-receipt semantics.
-- [ ] Editable profile and persistent notification preferences.
-- [ ] Mobile, accessibility, and cross-client authorization verification.
+- The new portal migration has **not** been applied to the production Supabase database. The preview environment may therefore show clear “schema not available yet” states for new services, files, milestones, deliverables, and notification preferences. Existing project, billing, and domain data is not modified by the feature branch.
+- The private storage bucket is created by the migration, not by the application at runtime. Upload/download operations remain unavailable until the migration is applied to the intended environment.
+- The portal APIs use a verified Supabase Auth session before service-role queries/writes and scope project, service, file, conversation, and notification access to the authenticated customer or verified administrator.
+- Client role changes are not exposed in account settings.
+- No production migration, payment gateway activation, registrar mutation, or production deployment has been performed by this feature branch.
 
-### Safety notes
+### Verification still required
 
-- No Supabase migration has been applied to any live environment.
-- The overview calculates outstanding balances from invoice totals less signed payment allocations; it does not treat a submitted payment claim as settlement.
-- The project and messaging APIs authenticate with the session first, then scope service-role operations to the verified user's own client/project/conversation records. Service-role credentials are used only in server-side route handlers.
-- The Files and My Services pages intentionally do not fabricate records. Their complete data models and storage integration remain separate tasks.
-- The current project model has only a basic project record; structured milestones/deliverables and collaboration controls are not yet implemented.
-- Do not merge or report the feature complete until the latest PR commit has green CI and a green/READY Vercel preview, and the authenticated client journey has been exercised.
+- [ ] Latest-commit CI: lint, TypeScript, unit/integration SQL tests, and build checks all green.
+- [ ] Latest-commit Vercel preview deployment in READY state.
+- [ ] Authenticated customer journey: request service, read/reply to conversation, list projects, review/approve milestone and deliverable, upload/download private files, view bills/domains, and update notification preferences once the migration is available in a test environment.
+- [ ] Admin journey: link a client account, create a project, assign a service, add a milestone, upload a deliverable, review a change request, and verify the resulting client notification.
+- [ ] Cross-customer access denial and mobile/accessibility verification.
+- [ ] Confirm deployment target and separately approve any database migration rollout before production release.
+
+Do not merge or report the feature complete until the latest code has green CI and a green/READY Vercel preview, and the authenticated client/admin journeys have been exercised or any environment limitation is explicitly resolved.
