@@ -30,7 +30,7 @@ export async function GET(){
   const db=createServiceClient() as unknown as SupabaseClient
   const [clientsResult,projectsResult,servicesResult,milestonesResult,deliverablesResult,changeRequestsResult,accountsResult]=await Promise.all([
    db.from("clients").select("id,user_id,company_name,status,created_at").order("created_at",{ascending:false}).limit(500),
-   db.from("projects").select("id,client_id,name,description,category,status,deadline,created_at,updated_at").order("updated_at",{ascending:false}).limit(500),
+   db.from("projects").select("id,client_id,name,description,status,deadline,created_at,updated_at").order("updated_at",{ascending:false}).limit(500),
    db.from("client_services").select("id,client_id,project_id,customer_id,service_type,name,status,renews_at,currency,created_at").order("created_at",{ascending:false}).limit(500),
    db.from("project_milestones").select("id,project_id,title,status,due_at,sort_order").order("sort_order").limit(1000),
    db.from("project_deliverables").select("id,project_id,title,status,filename,created_at").neq("status","draft").order("created_at",{ascending:false}).limit(1000),
@@ -87,8 +87,12 @@ export async function POST(request:Request){
    const {data:client,error:clientError}=await db.from("clients").select("id,user_id").eq("id",parsed.data.clientId).maybeSingle()
    if(clientError)throw clientError
    if(!client)return json({error:"Client not found."},404)
-   const {data:project,error}=await db.from("projects").insert({client_id:client.id,category:parsed.data.category,name:parsed.data.name,description:parsed.data.description||null,status:parsed.data.status,deadline:parsed.data.deadline||null}).select("id,client_id,name,description,category,status,deadline,created_at").single()
-   if(error)throw error
+   let result=await db.from("projects").insert({client_id:client.id,category:parsed.data.category,name:parsed.data.name,description:parsed.data.description||null,status:parsed.data.status,deadline:parsed.data.deadline||null}).select("id,client_id,name,description,category,status,deadline,created_at").single()
+   if(result.error&&(result.error.code==="PGRST204"||result.error.code==="42703"||String(result.error.message||"").toLowerCase().includes("category"))){
+    result=await db.from("projects").insert({client_id:client.id,name:parsed.data.name,description:parsed.data.description||null,status:parsed.data.status,deadline:parsed.data.deadline||null}).select("id,client_id,name,description,status,deadline,created_at").single()
+   }
+   if(result.error)throw result.error
+   const project={...result.data,category:result.data.category||"custom"}
    if(client.user_id){
     try{await db.from("client_notifications").insert({customer_id:client.user_id,category:"project",title:"New project added",body:"HEMBOX added "+project.name+" to your workspace.",href:"/portal/projects/"+project.id})}catch(notificationError){console.error("[Admin client workspace] Project notification failed:",notificationError)}
    }
