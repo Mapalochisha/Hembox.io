@@ -37,7 +37,7 @@ export async function PUT(request: Request) {
     const auth = createAuthClient()
     const { data: { user }, error: authError } = await auth.auth.getUser()
     if (authError || !user) return json({ error: "Sign in to save preferences." }, 401)
-    const db = createServiceClient() as unknown as SupabaseClient
+    const db = auth as unknown as SupabaseClient
     const { data, error } = await db.from("client_notification_preferences")
       .upsert({ customer_id:user.id,...parsed.data,updated_at:new Date().toISOString() },{onConflict:"customer_id"})
       .select("project_updates,service_updates,billing_updates,domain_updates,message_updates").single()
