@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server"
-import type { SupabaseClient } from "@supabase/supabase-js"
 import { createClient as createAuthClient } from "@/lib/supabase/server"
+import { createServiceClient } from "@/lib/supabase/service"
 
 export const dynamic = "force-dynamic"
 
@@ -17,7 +17,7 @@ export async function GET() {
     // The service client is used only after resolving the user from the verified
     // session. Every customer-data query is explicitly scoped to that user or
     // to client records owned by that user; never accept an owner ID from input.
-    const db = auth as unknown as SupabaseClient
+    const db: any = createServiceClient()
     const [clientResult, invoiceResult, recentInvoiceResult, domainResult, conversationResult, serviceResult, notificationResult] = await Promise.all([
       db.from("clients").select("id,company_name,status").eq("user_id", user.id).limit(20),
       db.from("billing_invoices").select("id,invoice_number,status,currency,total_minor,due_at,created_at").eq("customer_id", user.id).in("status", ["unpaid", "partially_paid", "overdue"]).order("created_at", { ascending: false }).limit(100),
@@ -44,8 +44,8 @@ export async function GET() {
       return json({ error: "Your workspace summary is temporarily unavailable." }, 503)
     }
 
-    const clients = clientResult.data ?? []
-    const clientIds = clients.map((client) => client.id)
+    const clients: any[] = clientResult.data ?? []
+    const clientIds = clients.map((client: any) => client.id)
     let projects: Array<{ id: string; name: string; description: string | null; category: string; status: string; deadline: string | null; updated_at: string | null }> = []
     if (clientIds.length) {
       type SummaryProjectRow = { id:string; name:string; description:string|null; category?:string|null; status:string; deadline:string|null; updated_at:string|null; client_id:string }
@@ -64,8 +64,8 @@ export async function GET() {
       projects = (data ?? []).map((project) => ({ ...project, category: project.category || "custom" }))
     }
 
-    const invoices = invoiceResult.data ?? []
-    const invoiceIds = invoices.map((invoice) => invoice.id)
+    const invoices: any[] = invoiceResult.data ?? []
+    const invoiceIds = invoices.map((invoice: any) => invoice.id)
     const { data: allocations, error: allocationsError } = invoiceIds.length
       ? await db.from("billing_payment_allocations").select("invoice_id,amount_minor,allocation_type").in("invoice_id", invoiceIds)
       : { data: [], error: null }
@@ -74,7 +74,7 @@ export async function GET() {
       return json({ error: "Billing information is temporarily unavailable." }, 503)
     }
     const allocatedByInvoice: Record<string, number> = {}
-    for (const allocation of allocations ?? []) {
+    for (const allocation of (allocations ?? []) as any[]) {
       const amount = Number(allocation.amount_minor || 0) * (allocation.allocation_type === "allocate" ? 1 : -1)
       allocatedByInvoice[allocation.invoice_id] = (allocatedByInvoice[allocation.invoice_id] ?? 0) + amount
     }
@@ -89,10 +89,10 @@ export async function GET() {
     const outstandingInvoices = invoices.filter((invoice) => (balanceByInvoice[invoice.id] ?? 0) > 0)
 
     const domains = domainResult.data ?? []
-    const recentDomains = domains.slice(0, 3).map((domain) => ({
+    const recentDomains = domains.slice(0, 3).map((domain: any) => ({
       id: domain.id, domain_name: domain.domain_name, status: domain.status, expires_at: domain.expires_at,
     }))
-    const conversations = (conversationResult.data ?? []).filter((item) => item.source === "billing" || item.source === "client-portal" || item.type === "contact")
+    const conversations = (conversationResult.data ?? []).filter((item: any) => item.source === "billing" || item.source === "client-portal" || item.type === "contact")
     const projectIds = projects.map((project) => project.id)
     const projectActivityResult = projectIds.length
       ? await db.from("project_activity").select("id,event_type,title,created_at").in("project_id", projectIds).order("created_at", { ascending: false }).limit(100)
@@ -124,10 +124,10 @@ export async function GET() {
       conversations: { count: conversations.length },
       notifications: { tracked: !notificationTableMissing, unread_count: notificationTableMissing ? null : (notificationResult.data ?? []).filter((item) => !item.read_at).length },
       activity: [
-        ...(projectActivityTableMissing ? [] : (projectActivityResult.data ?? []).map((item) => ({ id: "project-activity-" + item.id, kind: "project", title: item.title, detail: item.event_type.replaceAll("_", " "), at: item.created_at }))),
+        ...(projectActivityTableMissing ? [] : (projectActivityResult.data ?? []).map((item: any) => ({ id: "project-activity-" + item.id, kind: "project", title: item.title, detail: item.event_type.replaceAll("_", " "), at: item.created_at }))),
         ...projects.slice(0, 4).map((item) => ({ id: "project-" + item.id, kind: "project", title: item.name, detail: "Project status: " + item.status.replaceAll("_", " "), at: item.updated_at })),
-        ...(recentInvoiceResult.data ?? []).slice(0, 4).map((item) => ({ id: "invoice-" + item.id, kind: "billing", title: "Invoice " + item.invoice_number, detail: "Status: " + item.status.replaceAll("_", " "), at: item.created_at })),
-        ...domains.slice(0, 3).map((item) => ({ id: "domain-" + item.id, kind: "domain", title: item.domain_name, detail: "Domain order: " + item.status.replaceAll("_", " "), at: item.created_at })),
+        ...(recentInvoiceResult.data ?? []).slice(0, 4).map((item: any) => ({ id: "invoice-" + item.id, kind: "billing", title: "Invoice " + item.invoice_number, detail: "Status: " + item.status.replaceAll("_", " "), at: item.created_at })),
+        ...domains.slice(0, 3).map((item: any) => ({ id: "domain-" + item.id, kind: "domain", title: item.domain_name, detail: "Domain order: " + item.status.replaceAll("_", " "), at: item.created_at })),
       ].filter((item) => item.at).sort((a, b) => new Date(b.at as string).getTime() - new Date(a.at as string).getTime()).slice(0, 6),
     })
   } catch (error) {
