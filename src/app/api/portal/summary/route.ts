@@ -122,7 +122,7 @@ export async function GET() {
       billing: { outstanding_by_currency: dueByCurrency, invoices: recentInvoices, outstanding_count: outstandingInvoices.length },
       domains: { count: domains.length, recent: recentDomains },
       conversations: { count: conversations.length },
-      notifications: { tracked: !notificationTableMissing, unread_count: notificationTableMissing ? null : (notificationResult.data ?? []).filter((item) => !item.read_at).length },
+      notifications: { tracked: !notificationTableMissing, unread_count: notificationTableMissing ? null : (notificationResult.data ?? []).filter((item: any) => !item.read_at).length },
       activity: [
         ...(projectActivityTableMissing ? [] : (projectActivityResult.data ?? []).map((item: any) => ({ id: "project-activity-" + item.id, kind: "project", title: item.title, detail: item.event_type.replaceAll("_", " "), at: item.created_at }))),
         ...projects.slice(0, 4).map((item) => ({ id: "project-" + item.id, kind: "project", title: item.name, detail: "Project status: " + item.status.replaceAll("_", " "), at: item.updated_at })),
