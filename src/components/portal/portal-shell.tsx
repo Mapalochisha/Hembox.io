@@ -2,7 +2,7 @@
 
 import Link from "next/link"
 import { usePathname } from "next/navigation"
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import { useAuth } from "@/components/providers/auth-provider"
 import { cn } from "@/lib/utils"
 import {
@@ -33,6 +33,17 @@ export function PortalShell({ children, title, eyebrow = "CLIENT WORKSPACE" }: {
   const pathname = usePathname()
   const { user, isLoading, signOut } = useAuth()
   const [mobileOpen, setMobileOpen] = useState(false)
+  const [unreadNotifications, setUnreadNotifications] = useState(0)
+
+  useEffect(() => {
+    if (!user) { setUnreadNotifications(0); return }
+    let active = true
+    void fetch("/api/portal/notifications", { cache: "no-store" })
+      .then(async (response) => response.ok ? response.json() : null)
+      .then((result) => { if (active && result && typeof result.unreadCount === "number") setUnreadNotifications(result.unreadCount) })
+      .catch(() => { if (active) setUnreadNotifications(0) })
+    return () => { active = false }
+  }, [user?.id])
 
   if (isLoading) {
     return <div className="grid min-h-screen place-items-center bg-[#f6f8fb]" role="status" aria-label="Loading your workspace">
@@ -134,6 +145,7 @@ export function PortalShell({ children, title, eyebrow = "CLIENT WORKSPACE" }: {
             </div>
           </div>
           <div className="flex items-center gap-2 sm:gap-3">
+            <Link href="/portal/notifications" aria-label={unreadNotifications ? "Notifications, " + unreadNotifications + " unread" : "Notifications"} className="relative grid h-9 w-9 place-items-center rounded-xl border border-slate-200 text-slate-600 transition hover:border-slate-300 hover:bg-slate-50"><Bell className="h-4 w-4"/>{unreadNotifications > 0 && <span className="absolute -right-1 -top-1 grid min-h-[17px] min-w-[17px] place-items-center rounded-full bg-rose-500 px-1 text-[9px] font-bold text-white ring-2 ring-white">{unreadNotifications > 9 ? "9+" : unreadNotifications}</span>}</Link>
             <Link href="/portal/messages" aria-label="Messages and support" className="relative grid h-9 w-9 place-items-center rounded-xl border border-slate-200 text-slate-600 transition hover:border-slate-300 hover:bg-slate-50"><LifeBuoy className="h-4 w-4"/></Link>
             <div className="hidden h-8 w-px bg-slate-200 sm:block"/>
             <div className="hidden text-right sm:block"><p className="max-w-40 truncate text-xs font-semibold text-slate-800">{user.full_name || "Client"}</p><p className="text-[10px] text-slate-500">Client account</p></div>
