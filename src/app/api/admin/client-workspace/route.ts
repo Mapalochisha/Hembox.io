@@ -87,12 +87,17 @@ export async function POST(request:Request){
    const {data:client,error:clientError}=await db.from("clients").select("id,user_id").eq("id",parsed.data.clientId).maybeSingle()
    if(clientError)throw clientError
    if(!client)return json({error:"Client not found."},404)
-   let result=await db.from("projects").insert({client_id:client.id,category:parsed.data.category,name:parsed.data.name,description:parsed.data.description||null,status:parsed.data.status,deadline:parsed.data.deadline||null}).select("id,client_id,name,description,category,status,deadline,created_at").single()
-   if(result.error&&(result.error.code==="PGRST204"||result.error.code==="42703"||String(result.error.message||"").toLowerCase().includes("category"))){
-    result=await db.from("projects").insert({client_id:client.id,name:parsed.data.name,description:parsed.data.description||null,status:parsed.data.status,deadline:parsed.data.deadline||null}).select("id,client_id,name,description,status,deadline,created_at").single()
+   type CreatedProject={id:string;client_id:string;name:string;description:string|null;category?:string|null;status:string;deadline:string|null;created_at:string}
+   const initial=await db.from("projects").insert({client_id:client.id,category:parsed.data.category,name:parsed.data.name,description:parsed.data.description||null,status:parsed.data.status,deadline:parsed.data.deadline||null}).select("id,client_id,name,description,category,status,deadline,created_at").single()
+   let projectData=initial.data as unknown as CreatedProject|null
+   let projectError=initial.error as {code?:string;message?:string}|null
+   if(projectError&&(projectError.code==="PGRST204"||projectError.code==="42703"||String(projectError.message||"").toLowerCase().includes("category"))){
+    const fallback=await db.from("projects").insert({client_id:client.id,name:parsed.data.name,description:parsed.data.description||null,status:parsed.data.status,deadline:parsed.data.deadline||null}).select("id,client_id,name,description,status,deadline,created_at").single()
+    projectData=fallback.data as unknown as CreatedProject|null
+    projectError=fallback.error
    }
-   if(result.error)throw result.error
-   const project={...result.data,category:result.data.category||"custom"}
+   if(projectError)throw projectError
+   const project={...(projectData as CreatedProject),category:(projectData as CreatedProject|null)?.category||"custom"}
    if(client.user_id){
     try{await db.from("client_notifications").insert({customer_id:client.user_id,category:"project",title:"New project added",body:"HEMBOX added "+project.name+" to your workspace.",href:"/portal/projects/"+project.id})}catch(notificationError){console.error("[Admin client workspace] Project notification failed:",notificationError)}
    }
