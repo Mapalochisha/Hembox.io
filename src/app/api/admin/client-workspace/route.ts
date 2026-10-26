@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server"
 import { z } from "zod"
-import type { SupabaseClient } from "@supabase/supabase-js"
 import { createClient as createAuthClient } from "@/lib/supabase/server"
+import { createServiceClient } from "@/lib/supabase/service"
 
 export const dynamic = "force-dynamic"
 function json(body: unknown,status=200){return NextResponse.json(body,status===200?{headers:{"Cache-Control":"no-store"}}:{status,headers:{"Cache-Control":"no-store"}})}
@@ -26,7 +26,7 @@ export async function GET(){
  const context=await adminContext()
  if(context.status!==200)return json({error:context.status===401?"Authentication required.":context.status===403?"Administrator access required.":"Unable to verify administrator access."},context.status)
  try{
-  const db=auth as unknown as SupabaseClient
+  const db=createServiceClient()
   const [clientsResult,projectsResult,servicesResult,milestonesResult,deliverablesResult,changeRequestsResult,accountsResult]=await Promise.all([
    db.from("clients").select("id,user_id,company_name,status,created_at").order("created_at",{ascending:false}).limit(500),
    db.from("projects").select("id,client_id,name,description,status,deadline,created_at,updated_at").order("updated_at",{ascending:false}).limit(500),
@@ -59,7 +59,7 @@ export async function POST(request:Request){
  const context=await adminContext()
  if(context.status!==200)return json({error:context.status===401?"Authentication required.":context.status===403?"Administrator access required.":"Unable to verify administrator access."},context.status)
  try{
-  const db=auth as unknown as SupabaseClient
+  const db=createServiceClient()
   if(parsed.data.action==="create_client"){
    const {data:account,error:accountError}=await db.from("profiles").select("id,role").eq("id",parsed.data.userId).maybeSingle()
    if(accountError)throw accountError
