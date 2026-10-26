@@ -24,6 +24,7 @@ function RequestForm() {
   const [brief, setBrief] = useState("")
   const [timing, setTiming] = useState("flexible")
   const [budget, setBudget] = useState("")
+  const [budgetCurrency, setBudgetCurrency] = useState("ZMW")
   const [reference, setReference] = useState("")
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState("")
@@ -32,7 +33,7 @@ function RequestForm() {
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault(); setBusy(true); setError(""); setSuccess("")
     try {
-      const response = await fetch("/api/portal/requests", { method: "POST", headers: { "Content-Type": "application/json" }, cache: "no-store", body: JSON.stringify({ category, service, brief, timing, budget, reference }) })
+      const response = await fetch("/api/portal/requests", { method: "POST", headers: { "Content-Type": "application/json" }, cache: "no-store", body: JSON.stringify({ category, service, brief, timing, budget, budgetCurrency, reference }) })
       const result = await response.json()
       if (!response.ok) throw new Error(result.error || "Your request could not be sent.")
       setSuccess(result.message || "Your request has been sent.")
@@ -55,7 +56,7 @@ function RequestForm() {
         <label className="block"><span className="text-xs font-bold text-slate-700">Tell us about the project <span className="text-rose-600">*</span></span><textarea required minLength={10} maxLength={4000} rows={6} value={brief} onChange={(event) => setBrief(event.target.value)} placeholder="What are you trying to achieve? Who is it for? Are there any requirements or examples we should know about?" className="mt-2 w-full resize-y rounded-xl border border-slate-200 px-3.5 py-3 text-sm leading-6 text-slate-800 outline-none placeholder:text-slate-400 focus:border-teal focus:ring-2 focus:ring-teal/20"/><span className="mt-1 block text-right text-[10px] text-slate-400">{brief.length}/4000</span></label>
         <div className="grid gap-5 sm:grid-cols-2">
           <label className="block"><span className="text-xs font-bold text-slate-700">Preferred timing</span><select value={timing} onChange={(event) => setTiming(event.target.value)} className="mt-2 h-11 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm outline-none focus:border-teal focus:ring-2 focus:ring-teal/20"><option value="flexible">I&apos;m flexible</option><option value="within_month">Within one month</option><option value="urgent">As soon as possible</option></select></label>
-          <label className="block"><span className="text-xs font-bold text-slate-700">Indicative budget (optional)</span><input value={budget} onChange={(event) => setBudget(event.target.value)} maxLength={120} placeholder="e.g. Not sure yet, or ZMW 5,000–8,000" className="mt-2 h-11 w-full rounded-xl border border-slate-200 px-3 text-sm outline-none placeholder:text-slate-400 focus:border-teal focus:ring-2 focus:ring-teal/20"/></label>
+          <div><span className="text-xs font-bold text-slate-700">Indicative budget (optional)</span><div className="mt-2 flex gap-2"><select aria-label="Budget currency" value={budgetCurrency} onChange={(event) => setBudgetCurrency(event.target.value)} className="h-11 rounded-xl border border-slate-200 bg-white px-3 text-sm outline-none focus:border-teal"><option value="ZMW">ZMW</option><option value="USD">USD</option></select><input value={budget} onChange={(event) => setBudget(event.target.value)} maxLength={120} placeholder="e.g. 5,000–8,000 or not sure" className="h-11 min-w-0 flex-1 rounded-xl border border-slate-200 px-3 text-sm outline-none placeholder:text-slate-400 focus:border-teal focus:ring-2 focus:ring-teal/20"/></div></div>
         </div>
         <label className="block"><span className="text-xs font-bold text-slate-700">References or extra context (optional)</span><textarea value={reference} onChange={(event) => setReference(event.target.value)} maxLength={1000} rows={2} placeholder="Links, existing assets, platforms, or anything else we should consider." className="mt-2 w-full rounded-xl border border-slate-200 px-3.5 py-3 text-sm outline-none placeholder:text-slate-400 focus:border-teal focus:ring-2 focus:ring-teal/20"/></label>
         <div className="flex flex-col-reverse gap-3 border-t border-slate-100 pt-5 sm:flex-row sm:items-center sm:justify-between"><p className="max-w-sm text-[11px] leading-5 text-slate-500">Your request is private to your account and the HEMBOX team. No payment is taken by submitting this form.</p><button disabled={busy || brief.trim().length < 10} className="inline-flex h-11 items-center justify-center gap-2 rounded-xl bg-[#142239] px-5 text-sm font-semibold text-white transition hover:bg-[#203653] disabled:cursor-not-allowed disabled:opacity-50">{busy ? <Loader2 className="h-4 w-4 animate-spin"/> : <Send className="h-4 w-4"/>}{busy ? "Sending request…" : "Send service request"}</button></div>
