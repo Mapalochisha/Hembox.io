@@ -314,3 +314,125 @@ values (
   array['image/png','image/jpeg','image/webp','image/svg+xml','application/pdf','application/zip','text/plain','text/markdown','application/json','application/octet-stream']
 )
 on conflict (id) do update set public=false,file_size_limit=20971520,allowed_mime_types=excluded.allowed_mime_types;
+
+
+-- Respect each customer's in-app notification preferences for every notification source.
+create or replace function public.apply_client_notification_preferences()
+returns trigger
+language plpgsql
+security definer
+set search_path = ''
+as $$
+declare
+  v_enabled boolean := true;
+begin
+  select case new.category
+    when 'project' then project_updates
+    when 'service' then service_updates
+    when 'billing' then billing_updates
+    when 'domain' then domain_updates
+    when 'message' then message_updates
+    else true
+  end into v_enabled
+  from public.client_notification_preferences
+  where customer_id = new.customer_id;
+
+  if coalesce(v_enabled,true) = false then
+    return null;
+  end if;
+  return new;
+end;
+$$;
+revoke all on function public.apply_client_notification_preferences() from public,anon,authenticated;
+drop trigger if exists apply_client_notification_preferences on public.client_notifications;
+create trigger apply_client_notification_preferences
+before insert on public.client_notifications
+for each row execute function public.apply_client_notification_preferences();
+
+create or replace function public.notify_client_invoice_status_change()
+returns trigger
+language plpgsql
+security definer
+set search_path = ''
+as $$
+begin
+  if old.status is distinct from new.status and new.customer_id is not null then
+    insert into public.client_notifications(customer_id,category,title,body,href)
+    values (
+      new.customer_id,
+      'billing',
+      case new.status when 'paid' then 'Invoice paid' when 'overdue' then 'Invoice overdue' else 'Invoice updated' end,
+      'Invoice ' || coalesce(new.invoice_number,'') || ' is now ' || replace(new.status,'_',' ') || '.',
+      '/portal/bills'
+    );
+  end if;
+  return new;
+end;
+$$;
+revoke all on function public.notify_client_invoice_status_change() from public,anon,authenticated;
+drop trigger if exists notify_client_invoice_status_change on public.billing_invoices;
+create trigger notify_client_invoice_status_change
+after update of status on public.billing_invoices
+for each row when (old.status is distinct from new.status)
+execute function public.notify_client_invoice_status_change();
+
+create or replace function public.notify_client_admin_reply()
+returns trigger
+language plpgsql
+security definer
+set search_path = ''
+as $$
+declare
+  v_customer_id uuid;
+  v_source text;
+begin
+  select customer_id,source into v_customer_id,v_source
+  from public.inquiries where id=new.inquiry_id;
+  if v_customer_id is not null then
+    insert into public.client_notifications(customer_id,category,title,body,href)
+    values (
+      v_customer_id,
+      case when v_source='billing' then 'billing' else 'message' end,
+      'New reply from HEMBOX',
+      'Your HEMBOX team replied to a conversation.',
+      '/portal/messages'
+    );
+  end if;
+  return new;
+end;
+$$;
+revoke all on function public.notify_client_admin_reply() from public,anon,authenticated;
+drop trigger if exists notify_client_admin_reply on public.inquiry_messages;
+create trigger notify_client_admin_reply
+after insert on public.inquiry_messages
+for each row when (new.sender_role='admin')
+execute function public.notify_client_admin_reply();
+
+create or replace function public.notify_client_domain_status_change()
+returns trigger
+language plpgsql
+security definer
+set search_path = ''
+as $$
+begin
+  if new.customer_id is not null and (
+    old.status is distinct from new.status or old.expires_at is distinct from new.expires_at
+  ) then
+    insert into public.client_notifications(customer_id,category,title,body,href)
+    values (
+      new.customer_id,
+      'domain',
+      case when old.status is distinct from new.status then 'Domain order updated' else 'Domain renewal date updated' end,
+      coalesce(new.domain_name,'Your domain') || ' has an updated status: ' || replace(new.status,'_',' ') || '.',
+      '/portal/domains'
+    );
+  end if;
+  return new;
+end;
+$$;
+revoke all on function public.notify_client_domain_status_change() from public,anon,authenticated;
+drop trigger if exists notify_client_domain_status_change on public.domain_orders;
+create trigger notify_client_domain_status_change
+after update of status,expires_at on public.domain_orders
+for each row when (old.status is distinct from new.status or old.expires_at is distinct from new.expires_at)
+execute function public.notify_client_domain_status_change();
