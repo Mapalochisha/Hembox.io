@@ -338,19 +338,18 @@ Sequence may change after the audit reveals dependencies. No phase should bypass
 
 ### Release / environment boundaries
 
-- The new portal migration has **not** been applied to the production Supabase database. The preview environment may therefore show clear “schema not available yet” states for new services, files, milestones, deliverables, and notification preferences. Existing project, billing, and domain data is not modified by the feature branch.
-- The private storage bucket is created by the migration, not by the application at runtime. Upload/download operations remain unavailable until the migration is applied to the intended environment.
+- The additive client-portal migration was applied to the production Supabase project on 2026-10-26 after the user explicitly authorized using production because no development database is available. Verification confirmed the new workspace tables exist and the `client-deliverables` bucket is private with a 20 MB limit. The existing `clients` and `projects` tables had zero rows at the time of pre-migration inspection.
+- The private storage bucket is created by the migration, not by the application at runtime. File operations now use server-side service-role access only after a verified session and explicit ownership checks; the bucket remains private.
 - The portal APIs use a verified Supabase Auth session before service-role queries/writes and scope project, service, file, conversation, and notification access to the authenticated customer or verified administrator.
 - Client role changes are not exposed in account settings.
-- No production migration, payment gateway activation, registrar mutation, or production deployment has been performed by this feature branch.
+- No payment gateway activation or registrar mutation has been performed. Production deployment remains gated on green CI and a READY Vercel deployment for the exact final commit.
 
-### Verification still required
+### Release verification and handoff
 
-- [ ] Latest-commit CI: lint, TypeScript, unit/integration SQL tests, and build checks all green.
-- [ ] Latest-commit Vercel preview deployment in READY state.
-- [ ] Authenticated customer journey: request service, read/reply to conversation, list projects, review/approve milestone and deliverable, upload/download private files, view bills/domains, and update notification preferences once the migration is available in a test environment.
-- [ ] Admin journey: link a client account, create a project, assign a service, add a milestone, upload a deliverable, review a change request, and verify the resulting client notification.
-- [ ] Cross-customer access denial and mobile/accessibility verification.
-- [ ] Confirm deployment target and separately approve any database migration rollout before production release.
+- CI must pass lint, TypeScript, provider tests, SQL integration tests, and production build for the exact release commit.
+- A Vercel preview for that exact commit must reach READY before merging to `main`; the production deployment must also reach READY after merge.
+- The user will perform the authenticated customer and admin journeys on `main` after release because no separate development database is available. The SQL integration tests cover schema, RLS, ownership integrity, cross-customer isolation, and notification preferences; they do not replace browser-based acceptance testing.
+- Manual acceptance should cover service requests, messaging, projects, milestone/deliverable feedback, private upload/download, bills/domains, notification preferences, admin project/service setup, and cross-customer access denial on desktop and mobile.
+- Payment gateway activation and registrar mutations remain out of scope.
 
-Do not merge or report the feature complete until the latest code has green CI and a green/READY Vercel preview, and the authenticated client/admin journeys have been exercised or any environment limitation is explicitly resolved.
+Do not report the feature as fully accepted until the release checks are green and the user has completed the planned customer/admin testing on `main`.
