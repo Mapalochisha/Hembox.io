@@ -44,7 +44,7 @@ export function PortalShell({ children, title, eyebrow = "CLIENT WORKSPACE" }: {
   }
 
   if (!user) {
-    if (typeof window !== "undefined") window.location.replace("/login?next=/portal")
+    if (typeof window !== "undefined") window.location.replace("/login?next=" + encodeURIComponent(pathname || "/portal"))
     return <div className="min-h-screen bg-[#f6f8fb]" />
   }
 
