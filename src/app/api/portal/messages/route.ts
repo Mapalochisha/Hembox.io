@@ -39,7 +39,7 @@ export async function POST(request: Request) {
     const auth = createAuthClient()
     const { data: { user }, error: authError } = await auth.auth.getUser()
     if (authError || !user) return json({ error: "Sign in to send a message." }, 401)
-    const db = createServiceClient() as unknown as SupabaseClient
+    const db = auth as unknown as SupabaseClient
     const { data: thread, error: threadError } = await db.from("inquiries").select("id,status")
       .eq("id", parsed.data.conversationId).eq("customer_id", user.id).maybeSingle()
     if (threadError) throw threadError
