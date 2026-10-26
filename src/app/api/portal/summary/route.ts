@@ -64,8 +64,9 @@ export async function GET() {
       const currency = invoice.currency || "ZMW"
       const balance = Math.max(0, Number(invoice.total_minor || 0) - (allocatedByInvoice[invoice.id] ?? 0))
       balanceByInvoice[invoice.id] = balance
-      dueByCurrency[currency] = (dueByCurrency[currency] ?? 0) + balance
+      if (balance > 0) dueByCurrency[currency] = (dueByCurrency[currency] ?? 0) + balance
     }
+    const outstandingInvoices = invoices.filter((invoice) => (balanceByInvoice[invoice.id] ?? 0) > 0)
 
     const domains = domainResult.data ?? []
     const conversations = (conversationResult.data ?? []).filter((item) => item.source === "billing" || item.source === "client-portal" || item.type === "contact")
@@ -74,7 +75,7 @@ export async function GET() {
       id: project.id, name: project.name, description: project.description,
       status: project.status, deadline: project.deadline, updated_at: project.updated_at,
     }))
-    const recentInvoices = invoices.slice(0, 3).map((invoice) => ({
+    const recentInvoices = outstandingInvoices.slice(0, 3).map((invoice) => ({
       id: invoice.id, invoice_number: invoice.invoice_number, status: invoice.status,
       currency: invoice.currency, total_minor: invoice.total_minor, due_minor: balanceByInvoice[invoice.id] ?? Number(invoice.total_minor || 0), due_at: invoice.due_at,
     }))
@@ -86,7 +87,7 @@ export async function GET() {
       client: clients[0] ?? null,
       projects: { active: activeProjects.length, total: projects.length, recent: recentProjects },
       services: { tracked: false, active: null },
-      billing: { outstanding_by_currency: dueByCurrency, invoices: recentInvoices, outstanding_count: invoices.length },
+      billing: { outstanding_by_currency: dueByCurrency, invoices: recentInvoices, outstanding_count: outstandingInvoices.length },
       domains: { count: domains.length, recent: recentDomains },
       conversations: { count: conversations.length },
       activity: [
