@@ -2,7 +2,7 @@
 
 import Link from "next/link"
 import { PortalShell } from "@/components/portal/portal-shell"
-import { ArrowRight, ArrowUpRight, Boxes, CheckCircle2, Code2, Globe2, Layers3, Palette, PenTool, Smartphone, Sparkles, Wrench } from "lucide-react"
+import { ArrowRight, ArrowUpRight, CheckCircle2, Code2, Globe2, Layers3, Palette, Smartphone, Sparkles, Wrench } from "lucide-react"
 
 const groups = [
   { title: "Brand & creative", description: "Build a clear, distinctive identity and a consistent visual language.", icon: Palette, services: ["Brand identity & logo design", "Graphic design & marketing assets", "UI/UX and product design"] },
