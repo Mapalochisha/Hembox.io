@@ -2,7 +2,6 @@ import { NextResponse } from "next/server"
 import { z } from "zod"
 import type { SupabaseClient } from "@supabase/supabase-js"
 import { createClient as createAuthClient } from "@/lib/supabase/server"
-import { createServiceClient } from "@/lib/supabase/service"
 
 export const dynamic = "force-dynamic"
 const schema = z.object({
@@ -25,7 +24,7 @@ export async function POST(request: Request) {
     const { data: { user }, error: authError } = await auth.auth.getUser()
     if (authError || !user || !user.email) return json({ error: "Sign in with an email address to request a service." }, 401)
 
-    const db = createServiceClient() as unknown as SupabaseClient
+    const db = auth as unknown as SupabaseClient
     const message = [
       "Client portal service request",
       "Category: " + parsed.data.category,
