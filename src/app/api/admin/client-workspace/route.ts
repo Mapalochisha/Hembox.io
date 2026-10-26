@@ -26,20 +26,25 @@ export async function GET(){
  if(context.status!==200)return json({error:context.status===401?"Authentication required.":context.status===403?"Administrator access required.":"Unable to verify administrator access."},context.status)
  try{
   const db=createServiceClient() as unknown as SupabaseClient
-  const [clientsResult,projectsResult,servicesResult]=await Promise.all([
+  const [clientsResult,projectsResult,servicesResult,milestonesResult,deliverablesResult]=await Promise.all([
    db.from("clients").select("id,user_id,company_name,status,created_at").order("created_at",{ascending:false}).limit(500),
    db.from("projects").select("id,client_id,name,description,status,deadline,created_at,updated_at").order("updated_at",{ascending:false}).limit(500),
    db.from("client_services").select("id,client_id,project_id,customer_id,service_type,name,status,renews_at,currency,created_at").order("created_at",{ascending:false}).limit(500),
+   db.from("project_milestones").select("id,project_id,title,status,due_at,sort_order").order("sort_order").limit(1000),
+   db.from("project_deliverables").select("id,project_id,title,status,filename,created_at").neq("status","draft").order("created_at",{ascending:false}).limit(1000),
   ])
   if(clientsResult.error||projectsResult.error)throw clientsResult.error||projectsResult.error
-  const serviceMissing=Boolean(servicesResult.error&&(servicesResult.error.code==="PGRST205"||servicesResult.error.code==="42P01"||String(servicesResult.error.message||"").toLowerCase().includes("client_services")))
-  if(servicesResult.error&&!serviceMissing)throw servicesResult.error
+  const missing=(error: {code?:string;message?:string}|null,table:string)=>Boolean(error&&(error.code==="PGRST205"||error.code==="42P01"||String(error.message||"").toLowerCase().includes(table)))
+  const serviceMissing=missing(servicesResult.error,"client_services")
+  const milestonesMissing=missing(milestonesResult.error,"project_milestones")
+  const deliverablesMissing=missing(deliverablesResult.error,"project_deliverables")
+  if((servicesResult.error&&!serviceMissing)||(milestonesResult.error&&!milestonesMissing)||(deliverablesResult.error&&!deliverablesMissing))throw servicesResult.error||milestonesResult.error||deliverablesResult.error
   const clients=clientsResult.data??[]
   const userIds=Array.from(new Set(clients.map((client)=>client.user_id).filter(Boolean)))
   const profilesResult=userIds.length?await db.from("profiles").select("id,email,full_name").in("id",userIds):{data:[],error:null}
   if(profilesResult.error)throw profilesResult.error
   const profiles=new Map((profilesResult.data??[]).map((profile)=>[profile.id,profile]))
-  return json({clients:clients.map((client)=>({...client,profile:client.user_id?profiles.get(client.user_id)??null:null})),projects:projectsResult.data??[],services:servicesResult.data??[],servicesAvailable:!serviceMissing})
+  return json({clients:clients.map((client)=>({...client,profile:client.user_id?profiles.get(client.user_id)??null:null})),projects:projectsResult.data??[],services:serviceMissing?[]:servicesResult.data??[],milestones:milestonesMissing?[]:milestonesResult.data??[],deliverables:deliverablesMissing?[]:deliverablesResult.data??[],servicesAvailable:!serviceMissing,milestonesAvailable:!milestonesMissing,deliverablesAvailable:!deliverablesMissing})
  }catch(error){console.error("[Admin client workspace] Read failed:",error);return json({error:"Client workspace management data is unavailable."},503)}
 }
 
