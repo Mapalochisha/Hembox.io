@@ -2,7 +2,6 @@ import { NextResponse } from "next/server"
 import { Buffer } from "node:buffer"
 import type { SupabaseClient } from "@supabase/supabase-js"
 import { createClient as createAuthClient } from "@/lib/supabase/server"
-import { createServiceClient } from "@/lib/supabase/service"
 
 export const dynamic = "force-dynamic"
 const BUCKET = "client-deliverables"
@@ -35,7 +34,7 @@ export async function GET(request: Request) {
   try {
     const user = await currentUser()
     if (!user) return json({ error: "Sign in to view your files." }, 401)
-    const db = createServiceClient() as unknown as SupabaseClient
+    const db = auth as unknown as SupabaseClient
     const params = new URL(request.url).searchParams
     const fileId = params.get("fileId")
     const deliverableId = params.get("deliverableId")
@@ -97,7 +96,7 @@ export async function POST(request: Request) {
     if (candidate.size < 1 || candidate.size > MAX_BYTES) return json({ error: "Files must be between 1 byte and 20 MB." }, 400)
     if (!ALLOWED[candidate.type]) return json({ error: "This file type is not supported. Upload an image, PDF, ZIP, text, Markdown or JSON file." }, 400)
 
-    const db = createServiceClient() as unknown as SupabaseClient
+    const db = auth as unknown as SupabaseClient
     if (projectId && !(await ownedProject(db, projectId, user.id))) return json({ error: "Project not found." }, 404)
     const extension = ALLOWED[candidate.type]
     const objectName = crypto.randomUUID() + "." + extension
