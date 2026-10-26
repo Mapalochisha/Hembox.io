@@ -19,12 +19,13 @@ export async function GET() {
     // session. Every customer-data query is explicitly scoped to that user or
     // to client records owned by that user; never accept an owner ID from input.
     const db = createServiceClient() as unknown as SupabaseClient
-    const [clientResult, invoiceResult, domainResult, conversationResult, serviceResult] = await Promise.all([
+    const [clientResult, invoiceResult, domainResult, conversationResult, serviceResult, notificationResult] = await Promise.all([
       db.from("clients").select("id,company_name,status").eq("user_id", user.id).limit(20),
       db.from("billing_invoices").select("id,invoice_number,status,currency,total_minor,due_at,created_at").eq("customer_id", user.id).in("status", ["unpaid", "partially_paid", "overdue"]).order("created_at", { ascending: false }).limit(100),
       db.from("domain_orders").select("id,domain_name,status,expires_at,created_at").eq("customer_id", user.id).order("created_at", { ascending: false }).limit(100),
       db.from("inquiries").select("id,type,status,source,message,created_at").eq("customer_id", user.id).order("created_at", { ascending: false }).limit(100),
-      db.from("client_services").select("id,status").eq("customer_id", user.id).limit(200),
+      db.from("client_services").select("id,status,renews_at,name").eq("customer_id", user.id).limit(200),
+      db.from("client_notifications").select("id,read_at").eq("customer_id", user.id).limit(200),
     ])
 
     const serviceTableMissing = Boolean(serviceResult.error && (
@@ -32,7 +33,12 @@ export async function GET() {
       serviceResult.error.code === "42P01" ||
       String(serviceResult.error.message || "").toLowerCase().includes("client_services")
     ))
-    const failure = clientResult.error || invoiceResult.error || domainResult.error || conversationResult.error || (serviceTableMissing ? null : serviceResult.error)
+    const notificationTableMissing = Boolean(notificationResult.error && (
+      notificationResult.error.code === "PGRST205" ||
+      notificationResult.error.code === "42P01" ||
+      String(notificationResult.error.message || "").toLowerCase().includes("client_notifications")
+    ))
+    const failure = clientResult.error || invoiceResult.error || domainResult.error || conversationResult.error || (serviceTableMissing ? null : serviceResult.error) || (notificationTableMissing ? null : notificationResult.error)
     if (failure) {
       console.error("[Portal] Summary query failed:", failure)
       return json({ error: "Your workspace summary is temporarily unavailable." }, 503)
@@ -79,6 +85,19 @@ export async function GET() {
       id: domain.id, domain_name: domain.domain_name, status: domain.status, expires_at: domain.expires_at,
     }))
     const conversations = (conversationResult.data ?? []).filter((item) => item.source === "billing" || item.source === "client-portal" || item.type === "contact")
+    const projectIds = projects.map((project) => project.id)
+    const projectActivityResult = projectIds.length
+      ? await db.from("project_activity").select("id,event_type,title,created_at").in("project_id", projectIds).order("created_at", { ascending: false }).limit(100)
+      : { data: [], error: null }
+    const projectActivityTableMissing = Boolean(projectActivityResult.error && (
+      projectActivityResult.error.code === "PGRST205" ||
+      projectActivityResult.error.code === "42P01" ||
+      String(projectActivityResult.error.message || "").toLowerCase().includes("project_activity")
+    ))
+    if (projectActivityResult.error && !projectActivityTableMissing) {
+      console.error("[Portal] Project activity query failed:", projectActivityResult.error)
+      return json({ error: "Project activity is temporarily unavailable." }, 503)
+    }
     const activeProjects = projects.filter((project) => ["in_progress", "review"].includes(project.status))
     const recentProjects = projects.slice(0, 4).map((project) => ({
       id: project.id, name: project.name, description: project.description,
@@ -95,7 +114,9 @@ export async function GET() {
       billing: { outstanding_by_currency: dueByCurrency, invoices: recentInvoices, outstanding_count: outstandingInvoices.length },
       domains: { count: domains.length, recent: recentDomains },
       conversations: { count: conversations.length },
+      notifications: { tracked: !notificationTableMissing, unread_count: notificationTableMissing ? null : (notificationResult.data ?? []).filter((item) => !item.read_at).length },
       activity: [
+        ...(projectActivityTableMissing ? [] : (projectActivityResult.data ?? []).map((item) => ({ id: "project-activity-" + item.id, kind: "project", title: item.title, detail: item.event_type.replaceAll("_", " "), at: item.created_at }))),
         ...projects.slice(0, 4).map((item) => ({ id: "project-" + item.id, kind: "project", title: item.name, detail: "Project status: " + item.status.replaceAll("_", " "), at: item.updated_at })),
         ...invoices.slice(0, 3).map((item) => ({ id: "invoice-" + item.id, kind: "billing", title: "Invoice " + item.invoice_number, detail: "Status: " + item.status.replaceAll("_", " "), at: item.created_at })),
         ...domains.slice(0, 3).map((item) => ({ id: "domain-" + item.id, kind: "domain", title: item.domain_name, detail: "Domain order: " + item.status.replaceAll("_", " "), at: item.created_at })),
