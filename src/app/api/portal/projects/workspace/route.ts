@@ -7,10 +7,10 @@ import { createServiceClient } from "@/lib/supabase/service"
 export const dynamic = "force-dynamic"
 function json(body: unknown, status = 200) { return NextResponse.json(body, { status, headers: { "Cache-Control": "no-store" } }) }
 const actionSchema = z.discriminatedUnion("action", [
-  z.object({ action: z.literal("approve_milestone"), milestoneId: z.string().uuid() }).strict(),
-  z.object({ action: z.literal("approve_deliverable"), deliverableId: z.string().uuid() }).strict(),
-  z.object({ action: z.literal("request_deliverable_changes"), deliverableId: z.string().uuid(), note: z.string().trim().min(5).max(2000) }).strict(),
-  z.object({ action: z.literal("create_change_request"), title: z.string().trim().min(3).max(180), description: z.string().trim().min(10).max(4000) }).strict(),
+  z.object({ projectId: z.string().uuid(), action: z.literal("approve_milestone"), milestoneId: z.string().uuid() }).strict(),
+  z.object({ projectId: z.string().uuid(), action: z.literal("approve_deliverable"), deliverableId: z.string().uuid() }).strict(),
+  z.object({ projectId: z.string().uuid(), action: z.literal("request_deliverable_changes"), deliverableId: z.string().uuid(), note: z.string().trim().min(5).max(2000) }).strict(),
+  z.object({ projectId: z.string().uuid(), action: z.literal("create_change_request"), title: z.string().trim().min(3).max(180), description: z.string().trim().min(10).max(4000) }).strict(),
 ])
 
 async function getOwnedProject(db: SupabaseClient, projectId: string, customerId: string) {
@@ -62,7 +62,7 @@ export async function POST(request: Request) {
     const { data: { user }, error: authError } = await auth.auth.getUser()
     if (authError || !user) return json({ error: "Sign in to update this project." }, 401)
     const db = createServiceClient() as unknown as SupabaseClient
-    const project = await getOwnedProject(db, parsed.data.action === "create_change_request" ? String((body as { projectId?: string }).projectId ?? "") : String((body as { projectId?: string }).projectId ?? ""), user.id)
+    const project = await getOwnedProject(db, parsed.data.projectId, user.id)
     if (!project) return json({ error: "Project not found." }, 404)
 
     let activityTitle = ""
