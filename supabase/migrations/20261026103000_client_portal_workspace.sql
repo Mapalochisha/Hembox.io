@@ -32,12 +32,27 @@ create unique index if not exists clients_id_user_id_unique on public.clients(id
 -- Keep role checks independent of profile-table RLS recursion.
 create or replace function public.get_user_role(user_id uuid)
 returns text
-language sql
+language plpgsql
 security definer
 stable
 set search_path = ''
 as $role$
-  select role from public.profiles where id = user_id limit 1;
+declare
+  v_caller uuid;
+  v_caller_role text;
+begin
+  v_caller := auth.uid();
+  if v_caller is null then
+    return null;
+  end if;
+  if user_id is distinct from v_caller then
+    select role into v_caller_role from public.profiles where id = v_caller limit 1;
+    if v_caller_role is distinct from 'admin' then
+      return null;
+    end if;
+  end if;
+  return (select role from public.profiles where id = user_id limit 1);
+end;
 $role$;
 revoke all on function public.get_user_role(uuid) from public, anon;
 grant execute on function public.get_user_role(uuid) to authenticated, service_role;
