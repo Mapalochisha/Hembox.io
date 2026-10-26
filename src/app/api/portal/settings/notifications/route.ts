@@ -2,7 +2,6 @@ import { NextResponse } from "next/server"
 import { z } from "zod"
 import type { SupabaseClient } from "@supabase/supabase-js"
 import { createClient as createAuthClient } from "@/lib/supabase/server"
-import { createServiceClient } from "@/lib/supabase/service"
 
 export const dynamic = "force-dynamic"
 const schema = z.object({
@@ -20,7 +19,7 @@ export async function GET() {
     const auth = createAuthClient()
     const { data: { user }, error: authError } = await auth.auth.getUser()
     if (authError || !user) return json({ error: "Sign in to manage preferences." }, 401)
-    const db = createServiceClient() as unknown as SupabaseClient
+    const db = auth as unknown as SupabaseClient
     const { data, error } = await db.from("client_notification_preferences").select("project_updates,service_updates,billing_updates,domain_updates,message_updates").eq("customer_id",user.id).maybeSingle()
     if (error) throw error
     return json({ preferences: data ?? defaults })
