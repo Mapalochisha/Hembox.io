@@ -10,6 +10,7 @@ const schema=z.discriminatedUnion("action",[
  z.object({action:z.literal("create_project"),clientId:z.string().uuid(),name:z.string().trim().min(2).max(160),description:z.string().trim().max(4000).optional().default(""),status:z.enum(["draft","in_progress","review"]).default("draft"),deadline:z.string().datetime().nullable().optional()}).strict(),
  z.object({action:z.literal("create_service"),clientId:z.string().uuid(),projectId:z.string().uuid().nullable().optional(),serviceType:z.string().trim().min(2).max(80),name:z.string().trim().min(2).max(160),description:z.string().trim().max(2000).optional().default(""),status:z.enum(["pending","active","paused"]).default("active"),startsAt:z.string().datetime().nullable().optional(),renewsAt:z.string().datetime().nullable().optional(),currency:z.enum(["ZMW","USD"]).nullable().optional()}).strict(),
  z.object({action:z.literal("create_milestone"),projectId:z.string().uuid(),title:z.string().trim().min(2).max(180),description:z.string().trim().max(2000).optional().default(""),status:z.enum(["pending","in_progress","ready_for_review","blocked"]).default("pending"),dueAt:z.string().datetime().nullable().optional(),sortOrder:z.number().int().min(0).max(10000).default(0)}).strict(),
+ z.object({action:z.literal("review_change_request"),changeRequestId:z.string().uuid(),status:z.enum(["under_review","approved","declined","completed"]),decisionNote:z.string().trim().max(2000).optional().default("")}).strict(),
 ])
 async function adminContext(){
  const auth=createAuthClient()
@@ -26,25 +27,27 @@ export async function GET(){
  if(context.status!==200)return json({error:context.status===401?"Authentication required.":context.status===403?"Administrator access required.":"Unable to verify administrator access."},context.status)
  try{
   const db=createServiceClient() as unknown as SupabaseClient
-  const [clientsResult,projectsResult,servicesResult,milestonesResult,deliverablesResult]=await Promise.all([
+  const [clientsResult,projectsResult,servicesResult,milestonesResult,deliverablesResult,changeRequestsResult]=await Promise.all([
    db.from("clients").select("id,user_id,company_name,status,created_at").order("created_at",{ascending:false}).limit(500),
    db.from("projects").select("id,client_id,name,description,status,deadline,created_at,updated_at").order("updated_at",{ascending:false}).limit(500),
    db.from("client_services").select("id,client_id,project_id,customer_id,service_type,name,status,renews_at,currency,created_at").order("created_at",{ascending:false}).limit(500),
    db.from("project_milestones").select("id,project_id,title,status,due_at,sort_order").order("sort_order").limit(1000),
    db.from("project_deliverables").select("id,project_id,title,status,filename,created_at").neq("status","draft").order("created_at",{ascending:false}).limit(1000),
+   db.from("project_change_requests").select("id,project_id,customer_id,title,description,status,decision_note,created_at").order("created_at",{ascending:false}).limit(1000),
   ])
   if(clientsResult.error||projectsResult.error)throw clientsResult.error||projectsResult.error
   const missing=(error: {code?:string;message?:string}|null,table:string)=>Boolean(error&&(error.code==="PGRST205"||error.code==="42P01"||String(error.message||"").toLowerCase().includes(table)))
   const serviceMissing=missing(servicesResult.error,"client_services")
   const milestonesMissing=missing(milestonesResult.error,"project_milestones")
   const deliverablesMissing=missing(deliverablesResult.error,"project_deliverables")
-  if((servicesResult.error&&!serviceMissing)||(milestonesResult.error&&!milestonesMissing)||(deliverablesResult.error&&!deliverablesMissing))throw servicesResult.error||milestonesResult.error||deliverablesResult.error
+  const changeRequestsMissing=missing(changeRequestsResult.error,"project_change_requests")
+  if((servicesResult.error&&!serviceMissing)||(milestonesResult.error&&!milestonesMissing)||(deliverablesResult.error&&!deliverablesMissing)||(changeRequestsResult.error&&!changeRequestsMissing))throw servicesResult.error||milestonesResult.error||deliverablesResult.error||changeRequestsResult.error
   const clients=clientsResult.data??[]
   const userIds=Array.from(new Set(clients.map((client)=>client.user_id).filter(Boolean)))
   const profilesResult=userIds.length?await db.from("profiles").select("id,email,full_name").in("id",userIds):{data:[],error:null}
   if(profilesResult.error)throw profilesResult.error
   const profiles=new Map((profilesResult.data??[]).map((profile)=>[profile.id,profile]))
-  return json({clients:clients.map((client)=>({...client,profile:client.user_id?profiles.get(client.user_id)??null:null})),projects:projectsResult.data??[],services:serviceMissing?[]:servicesResult.data??[],milestones:milestonesMissing?[]:milestonesResult.data??[],deliverables:deliverablesMissing?[]:deliverablesResult.data??[],servicesAvailable:!serviceMissing,milestonesAvailable:!milestonesMissing,deliverablesAvailable:!deliverablesMissing})
+  return json({clients:clients.map((client)=>({...client,profile:client.user_id?profiles.get(client.user_id)??null:null})),projects:projectsResult.data??[],services:serviceMissing?[]:servicesResult.data??[],milestones:milestonesMissing?[]:milestonesResult.data??[],deliverables:deliverablesMissing?[]:deliverablesResult.data??[],changeRequests:changeRequestsMissing?[]:changeRequestsResult.data??[],servicesAvailable:!serviceMissing,milestonesAvailable:!milestonesMissing,deliverablesAvailable:!deliverablesMissing,changeRequestsAvailable:!changeRequestsMissing})
  }catch(error){console.error("[Admin client workspace] Read failed:",error);return json({error:"Client workspace management data is unavailable."},503)}
 }
 
@@ -56,6 +59,17 @@ export async function POST(request:Request){
  if(context.status!==200)return json({error:context.status===401?"Authentication required.":context.status===403?"Administrator access required.":"Unable to verify administrator access."},context.status)
  try{
   const db=createServiceClient() as unknown as SupabaseClient
+  if(parsed.data.action==="review_change_request"){
+   const {data:changeRequest,error:changeError}=await db.from("project_change_requests").select("id,project_id,customer_id,title").eq("id",parsed.data.changeRequestId).maybeSingle()
+   if(changeError)throw changeError
+   if(!changeRequest)return json({error:"Change request not found."},404)
+   const now=new Date().toISOString()
+   const {error:updateError}=await db.from("project_change_requests").update({status:parsed.data.status,decision_note:parsed.data.decisionNote||null,reviewed_by:context.user.id,reviewed_at:now,updated_at:now}).eq("id",changeRequest.id)
+   if(updateError)throw updateError
+   try{await db.from("project_activity").insert({project_id:changeRequest.project_id,actor_id:context.user.id,actor_role:"admin",event_type:"change_request_"+parsed.data.status,title:"Change request "+parsed.data.status+": "+changeRequest.title,details:{change_request_id:changeRequest.id}})}catch(activityError){console.error("[Admin client workspace] Change request activity failed:",activityError)}
+   try{await db.from("client_notifications").insert({customer_id:changeRequest.customer_id,category:"project",title:"Change request updated",body:"HEMBOX updated the status of your request: "+changeRequest.title+".",href:"/portal/projects/"+changeRequest.project_id})}catch(notificationError){console.error("[Admin client workspace] Change request notification failed:",notificationError)}
+   return json({success:true,message:"Change request updated."},200)
+  }
   if(parsed.data.action==="create_project"){
    const {data:client,error:clientError}=await db.from("clients").select("id,user_id").eq("id",parsed.data.clientId).maybeSingle()
    if(clientError)throw clientError
