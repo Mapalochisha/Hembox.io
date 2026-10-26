@@ -27,6 +27,8 @@ create table if not exists public.projects (
   updated_at timestamptz not null default now()
 );
 
+create unique index if not exists clients_id_user_id_unique on public.clients(id,user_id);
+
 alter table public.clients enable row level security;
 alter table public.projects enable row level security;
 
@@ -60,7 +62,7 @@ create policy "Client workspace admins manage projects"
 create table if not exists public.client_services (
   id uuid primary key default gen_random_uuid(),
   customer_id uuid not null references auth.users(id) on delete cascade,
-  client_id uuid references public.clients(id) on delete set null,
+  client_id uuid not null,
   project_id uuid references public.projects(id) on delete set null,
   service_type text not null check (length(trim(service_type)) between 2 and 80),
   name text not null check (length(trim(name)) between 2 and 160),
@@ -71,7 +73,8 @@ create table if not exists public.client_services (
   currency text check (currency is null or currency in ('ZMW','USD')),
   created_by uuid references auth.users(id) on delete set null,
   created_at timestamptz not null default now(),
-  updated_at timestamptz not null default now()
+  updated_at timestamptz not null default now(),
+  constraint client_services_client_customer_fk foreign key (client_id,customer_id) references public.clients(id,user_id) on delete cascade
 );
 create index if not exists client_services_customer_status_idx on public.client_services(customer_id,status,created_at desc);
 create index if not exists client_services_project_idx on public.client_services(project_id) where project_id is not null;
