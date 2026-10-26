@@ -2,7 +2,6 @@ import { NextResponse } from "next/server"
 import { z } from "zod"
 import type { SupabaseClient } from "@supabase/supabase-js"
 import { createClient as createAuthClient } from "@/lib/supabase/server"
-import { createServiceClient } from "@/lib/supabase/service"
 
 export const dynamic = "force-dynamic"
 function json(body: unknown, status = 200) { return NextResponse.json(body, { status, headers: { "Cache-Control": "no-store" } }) }
@@ -38,7 +37,7 @@ export async function GET(request: Request) {
     if (authError || !user) return json({ error: "Sign in to view project collaboration." }, 401)
     const projectId = new URL(request.url).searchParams.get("projectId")
     if (!projectId || !z.string().uuid().safeParse(projectId).success) return json({ error: "Provide a valid project." }, 400)
-    const db = createServiceClient() as unknown as SupabaseClient
+    const db = auth as unknown as SupabaseClient
     const project = await getOwnedProject(db, projectId, user.id)
     if (!project) return json({ error: "Project not found." }, 404)
     const [milestoneResult, deliverableResult, changeResult, activityResult, filesResult] = await Promise.all([
@@ -68,7 +67,7 @@ export async function POST(request: Request) {
     const auth = createAuthClient()
     const { data: { user }, error: authError } = await auth.auth.getUser()
     if (authError || !user) return json({ error: "Sign in to update this project." }, 401)
-    const db = createServiceClient() as unknown as SupabaseClient
+    const db = auth as unknown as SupabaseClient
     const project = await getOwnedProject(db, parsed.data.projectId, user.id)
     if (!project) return json({ error: "Project not found." }, 404)
 
