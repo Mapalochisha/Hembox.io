@@ -18,14 +18,17 @@ async function getOwnedProject(db: SupabaseClient, projectId: string, customerId
   if (clientsError) throw clientsError
   const clientIds = (clients ?? []).map((client) => client.id)
   if (!clientIds.length) return null
-  let result = await db.from("projects")
-    .select("id,client_id,name,description,category,status,deadline,created_at,updated_at")
-    .eq("id", projectId).in("client_id", clientIds).maybeSingle()
-  if (result.error && (result.error.code === "PGRST204" || result.error.code === "42703" || String(result.error.message || "").toLowerCase().includes("category"))) {
-    result = await db.from("projects").select("id,client_id,name,description,status,deadline,created_at,updated_at").eq("id", projectId).in("client_id", clientIds).maybeSingle()
+  type ProjectRow = { id:string; client_id:string; name:string; description:string|null; category?:string|null; status:string; deadline:string|null; created_at:string; updated_at:string }
+  const initial = await db.from("projects").select("id,client_id,name,description,category,status,deadline,created_at,updated_at").eq("id", projectId).in("client_id", clientIds).maybeSingle()
+  let project = initial.data as unknown as ProjectRow | null
+  let queryError = initial.error as {code?:string;message?:string}|null
+  if (queryError && (queryError.code === "PGRST204" || queryError.code === "42703" || String(queryError.message || "").toLowerCase().includes("category"))) {
+    const fallback = await db.from("projects").select("id,client_id,name,description,status,deadline,created_at,updated_at").eq("id", projectId).in("client_id", clientIds).maybeSingle()
+    project = fallback.data as unknown as ProjectRow | null
+    queryError = fallback.error
   }
-  if (result.error) throw result.error
-  return result.data ? { ...result.data, category: result.data.category || "custom" } : null
+  if (queryError) throw queryError
+  return project ? { ...project, category: project.category || "custom" } : null
 }
 
 export async function GET(request: Request) {
