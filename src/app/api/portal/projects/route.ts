@@ -21,10 +21,16 @@ export async function GET(request: Request) {
     let query = db.from("projects").select("id,client_id,name,description,category,status,deadline,created_at,updated_at").in("client_id", clientIds).order("updated_at", { ascending: false }).limit(200)
     const projectId = new URL(request.url).searchParams.get("projectId")
     if (projectId) query = query.eq("id", projectId)
-    const { data, error } = await query
-    if (error) throw error
-    if (projectId && !(data ?? []).length) return json({ error: "Project not found." }, 404)
-    return json({ projects: data ?? [], clients: clients ?? [] })
+    let result = await query
+    if (result.error && (result.error.code === "PGRST204" || result.error.code === "42703" || String(result.error.message || "").toLowerCase().includes("category"))) {
+      let fallback = db.from("projects").select("id,client_id,name,description,status,deadline,created_at,updated_at").in("client_id", clientIds).order("updated_at", { ascending: false }).limit(200)
+      if (projectId) fallback = fallback.eq("id", projectId)
+      result = await fallback
+    }
+    if (result.error) throw result.error
+    const projects = (result.data ?? []).map((project) => ({ ...project, category: project.category || "custom" }))
+    if (projectId && !projects.length) return json({ error: "Project not found." }, 404)
+    return json({ projects, clients: clients ?? [] })
   } catch (error) {
     console.error("[Portal] Project lookup failed:", error)
     return json({ error: "Project information is temporarily unavailable." }, 503)
