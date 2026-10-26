@@ -2,6 +2,7 @@ import { NextResponse } from "next/server"
 import { z } from "zod"
 import type { SupabaseClient } from "@supabase/supabase-js"
 import { createClient as createAuthClient } from "@/lib/supabase/server"
+import { createServiceClient } from "@/lib/supabase/service"
 
 export const dynamic = "force-dynamic"
 const schema = z.object({ notificationId: z.string().uuid().optional(), markAllRead: z.boolean().optional() }).strict()
@@ -33,7 +34,7 @@ export async function PATCH(request: Request) {
     const auth = createAuthClient()
     const { data: { user }, error: authError } = await auth.auth.getUser()
     if (authError || !user) return json({ error: "Sign in to update notifications." }, 401)
-    const db = auth as unknown as SupabaseClient
+    const db: any = createServiceClient()
     let query = db.from("client_notifications").update({ read_at: new Date().toISOString() }).eq("customer_id", user.id).is("read_at", null)
     if (parsed.data.notificationId) query = query.eq("id", parsed.data.notificationId)
     const { error } = await query
