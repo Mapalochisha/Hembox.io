@@ -2,7 +2,6 @@ import { NextResponse } from "next/server"
 import { z } from "zod"
 import type { SupabaseClient } from "@supabase/supabase-js"
 import { createClient as createAuthClient } from "@/lib/supabase/server"
-import { createServiceClient } from "@/lib/supabase/service"
 
 export const dynamic = "force-dynamic"
 const schema = z.object({ notificationId: z.string().uuid().optional(), markAllRead: z.boolean().optional() }).strict()
@@ -13,7 +12,7 @@ export async function GET() {
     const auth = createAuthClient()
     const { data: { user }, error: authError } = await auth.auth.getUser()
     if (authError || !user) return json({ error: "Sign in to view notifications." }, 401)
-    const db = createServiceClient() as unknown as SupabaseClient
+    const db = auth as unknown as SupabaseClient
     const { data, error } = await db.from("client_notifications")
       .select("id,category,title,body,href,read_at,created_at")
       .eq("customer_id", user.id).order("created_at", { ascending: false }).limit(100)
