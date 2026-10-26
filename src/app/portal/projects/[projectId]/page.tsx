@@ -4,7 +4,7 @@ import Link from "next/link"
 import { useParams } from "next/navigation"
 import { FormEvent, useEffect, useState } from "react"
 import { PortalShell } from "@/components/portal/portal-shell"
-import { ArrowDownToLine, ArrowLeft, CalendarClock, CheckCircle2, Clock3, FileText, FolderKanban, Loader2, MessageSquare, RefreshCw, Send, ShieldCheck, ThumbsUp } from "lucide-react"
+import { ArrowDownToLine, ArrowLeft, CalendarClock, CheckCircle2, Clock3, FileText, FolderKanban, Loader2, MessageSquare, Send, ShieldCheck, ThumbsUp } from "lucide-react"
 
 type Project = { id:string; name:string; description:string|null; status:string; deadline:string|null; updated_at:string|null }
 type Milestone = { id:string; title:string; description:string|null; status:string; due_at:string|null; approved_at:string|null }
