@@ -44,11 +44,11 @@ export async function GET(){
   const changeRequestsMissing=missing(changeRequestsResult.error,"project_change_requests")
   if((servicesResult.error&&!serviceMissing)||(milestonesResult.error&&!milestonesMissing)||(deliverablesResult.error&&!deliverablesMissing)||(changeRequestsResult.error&&!changeRequestsMissing))throw servicesResult.error||milestonesResult.error||deliverablesResult.error||changeRequestsResult.error
   const clients=clientsResult.data??[]
-  const userIds=Array.from(new Set(clients.map((client)=>client.user_id).filter(Boolean)))
-  const profilesResult=userIds.length?await db.from("profiles").select("id,email,full_name").in("id",userIds):{data:[],error:null}
+  const userIds=Array.from(new Set(clients.map((client: any)=>client.user_id).filter(Boolean)))
+  const profilesResult: {data: any[] | null; error: any} = userIds.length ? await db.from("profiles").select("id,email,full_name").in("id",userIds) : {data:[],error:null}
   if(profilesResult.error)throw profilesResult.error
-  const profiles=new Map((profilesResult.data??[]).map((profile)=>[profile.id,profile]))
-  return json({clients:clients.map((client)=>({...client,profile:client.user_id?profiles.get(client.user_id)??null:null})),availableAccounts:accountsResult.data??[],projects:projectsResult.data??[],services:serviceMissing?[]:servicesResult.data??[],milestones:milestonesMissing?[]:milestonesResult.data??[],deliverables:deliverablesMissing?[]:deliverablesResult.data??[],changeRequests:changeRequestsMissing?[]:changeRequestsResult.data??[],servicesAvailable:!serviceMissing,milestonesAvailable:!milestonesMissing,deliverablesAvailable:!deliverablesMissing,changeRequestsAvailable:!changeRequestsMissing})
+  const profiles=new Map((profilesResult.data??[]).map((profile: any)=>[profile.id,profile]))
+  return json({clients:clients.map((client: any)=>({...client,profile:client.user_id?profiles.get(client.user_id)??null:null})),availableAccounts:accountsResult.data??[],projects:projectsResult.data??[],services:serviceMissing?[]:servicesResult.data??[],milestones:milestonesMissing?[]:milestonesResult.data??[],deliverables:deliverablesMissing?[]:deliverablesResult.data??[],changeRequests:changeRequestsMissing?[]:changeRequestsResult.data??[],servicesAvailable:!serviceMissing,milestonesAvailable:!milestonesMissing,deliverablesAvailable:!deliverablesMissing,changeRequestsAvailable:!changeRequestsMissing})
  }catch(error){console.error("[Admin client workspace] Read failed:",error);return json({error:"Client workspace management data is unavailable."},503)}
 }
 
@@ -59,7 +59,7 @@ export async function POST(request:Request){
  const context=await adminContext()
  if(context.status!==200)return json({error:context.status===401?"Authentication required.":context.status===403?"Administrator access required.":"Unable to verify administrator access."},context.status)
  try{
-  const db=createServiceClient()
+  const db: any = createServiceClient()
   if(parsed.data.action==="create_client"){
    const {data:account,error:accountError}=await db.from("profiles").select("id,role").eq("id",parsed.data.userId).maybeSingle()
    if(accountError)throw accountError
