@@ -1,5 +1,4 @@
 import { NextResponse } from "next/server"
-import type { SupabaseClient } from "@supabase/supabase-js"
 import { z } from "zod"
 import { createClient as createAuthClient } from "@/lib/supabase/server"
 import { createServiceClient } from "@/lib/supabase/service"
@@ -27,7 +26,7 @@ export async function GET(){
  const context=await adminContext()
  if(context.status!==200)return json({error:context.status===401?"Authentication required.":context.status===403?"Administrator access required.":"Unable to verify administrator access."},context.status)
  try{
-  const db=createServiceClient() as unknown as SupabaseClient
+  const db: any = createServiceClient()
   const [clientsResult,projectsResult,servicesResult,milestonesResult,deliverablesResult,changeRequestsResult,accountsResult]=await Promise.all([
    db.from("clients").select("id,user_id,company_name,status,created_at").order("created_at",{ascending:false}).limit(500),
    db.from("projects").select("id,client_id,name,description,status,deadline,created_at,updated_at").order("updated_at",{ascending:false}).limit(500),
