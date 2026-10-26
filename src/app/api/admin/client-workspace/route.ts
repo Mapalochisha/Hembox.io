@@ -8,7 +8,7 @@ export const dynamic = "force-dynamic"
 function json(body: unknown,status=200){return NextResponse.json(body,status===200?{headers:{"Cache-Control":"no-store"}}:{status,headers:{"Cache-Control":"no-store"}})}
 const schema=z.discriminatedUnion("action",[
  z.object({action:z.literal("create_client"),userId:z.string().uuid(),companyName:z.string().trim().min(2).max(180),industry:z.string().trim().max(120).optional().default(""),website:z.string().trim().max(255).optional().default("")}).strict(),
- z.object({action:z.literal("create_project"),clientId:z.string().uuid(),name:z.string().trim().min(2).max(160),description:z.string().trim().max(4000).optional().default(""),status:z.enum(["draft","in_progress","review"]).default("draft"),deadline:z.string().datetime().nullable().optional()}).strict(),
+ z.object({action:z.literal("create_project"),clientId:z.string().uuid(),category:z.enum(["brand_identity","graphic_design","website","web_application","mobile_app","software","ui_ux","custom"]).default("custom"),name:z.string().trim().min(2).max(160),description:z.string().trim().max(4000).optional().default(""),status:z.enum(["draft","in_progress","review"]).default("draft"),deadline:z.string().datetime().nullable().optional()}).strict(),
  z.object({action:z.literal("create_service"),clientId:z.string().uuid(),projectId:z.string().uuid().nullable().optional(),serviceType:z.string().trim().min(2).max(80),name:z.string().trim().min(2).max(160),description:z.string().trim().max(2000).optional().default(""),status:z.enum(["pending","active","paused"]).default("active"),startsAt:z.string().datetime().nullable().optional(),renewsAt:z.string().datetime().nullable().optional(),currency:z.enum(["ZMW","USD"]).nullable().optional()}).strict(),
  z.object({action:z.literal("create_milestone"),projectId:z.string().uuid(),title:z.string().trim().min(2).max(180),description:z.string().trim().max(2000).optional().default(""),status:z.enum(["pending","in_progress","ready_for_review","blocked"]).default("pending"),dueAt:z.string().datetime().nullable().optional(),sortOrder:z.number().int().min(0).max(10000).default(0)}).strict(),
  z.object({action:z.literal("review_change_request"),changeRequestId:z.string().uuid(),status:z.enum(["under_review","approved","declined","completed"]),decisionNote:z.string().trim().max(2000).optional().default("")}).strict(),
@@ -30,7 +30,7 @@ export async function GET(){
   const db=createServiceClient() as unknown as SupabaseClient
   const [clientsResult,projectsResult,servicesResult,milestonesResult,deliverablesResult,changeRequestsResult,accountsResult]=await Promise.all([
    db.from("clients").select("id,user_id,company_name,status,created_at").order("created_at",{ascending:false}).limit(500),
-   db.from("projects").select("id,client_id,name,description,status,deadline,created_at,updated_at").order("updated_at",{ascending:false}).limit(500),
+   db.from("projects").select("id,client_id,name,description,category,status,deadline,created_at,updated_at").order("updated_at",{ascending:false}).limit(500),
    db.from("client_services").select("id,client_id,project_id,customer_id,service_type,name,status,renews_at,currency,created_at").order("created_at",{ascending:false}).limit(500),
    db.from("project_milestones").select("id,project_id,title,status,due_at,sort_order").order("sort_order").limit(1000),
    db.from("project_deliverables").select("id,project_id,title,status,filename,created_at").neq("status","draft").order("created_at",{ascending:false}).limit(1000),
@@ -87,7 +87,7 @@ export async function POST(request:Request){
    const {data:client,error:clientError}=await db.from("clients").select("id,user_id").eq("id",parsed.data.clientId).maybeSingle()
    if(clientError)throw clientError
    if(!client)return json({error:"Client not found."},404)
-   const {data:project,error}=await db.from("projects").insert({client_id:client.id,name:parsed.data.name,description:parsed.data.description||null,status:parsed.data.status,deadline:parsed.data.deadline||null}).select("id,client_id,name,description,status,deadline,created_at").single()
+   const {data:project,error}=await db.from("projects").insert({client_id:client.id,category:parsed.data.category,name:parsed.data.name,description:parsed.data.description||null,status:parsed.data.status,deadline:parsed.data.deadline||null}).select("id,client_id,name,description,category,status,deadline,created_at").single()
    if(error)throw error
    if(client.user_id){
     try{await db.from("client_notifications").insert({customer_id:client.user_id,category:"project",title:"New project added",body:"HEMBOX added "+project.name+" to your workspace.",href:"/portal/projects/"+project.id})}catch(notificationError){console.error("[Admin client workspace] Project notification failed:",notificationError)}
