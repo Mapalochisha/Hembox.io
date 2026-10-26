@@ -11,6 +11,7 @@ const schema = z.object({
   brief: z.string().trim().min(10).max(4000),
   timing: z.enum(["flexible", "within_month", "urgent"]).default("flexible"),
   budget: z.string().trim().max(120).optional().default(""),
+  budgetCurrency: z.enum(["ZMW","USD"]).default("ZMW"),
   reference: z.string().trim().max(1000).optional().default(""),
 }).strict()
 function json(body: unknown, status = 200) { return NextResponse.json(body, { status, headers: { "Cache-Control": "no-store" } }) }
@@ -30,7 +31,7 @@ export async function POST(request: Request) {
       "Category: " + parsed.data.category,
       "Requested service: " + parsed.data.service,
       "Preferred timing: " + ({ flexible: "Flexible", within_month: "Within one month", urgent: "As soon as possible" }[parsed.data.timing]),
-      parsed.data.budget ? "Indicative budget: " + parsed.data.budget : null,
+      parsed.data.budget ? "Indicative budget (" + parsed.data.budgetCurrency + "): " + parsed.data.budget : null,
       parsed.data.reference ? "References or context: " + parsed.data.reference : null,
       "",
       "Project brief:",
