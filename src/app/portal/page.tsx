@@ -4,7 +4,7 @@ import Link from "next/link"
 import { useEffect, useState } from "react"
 import { PortalShell } from "@/components/portal/portal-shell"
 import {
-  ArrowRight, ArrowUpRight, BriefcaseBusiness, CalendarClock, CheckCircle2,
+  ArrowRight, ArrowUpRight, BriefcaseBusiness, CheckCircle2,
   CircleDollarSign, Clock3, FileText, FolderKanban, Globe2, MessageSquare,
   Plus, RefreshCw, Sparkles, Wallet
 } from "lucide-react"
