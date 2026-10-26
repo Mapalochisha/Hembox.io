@@ -40,8 +40,8 @@ create policy "Client workspace users can view own client records"
 drop policy if exists "Client workspace admins manage client records" on public.clients;
 create policy "Client workspace admins manage client records"
   on public.clients for all to authenticated
-  using (exists (select 1 from public.profiles p where p.id = (select auth.uid()) and p.role = 'admin'))
-  with check (exists (select 1 from public.profiles p where p.id = (select auth.uid()) and p.role = 'admin'));
+  using (public.get_user_role((select auth.uid())) = 'admin')
+  with check (public.get_user_role((select auth.uid())) = 'admin');
 
 drop policy if exists "Client workspace users can view own projects" on public.projects;
 create policy "Client workspace users can view own projects"
@@ -54,8 +54,8 @@ create policy "Client workspace users can view own projects"
 drop policy if exists "Client workspace admins manage projects" on public.projects;
 create policy "Client workspace admins manage projects"
   on public.projects for all to authenticated
-  using (exists (select 1 from public.profiles p where p.id = (select auth.uid()) and p.role = 'admin'))
-  with check (exists (select 1 from public.profiles p where p.id = (select auth.uid()) and p.role = 'admin'));
+  using (public.get_user_role((select auth.uid())) = 'admin')
+  with check (public.get_user_role((select auth.uid())) = 'admin');
 
 create table if not exists public.client_services (
   id uuid primary key default gen_random_uuid(),
@@ -86,8 +86,8 @@ create policy "Customers can view their own services"
 drop policy if exists "Admins manage client services" on public.client_services;
 create policy "Admins manage client services"
   on public.client_services for all to authenticated
-  using (exists (select 1 from public.profiles p where p.id = (select auth.uid()) and p.role = 'admin'))
-  with check (exists (select 1 from public.profiles p where p.id = (select auth.uid()) and p.role = 'admin'));
+  using (public.get_user_role((select auth.uid())) = 'admin')
+  with check (public.get_user_role((select auth.uid())) = 'admin');
 
 create table if not exists public.project_milestones (
   id uuid primary key default gen_random_uuid(),
@@ -116,8 +116,8 @@ create policy "Customers can view own project milestones"
 drop policy if exists "Admins manage project milestones" on public.project_milestones;
 create policy "Admins manage project milestones"
   on public.project_milestones for all to authenticated
-  using (exists (select 1 from public.profiles p where p.id=(select auth.uid()) and p.role='admin'))
-  with check (exists (select 1 from public.profiles p where p.id=(select auth.uid()) and p.role='admin'));
+  using (public.get_user_role((select auth.uid())) = 'admin')
+  with check (public.get_user_role((select auth.uid())) = 'admin');
 
 create table if not exists public.project_deliverables (
   id uuid primary key default gen_random_uuid(),
@@ -154,8 +154,8 @@ create policy "Customers can view own project deliverables"
 drop policy if exists "Admins manage project deliverables" on public.project_deliverables;
 create policy "Admins manage project deliverables"
   on public.project_deliverables for all to authenticated
-  using (exists (select 1 from public.profiles p where p.id=(select auth.uid()) and p.role='admin'))
-  with check (exists (select 1 from public.profiles p where p.id=(select auth.uid()) and p.role='admin'));
+  using (public.get_user_role((select auth.uid())) = 'admin')
+  with check (public.get_user_role((select auth.uid())) = 'admin');
 
 create table if not exists public.project_change_requests (
   id uuid primary key default gen_random_uuid(),
@@ -182,8 +182,8 @@ create policy "Customers can view own project change requests"
 drop policy if exists "Admins manage project change requests" on public.project_change_requests;
 create policy "Admins manage project change requests"
   on public.project_change_requests for all to authenticated
-  using (exists (select 1 from public.profiles p where p.id=(select auth.uid()) and p.role='admin'))
-  with check (exists (select 1 from public.profiles p where p.id=(select auth.uid()) and p.role='admin'));
+  using (public.get_user_role((select auth.uid())) = 'admin')
+  with check (public.get_user_role((select auth.uid())) = 'admin');
 
 create table if not exists public.project_activity (
   id uuid primary key default gen_random_uuid(),
@@ -207,8 +207,8 @@ create policy "Customers can view own project activity"
 drop policy if exists "Admins manage project activity" on public.project_activity;
 create policy "Admins manage project activity"
   on public.project_activity for all to authenticated
-  using (exists (select 1 from public.profiles p where p.id=(select auth.uid()) and p.role='admin'))
-  with check (exists (select 1 from public.profiles p where p.id=(select auth.uid()) and p.role='admin'));
+  using (public.get_user_role((select auth.uid())) = 'admin')
+  with check (public.get_user_role((select auth.uid())) = 'admin');
 
 create table if not exists public.client_files (
   id uuid primary key default gen_random_uuid(),
@@ -241,8 +241,8 @@ create policy "Customers can view own client files"
 drop policy if exists "Admins manage client files" on public.client_files;
 create policy "Admins manage client files"
   on public.client_files for all to authenticated
-  using (exists (select 1 from public.profiles p where p.id=(select auth.uid()) and p.role='admin'))
-  with check (exists (select 1 from public.profiles p where p.id=(select auth.uid()) and p.role='admin'));
+  using (public.get_user_role((select auth.uid())) = 'admin')
+  with check (public.get_user_role((select auth.uid())) = 'admin');
 
 create table if not exists public.client_notifications (
   id uuid primary key default gen_random_uuid(),
@@ -266,8 +266,8 @@ create policy "Customers can view own notifications"
 drop policy if exists "Admins manage client notifications" on public.client_notifications;
 create policy "Admins manage client notifications"
   on public.client_notifications for all to authenticated
-  using (exists (select 1 from public.profiles p where p.id=(select auth.uid()) and p.role='admin'))
-  with check (exists (select 1 from public.profiles p where p.id=(select auth.uid()) and p.role='admin'));
+  using (public.get_user_role((select auth.uid())) = 'admin')
+  with check (public.get_user_role((select auth.uid())) = 'admin');
 
 create table if not exists public.client_notification_preferences (
   customer_id uuid primary key references auth.users(id) on delete cascade,
