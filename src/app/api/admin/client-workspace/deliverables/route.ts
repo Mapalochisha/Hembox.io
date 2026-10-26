@@ -2,7 +2,6 @@ import { NextResponse } from "next/server"
 import { Buffer } from "node:buffer"
 import type { SupabaseClient } from "@supabase/supabase-js"
 import { createClient as createAuthClient } from "@/lib/supabase/server"
-import { createServiceClient } from "@/lib/supabase/service"
 
 export const dynamic="force-dynamic"
 const BUCKET="client-deliverables"
@@ -24,7 +23,7 @@ export async function POST(request:Request){
   if(!/^[0-9a-f-]{36}$/i.test(projectId)||title.length<2||title.length>180||!(candidate instanceof File))return json({error:"Provide a project, deliverable title and file."},400)
   if(candidate.size<1||candidate.size>MAX_BYTES)return json({error:"Files must be between 1 byte and 20 MB."},400)
   if(!ALLOWED[candidate.type])return json({error:"This file type is not supported."},400)
-  const db=createServiceClient() as unknown as SupabaseClient
+  const db=auth as unknown as SupabaseClient
   const {data:project,error:projectError}=await db.from("projects").select("id,client_id").eq("id",projectId).maybeSingle()
   if(projectError)throw projectError
   if(!project)return json({error:"Project not found."},404)
