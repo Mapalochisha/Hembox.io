@@ -38,18 +38,19 @@ export async function GET(request: Request) {
     const db = createServiceClient() as unknown as SupabaseClient
     const project = await getOwnedProject(db, projectId, user.id)
     if (!project) return json({ error: "Project not found." }, 404)
-    const [milestoneResult, deliverableResult, changeResult, activityResult] = await Promise.all([
+    const [milestoneResult, deliverableResult, changeResult, activityResult, filesResult] = await Promise.all([
       db.from("project_milestones").select("id,title,description,status,due_at,sort_order,approved_at,created_at,updated_at").eq("project_id", project.id).order("sort_order").order("created_at"),
       db.from("project_deliverables").select("id,milestone_id,title,description,filename,mime_type,size_bytes,version,status,feedback_note,shared_at,approved_at,created_at,updated_at").eq("project_id", project.id).neq("status","draft").neq("status","superseded").order("created_at",{ascending:false}),
       db.from("project_change_requests").select("id,title,description,status,decision_note,reviewed_at,created_at,updated_at").eq("project_id", project.id).eq("customer_id",user.id).order("created_at",{ascending:false}),
       db.from("project_activity").select("id,actor_role,event_type,title,details,created_at").eq("project_id", project.id).order("created_at",{ascending:false}).limit(100),
+      db.from("client_files").select("id,filename,mime_type,size_bytes,category,description,created_at").eq("customer_id",user.id).eq("project_id",project.id).eq("visibility","client").order("created_at",{ascending:false}).limit(200),
     ])
-    const failure = milestoneResult.error || deliverableResult.error || changeResult.error || activityResult.error
+    const failure = milestoneResult.error || deliverableResult.error || changeResult.error || activityResult.error || filesResult.error
     if (failure) {
       console.error("[Portal] Project collaboration read failed:", failure)
       return json({ error: "Project collaboration data is not available yet." }, 503)
     }
-    return json({ milestones: milestoneResult.data ?? [], deliverables: deliverableResult.data ?? [], changeRequests: changeResult.data ?? [], activity: activityResult.data ?? [] })
+    return json({ milestones: milestoneResult.data ?? [], deliverables: deliverableResult.data ?? [], changeRequests: changeResult.data ?? [], activity: activityResult.data ?? [], files: filesResult.data ?? [] })
   } catch (error) {
     console.error("[Portal] Project collaboration failed:", error)
     return json({ error: "Project collaboration data is temporarily unavailable." }, 503)
