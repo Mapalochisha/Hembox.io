@@ -1,7 +1,6 @@
 import { NextResponse } from "next/server"
 import type { SupabaseClient } from "@supabase/supabase-js"
 import { createClient as createAuthClient } from "@/lib/supabase/server"
-import { createServiceClient } from "@/lib/supabase/service"
 
 export const dynamic = "force-dynamic"
 
@@ -18,7 +17,7 @@ export async function GET() {
     // The service client is used only after resolving the user from the verified
     // session. Every customer-data query is explicitly scoped to that user or
     // to client records owned by that user; never accept an owner ID from input.
-    const db = createServiceClient() as unknown as SupabaseClient
+    const db = auth as unknown as SupabaseClient
     const [clientResult, invoiceResult, recentInvoiceResult, domainResult, conversationResult, serviceResult, notificationResult] = await Promise.all([
       db.from("clients").select("id,company_name,status").eq("user_id", user.id).limit(20),
       db.from("billing_invoices").select("id,invoice_number,status,currency,total_minor,due_at,created_at").eq("customer_id", user.id).in("status", ["unpaid", "partially_paid", "overdue"]).order("created_at", { ascending: false }).limit(100),
