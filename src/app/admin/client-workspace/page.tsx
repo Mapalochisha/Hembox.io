@@ -1,7 +1,7 @@
 "use client"
 
 import { ChangeEvent, FormEvent, useEffect, useMemo, useState } from "react"
-import { ArrowUpRight, BriefcaseBusiness, CalendarClock, CheckCircle2, FileText, FolderKanban, Loader2, Plus, RefreshCw, ShieldCheck, UploadCloud, Wrench } from "lucide-react"
+import { BriefcaseBusiness, CalendarClock, FileText, FolderKanban, Loader2, Plus, RefreshCw, ShieldCheck, UploadCloud, Wrench } from "lucide-react"
 
 type Client={id:string;user_id:string|null;company_name:string|null;status:string;profile:{full_name:string|null;email:string}|null}
 type Project={id:string;client_id:string;name:string;description:string|null;status:string;deadline:string|null;updated_at:string|null}
