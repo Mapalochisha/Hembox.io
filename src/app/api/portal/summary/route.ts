@@ -46,9 +46,9 @@ export async function GET() {
 
     const clients = clientResult.data ?? []
     const clientIds = clients.map((client) => client.id)
-    let projects: Array<{ id: string; name: string; description: string | null; status: string; deadline: string | null; updated_at: string | null }> = []
+    let projects: Array<{ id: string; name: string; description: string | null; category: string; status: string; deadline: string | null; updated_at: string | null }> = []
     if (clientIds.length) {
-      const { data, error } = await db.from("projects").select("id,name,description,status,deadline,updated_at,client_id").in("client_id", clientIds).order("updated_at", { ascending: false }).limit(100)
+      const { data, error } = await db.from("projects").select("id,name,description,category,status,deadline,updated_at,client_id").in("client_id", clientIds).order("updated_at", { ascending: false }).limit(100)
       if (error) {
         console.error("[Portal] Project summary query failed:", error)
         return json({ error: "Project information is temporarily unavailable." }, 503)
@@ -100,7 +100,7 @@ export async function GET() {
     }
     const activeProjects = projects.filter((project) => ["in_progress", "review"].includes(project.status))
     const recentProjects = projects.slice(0, 4).map((project) => ({
-      id: project.id, name: project.name, description: project.description,
+      id: project.id, name: project.name, description: project.description, category: project.category,
       status: project.status, deadline: project.deadline, updated_at: project.updated_at,
     }))
     const recentInvoices = outstandingInvoices.slice(0, 3).map((invoice) => ({
