@@ -2,7 +2,7 @@
 
 import Link from "next/link"
 import { useCallback, useEffect, useMemo, useState } from "react"
-import { Navbar } from "@/components/landing/navbar"
+import { PortalShell } from "@/components/portal/portal-shell"
 import { useAuth } from "@/components/providers/auth-provider"
 import { createClient, isSupabaseConfigured } from "@/lib/supabase/client"
 import { AlertCircle, CheckCircle2, Clock3, CreditCard, FileText, Loader2, RefreshCw, Search, Wallet } from "lucide-react"
@@ -253,8 +253,8 @@ export default function BillsPage() {
 
   const selectedMethod = methods.find((method) => method.id === methodId)
 
-  if (authLoading || loading) return <div className="min-h-screen bg-slate-50"><Navbar /><div className="mx-auto flex min-h-[60vh] max-w-6xl items-center justify-center px-6"><Loader2 className="h-7 w-7 animate-spin text-teal" /><span className="ml-3 text-sm text-slate-500">Loading your bills…</span></div></div>
-  if (!user) return <div className="min-h-screen bg-slate-50"><Navbar /><main className="mx-auto max-w-3xl px-6 pb-20 pt-36 text-center"><h1 className="text-3xl font-bold text-navy">Sign in to view your bills</h1><p className="mt-3 text-slate-600">Your invoices and payment claims are private to your account.</p><Link href="/login" className="mt-6 inline-flex rounded-xl bg-navy px-5 py-3 font-semibold text-white">Sign in</Link></main></div>
+  if (authLoading || loading) return <PortalShell title="Bills & payments"><div className="flex min-h-[45vh] items-center justify-center px-6"><Loader2 className="h-7 w-7 animate-spin text-teal" /><span className="ml-3 text-sm text-slate-500">Loading your bills…</span></div></PortalShell>
+  if (!user) return <PortalShell title="Bills & payments"><div className="py-16 text-center"><h2 className="text-xl font-bold text-navy">Sign in to view your bills</h2><p className="mt-3 text-slate-600">Your invoices and payment claims are private to your account.</p><Link href="/login" className="mt-6 inline-flex rounded-xl bg-navy px-5 py-3 font-semibold text-white">Sign in</Link></div></PortalShell>
 
   return (
     <div className="min-h-screen bg-slate-50 text-slate-900">
