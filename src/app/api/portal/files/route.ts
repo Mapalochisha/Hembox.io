@@ -2,6 +2,7 @@ import { NextResponse } from "next/server"
 import { Buffer } from "node:buffer"
 import type { SupabaseClient } from "@supabase/supabase-js"
 import { createClient as createAuthClient } from "@/lib/supabase/server"
+import { createServiceClient } from "@/lib/supabase/service"
 
 export const dynamic = "force-dynamic"
 const BUCKET = "client-deliverables"
@@ -36,6 +37,7 @@ export async function GET(request: Request) {
     if (!session) return json({ error: "Sign in to view your files." }, 401)
     const { auth, user } = session
     const db = auth as unknown as SupabaseClient
+    const storageDb: any = createServiceClient()
     const params = new URL(request.url).searchParams
     const fileId = params.get("fileId")
     const deliverableId = params.get("deliverableId")
@@ -47,7 +49,7 @@ export async function GET(request: Request) {
       if (error) throw error
       if (!deliverable || !(await ownedProject(db, deliverable.project_id, user.id))) return json({ error: "File not found." }, 404)
       if (deliverable.status === "draft" || deliverable.status === "superseded") return json({ error: "This deliverable is not available for download." }, 409)
-      const { data, error: signError } = await db.storage.from(deliverable.storage_bucket || BUCKET).createSignedUrl(deliverable.storage_path, 60)
+      const { data, error: signError } = await storageDb.storage.from(deliverable.storage_bucket || BUCKET).createSignedUrl(deliverable.storage_path, 60)
       if (signError) throw signError
       return json({ url: data.signedUrl, filename: deliverable.filename, expiresIn: 60 })
     }
@@ -57,7 +59,7 @@ export async function GET(request: Request) {
         .eq("id", fileId).eq("customer_id", user.id).eq("visibility", "client").maybeSingle()
       if (error) throw error
       if (!file) return json({ error: "File not found." }, 404)
-      const { data, error: signError } = await db.storage.from(file.storage_bucket || BUCKET).createSignedUrl(file.storage_path, 60)
+      const { data, error: signError } = await storageDb.storage.from(file.storage_bucket || BUCKET).createSignedUrl(file.storage_path, 60)
       if (signError) throw signError
       return json({ url: data.signedUrl, filename: file.filename, expiresIn: 60 })
     }
@@ -99,21 +101,22 @@ export async function POST(request: Request) {
     if (!ALLOWED[candidate.type]) return json({ error: "This file type is not supported. Upload an image, PDF, ZIP, text, Markdown or JSON file." }, 400)
 
     const db = auth as unknown as SupabaseClient
+    const serviceDb: any = createServiceClient()
     if (projectId && !(await ownedProject(db, projectId, user.id))) return json({ error: "Project not found." }, 404)
     const extension = ALLOWED[candidate.type]
     const objectName = crypto.randomUUID() + "." + extension
     const storagePath = user.id + "/uploads/" + objectName
-    const { error: uploadError } = await db.storage.from(BUCKET).upload(storagePath, Buffer.from(await candidate.arrayBuffer()), { contentType: candidate.type, upsert: false })
+    const { error: uploadError } = await serviceDb.storage.from(BUCKET).upload(storagePath, Buffer.from(await candidate.arrayBuffer()), { contentType: candidate.type, upsert: false })
     if (uploadError) throw uploadError
 
-    const { data: file, error: insertError } = await db.from("client_files").insert({
+    const { data: file, error: insertError } = await serviceDb.from("client_files").insert({
       customer_id: user.id, project_id: projectId || null, storage_bucket: BUCKET,
       storage_path: storagePath, filename: candidate.name.slice(0, 255),
       mime_type: candidate.type, size_bytes: candidate.size, category: "reference",
       description: description || null, visibility: "client", uploader_role: "customer", uploaded_by: user.id,
     }).select("id,project_id,filename,mime_type,size_bytes,category,description,created_at").single()
     if (insertError) {
-      await db.storage.from(BUCKET).remove([storagePath])
+      await serviceDb.storage.from(BUCKET).remove([storagePath])
       throw insertError
     }
     return json({ file }, 201)
