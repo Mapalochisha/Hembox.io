@@ -29,6 +29,19 @@ create table if not exists public.projects (
 
 create unique index if not exists clients_id_user_id_unique on public.clients(id,user_id);
 
+-- Keep role checks independent of profile-table RLS recursion.
+create or replace function public.get_user_role(user_id uuid)
+returns text
+language sql
+security definer
+stable
+set search_path = ''
+as $
+  select role from public.profiles where id = user_id limit 1;
+$;
+revoke all on function public.get_user_role(uuid) from public, anon;
+grant execute on function public.get_user_role(uuid) to authenticated, service_role;
+
 alter table public.clients enable row level security;
 alter table public.projects enable row level security;
 
