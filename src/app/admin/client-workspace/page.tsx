@@ -3,7 +3,8 @@
 import { ChangeEvent, FormEvent, useEffect, useMemo, useState } from "react"
 import { BriefcaseBusiness, CalendarClock, FileText, FolderKanban, Loader2, Plus, RefreshCw, ShieldCheck, UploadCloud, Wrench } from "lucide-react"
 
-type Account={id:string;email:string;full_name:string|null;role:string}\ntype Client={id:string;user_id:string|null;company_name:string|null;status:string;profile:{full_name:string|null;email:string}|null}
+type Account={id:string;email:string;full_name:string|null;role:string}
+type Client={id:string;user_id:string|null;company_name:string|null;status:string;profile:{full_name:string|null;email:string}|null}
 type Project={id:string;client_id:string;name:string;description:string|null;status:string;deadline:string|null;updated_at:string|null}
 type Service={id:string;client_id:string;project_id:string|null;customer_id:string;service_type:string;name:string;status:string;renews_at:string|null;currency:string|null}
 type Milestone={id:string;project_id:string;title:string;status:string;due_at:string|null;sort_order:number}
@@ -20,10 +21,15 @@ export default function AdminClientWorkspacePage(){
  const [saving,setSaving]=useState(false)
  const [error,setError]=useState("")
  const [notice,setNotice]=useState("")
- const [tab,setTab]=useState<Tab>("client")\n const [accountId,setAccountId]=useState("")\n const [companyName,setCompanyName]=useState("")\n const [industry,setIndustry]=useState("")\n const [website,setWebsite]=useState("")
+ const [tab,setTab]=useState<Tab>("client")
+ const [accountId,setAccountId]=useState("")
+ const [companyName,setCompanyName]=useState("")
+ const [industry,setIndustry]=useState("")
+ const [website,setWebsite]=useState("")
  const [clientId,setClientId]=useState("")
  const [projectId,setProjectId]=useState("")
- const [projectName,setProjectName]=useState("")\n const [projectCategory,setProjectCategory]=useState("brand_identity")
+ const [projectName,setProjectName]=useState("")
+ const [projectCategory,setProjectCategory]=useState("brand_identity")
  const [projectDescription,setProjectDescription]=useState("")
  const [projectStatus,setProjectStatus]=useState("draft")
  const [projectDeadline,setProjectDeadline]=useState("")
@@ -53,7 +59,8 @@ export default function AdminClientWorkspacePage(){
  const customerName=(id:string)=>{const client=data?.clients.find((item)=>item.user_id===id);return client?clientName(client.id):"Customer account"}
 
  async function post(body:Record<string,unknown>){setSaving(true);setError("");setNotice("");try{const response=await fetch("/api/admin/client-workspace",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(body)});const result=await response.json();if(!response.ok)throw new Error(result.error||"Could not save the record.");setNotice(result.message||"Saved.");if(result.client?.id)setClientId(result.client.id);if(result.project?.id){setProjectId(result.project.id);if(result.project.client_id)setClientId(result.project.client_id)}await load();return true}catch(e){setError(e instanceof Error?e.message:"Could not save the record.");return false}finally{setSaving(false)}}
- async function submitClient(event:FormEvent<HTMLFormElement>){event.preventDefault();if(await post({action:"create_client",userId:accountId,companyName,industry,website})){setCompanyName("");setIndustry("");setWebsite("")}}\n async function submitProject(event:FormEvent<HTMLFormElement>){event.preventDefault();if(await post({action:"create_project",clientId,category:projectCategory,name:projectName,description:projectDescription,status:projectStatus,deadline:iso(projectDeadline)})){setProjectName("");setProjectDescription("");setProjectDeadline("")}}
+ async function submitClient(event:FormEvent<HTMLFormElement>){event.preventDefault();if(await post({action:"create_client",userId:accountId,companyName,industry,website})){setCompanyName("");setIndustry("");setWebsite("")}}
+ async function submitProject(event:FormEvent<HTMLFormElement>){event.preventDefault();if(await post({action:"create_project",clientId,category:projectCategory,name:projectName,description:projectDescription,status:projectStatus,deadline:iso(projectDeadline)})){setProjectName("");setProjectDescription("");setProjectDeadline("")}}
  async function submitService(event:FormEvent<HTMLFormElement>){event.preventDefault();if(await post({action:"create_service",clientId,projectId:projectId||null,serviceType,name:serviceName,description:serviceDescription,status:serviceStatus,startsAt:iso(serviceStart),renewsAt:iso(serviceRenewal),currency:currency||null})){setServiceName("");setServiceDescription("");setServiceRenewal("")}}
  async function submitMilestone(event:FormEvent<HTMLFormElement>){event.preventDefault();if(await post({action:"create_milestone",projectId,title:milestoneTitle,description:milestoneDescription,status:milestoneStatus,dueAt:iso(milestoneDue),sortOrder:Number(milestoneOrder)||0})){setMilestoneTitle("");setMilestoneDescription("");setMilestoneDue("");setMilestoneOrder(String((Number(milestoneOrder)||0)+1))}}
  async function submitDeliverable(event:FormEvent<HTMLFormElement>){event.preventDefault();if(!deliverableFile)return;setSaving(true);setError("");setNotice("");try{const form=new FormData();form.set("projectId",projectId);if(deliverableMilestone)form.set("milestoneId",deliverableMilestone);form.set("title",deliverableTitle);form.set("description",deliverableDescription);form.set("file",deliverableFile);const response=await fetch("/api/admin/client-workspace/deliverables",{method:"POST",body:form});const result=await response.json();if(!response.ok)throw new Error(result.error||"Could not upload the deliverable.");setNotice(result.message||"Deliverable shared.");setDeliverableTitle("");setDeliverableDescription("");setDeliverableFile(null);setDeliverableMilestone("");const input=document.getElementById("admin-deliverable-file") as HTMLInputElement|null;if(input)input.value="";await load()}catch(e){setError(e instanceof Error?e.message:"Could not upload the deliverable.")}finally{setSaving(false)}}
