@@ -2,6 +2,7 @@ import { NextResponse } from "next/server"
 import { z } from "zod"
 import type { SupabaseClient } from "@supabase/supabase-js"
 import { createClient as createAuthClient } from "@/lib/supabase/server"
+import { createServiceClient } from "@/lib/supabase/service"
 
 export const dynamic = "force-dynamic"
 function json(body: unknown, status = 200) { return NextResponse.json(body, { status, headers: { "Cache-Control": "no-store" } }) }
@@ -68,6 +69,7 @@ export async function POST(request: Request) {
     const { data: { user }, error: authError } = await auth.auth.getUser()
     if (authError || !user) return json({ error: "Sign in to update this project." }, 401)
     const db = auth as unknown as SupabaseClient
+    const writeDb: any = createServiceClient()
     const project = await getOwnedProject(db, parsed.data.projectId, user.id)
     if (!project) return json({ error: "Project not found." }, 404)
 
@@ -77,7 +79,7 @@ export async function POST(request: Request) {
       if (error) throw error
       if (!milestone) return json({ error: "Milestone not found." }, 404)
       if (milestone.status !== "ready_for_review") return json({ error: "Only milestones ready for review can be approved." }, 409)
-      const { error: updateError } = await db.from("project_milestones").update({ status:"approved",approved_by:user.id,approved_at:new Date().toISOString(),updated_at:new Date().toISOString() }).eq("id",milestone.id)
+      const { error: updateError } = await writeDb.from("project_milestones").update({ status:"approved",approved_by:user.id,approved_at:new Date().toISOString(),updated_at:new Date().toISOString() }).eq("id",milestone.id)
       if (updateError) throw updateError
       activityTitle = "Milestone approved: " + milestone.title
     } else if (parsed.data.action === "approve_deliverable") {
@@ -85,7 +87,7 @@ export async function POST(request: Request) {
       if (error) throw error
       if (!deliverable) return json({ error: "Deliverable not found." }, 404)
       if (deliverable.status !== "shared") return json({ error: "Only shared deliverables can be approved." }, 409)
-      const { error: updateError } = await db.from("project_deliverables").update({ status:"approved",approved_by:user.id,approved_at:new Date().toISOString(),feedback_note:null,updated_at:new Date().toISOString() }).eq("id",deliverable.id)
+      const { error: updateError } = await writeDb.from("project_deliverables").update({ status:"approved",approved_by:user.id,approved_at:new Date().toISOString(),feedback_note:null,updated_at:new Date().toISOString() }).eq("id",deliverable.id)
       if (updateError) throw updateError
       activityTitle = "Deliverable approved: " + deliverable.title
     } else if (parsed.data.action === "request_deliverable_changes") {
@@ -96,13 +98,13 @@ export async function POST(request: Request) {
       if (updateError) throw updateError
       activityTitle = "Changes requested: " + deliverable.title
     } else {
-      const { error } = await db.from("project_change_requests").insert({ project_id:project.id,customer_id:user.id,title:parsed.data.title,description:parsed.data.description })
+      const { error } = await writeDb.from("project_change_requests").insert({ project_id:project.id,customer_id:user.id,title:parsed.data.title,description:parsed.data.description })
       if (error) throw error
       activityTitle = "Change request submitted: " + parsed.data.title
     }
 
     try {
-      await db.from("project_activity").insert({ project_id:project.id,actor_id:user.id,actor_role:"customer",event_type:parsed.data.action,title:activityTitle,details:{} })
+      await writeDb.from("project_activity").insert({ project_id:project.id,actor_id:user.id,actor_role:"customer",event_type:parsed.data.action,title:activityTitle,details:{} })
     } catch (activityError) {
       console.error("[Portal] Action saved but activity log failed:", activityError)
     }
