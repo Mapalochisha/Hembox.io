@@ -77,10 +77,10 @@ export default function ClientWorkspacePage() {
     </div>}
 
     <section aria-label="Workspace summary" className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4">
-      <SummaryCard title="Active projects" icon={FolderKanban} value={loading ? "—" : String(summary?.projects.active ?? 0)} note={loading ? "Loading project status" : (summary?.projects.total ?? 0) + " projects in your workspace"} href="/portal/projects" accent="teal"/>
+      <SummaryCard title="Active projects" icon={FolderKanban} value={loading || !summary ? "—" : String(summary.projects.active)} note={loading ? "Loading project status" : summary ? summary.projects.total + " projects in your workspace" : "Project summary unavailable"} href="/portal/projects" accent="teal"/>
       <SummaryCard title="Active services" icon={BriefcaseBusiness} value={loading ? "—" : summary?.services.tracked ? String(summary.services.active ?? 0) : "—"} note={loading ? "Loading services" : summary?.services.tracked ? "Currently active" : "Service inventory is being connected"} href="/portal/services" accent="blue"/>
-      <SummaryCard title="Outstanding balance" icon={Wallet} value={loading ? "—" : summary && Object.keys(summary.billing.outstanding_by_currency).length ? Object.entries(summary.billing.outstanding_by_currency).map(([currency, amount]) => money(amount, currency)).join(" · ") : money(0, "ZMW")} note={loading ? "Loading billing" : (summary?.billing.outstanding_count ?? 0) + " invoices to review"} href="/portal/bills" accent="amber"/>
-      <SummaryCard title="Conversations" icon={MessageSquare} value={loading ? "—" : String(summary?.conversations.count ?? 0)} note="Your conversations with HEMBOX" href="/portal/messages" accent="violet"/>
+      <SummaryCard title="Outstanding balance" icon={Wallet} value={loading || !summary ? "—" : Object.keys(summary.billing.outstanding_by_currency).length ? Object.entries(summary.billing.outstanding_by_currency).map(([currency, amount]) => money(amount, currency)).join(" · ") : money(0, "ZMW")} note={loading ? "Loading billing" : summary ? summary.billing.outstanding_count + " invoices to review" : "Billing summary unavailable"} href="/portal/bills" accent="amber"/>
+      <SummaryCard title="Conversations" icon={MessageSquare} value={loading || !summary ? "—" : String(summary.conversations.count)} note={summary ? "Your conversations with HEMBOX" : "Conversation summary unavailable"} href="/portal/messages" accent="violet"/>
     </section>
 
     <div className="mt-6 grid gap-5 xl:grid-cols-[minmax(0,1.45fr)_minmax(300px,0.85fr)]">
