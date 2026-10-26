@@ -57,11 +57,14 @@ export async function POST(request:Request){
  try{
   const db=createServiceClient() as unknown as SupabaseClient
   if(parsed.data.action==="create_project"){
-   const {data:client,error:clientError}=await db.from("clients").select("id").eq("id",parsed.data.clientId).maybeSingle()
+   const {data:client,error:clientError}=await db.from("clients").select("id,user_id").eq("id",parsed.data.clientId).maybeSingle()
    if(clientError)throw clientError
    if(!client)return json({error:"Client not found."},404)
    const {data:project,error}=await db.from("projects").insert({client_id:client.id,name:parsed.data.name,description:parsed.data.description||null,status:parsed.data.status,deadline:parsed.data.deadline||null}).select("id,client_id,name,description,status,deadline,created_at").single()
    if(error)throw error
+   if(client.user_id){
+    try{await db.from("client_notifications").insert({customer_id:client.user_id,category:"project",title:"New project added",body:"HEMBOX added "+project.name+" to your workspace.",href:"/portal/projects/"+project.id})}catch(notificationError){console.error("[Admin client workspace] Project notification failed:",notificationError)}
+   }
    return json({project,message:"Project created."},201)
   }
   if(parsed.data.action==="create_service"){
@@ -75,14 +78,17 @@ export async function POST(request:Request){
    }
    const {data:service,error}=await db.from("client_services").insert({customer_id:client.user_id,client_id:client.id,project_id:parsed.data.projectId||null,service_type:parsed.data.serviceType,name:parsed.data.name,description:parsed.data.description||null,status:parsed.data.status,starts_at:parsed.data.startsAt||null,renews_at:parsed.data.renewsAt||null,currency:parsed.data.currency||null,created_by:context.user.id}).select("id,name,status,service_type,renews_at,currency").single()
    if(error)throw error
+   try{await db.from("client_notifications").insert({customer_id:client.user_id,category:"service",title:"Service added to your workspace",body:"HEMBOX added "+service.name+" to your services.",href:"/portal/services"})}catch(notificationError){console.error("[Admin client workspace] Service notification failed:",notificationError)}
+   if(parsed.data.projectId){try{await db.from("project_activity").insert({project_id:parsed.data.projectId,actor_id:context.user.id,actor_role:"admin",event_type:"service_created",title:"Service added: "+service.name,details:{service_id:service.id}})}catch(activityError){console.error("[Admin client workspace] Service activity failed:",activityError)}}
    return json({service,message:"Service record created."},201)
   }
-  const {data:project,error:projectError}=await db.from("projects").select("id").eq("id",parsed.data.projectId).maybeSingle()
+  const {data:project,error:projectError}=await db.from("projects").select("id,client_id,name").eq("id",parsed.data.projectId).maybeSingle()
   if(projectError)throw projectError
   if(!project)return json({error:"Project not found."},404)
   const {data:milestone,error}=await db.from("project_milestones").insert({project_id:project.id,title:parsed.data.title,description:parsed.data.description||null,status:parsed.data.status,due_at:parsed.data.dueAt||null,sort_order:parsed.data.sortOrder,created_by:context.user.id}).select("id,title,status,due_at").single()
   if(error)throw error
-  await db.from("project_activity").insert({project_id:project.id,actor_id:context.user.id,actor_role:"admin",event_type:"milestone_created",title:"Milestone added: "+milestone.title,details:{}})
+  try{await db.from("project_activity").insert({project_id:project.id,actor_id:context.user.id,actor_role:"admin",event_type:"milestone_created",title:"Milestone added: "+milestone.title,details:{milestone_id:milestone.id}})}catch(activityError){console.error("[Admin client workspace] Milestone activity failed:",activityError)}
+  try{const {data:client}=await db.from("clients").select("user_id").eq("id",project.client_id).maybeSingle();if(client?.user_id)await db.from("client_notifications").insert({customer_id:client.user_id,category:"project",title:"Project milestone updated",body:"A new milestone was added to "+project.name+": "+milestone.title+".",href:"/portal/projects/"+project.id})}catch(notificationError){console.error("[Admin client workspace] Milestone notification failed:",notificationError)}
   return json({milestone,message:"Milestone added to the project."},201)
  }catch(error){console.error("[Admin client workspace] Save failed:",error);return json({error:"Unable to save this workspace record. Confirm the client portal migration is applied in this environment."},503)}
 }
