@@ -75,6 +75,9 @@ export async function GET() {
     const outstandingInvoices = invoices.filter((invoice) => (balanceByInvoice[invoice.id] ?? 0) > 0)
 
     const domains = domainResult.data ?? []
+    const recentDomains = domains.slice(0, 3).map((domain) => ({
+      id: domain.id, domain_name: domain.domain_name, status: domain.status, expires_at: domain.expires_at,
+    }))
     const conversations = (conversationResult.data ?? []).filter((item) => item.source === "billing" || item.source === "client-portal" || item.type === "contact")
     const activeProjects = projects.filter((project) => ["in_progress", "review"].includes(project.status))
     const recentProjects = projects.slice(0, 4).map((project) => ({
