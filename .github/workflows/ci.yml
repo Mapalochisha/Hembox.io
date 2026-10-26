@@ -178,6 +178,12 @@ jobs:
       - name: Seed default manual payment methods
         run: psql -v ON_ERROR_STOP=1 -f supabase/migrations/20261025110000_billing_default_payment_methods.sql
 
+      - name: Apply client portal workspace migration
+        run: psql -v ON_ERROR_STOP=1 -f supabase/migrations/20261026103000_client_portal_workspace.sql
+
+      - name: Assert client portal schema and ownership policies
+        run: psql -v ON_ERROR_STOP=1 -f supabase/tests/client_portal_workspace.test.sql
+
       - name: Assert domain schema constraints and security policies
         run: psql -v ON_ERROR_STOP=1 -f supabase/tests/domain_reselling_foundation.test.sql
 
