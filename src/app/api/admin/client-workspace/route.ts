@@ -7,6 +7,7 @@ import { createServiceClient } from "@/lib/supabase/service"
 export const dynamic = "force-dynamic"
 function json(body: unknown,status=200){return NextResponse.json(body,status===200?{headers:{"Cache-Control":"no-store"}}:{status,headers:{"Cache-Control":"no-store"}})}
 const schema=z.discriminatedUnion("action",[
+ z.object({action:z.literal("create_client"),userId:z.string().uuid(),companyName:z.string().trim().min(2).max(180),industry:z.string().trim().max(120).optional().default(""),website:z.string().trim().max(255).optional().default("")}).strict(),
  z.object({action:z.literal("create_project"),clientId:z.string().uuid(),name:z.string().trim().min(2).max(160),description:z.string().trim().max(4000).optional().default(""),status:z.enum(["draft","in_progress","review"]).default("draft"),deadline:z.string().datetime().nullable().optional()}).strict(),
  z.object({action:z.literal("create_service"),clientId:z.string().uuid(),projectId:z.string().uuid().nullable().optional(),serviceType:z.string().trim().min(2).max(80),name:z.string().trim().min(2).max(160),description:z.string().trim().max(2000).optional().default(""),status:z.enum(["pending","active","paused"]).default("active"),startsAt:z.string().datetime().nullable().optional(),renewsAt:z.string().datetime().nullable().optional(),currency:z.enum(["ZMW","USD"]).nullable().optional()}).strict(),
  z.object({action:z.literal("create_milestone"),projectId:z.string().uuid(),title:z.string().trim().min(2).max(180),description:z.string().trim().max(2000).optional().default(""),status:z.enum(["pending","in_progress","ready_for_review","blocked"]).default("pending"),dueAt:z.string().datetime().nullable().optional(),sortOrder:z.number().int().min(0).max(10000).default(0)}).strict(),
@@ -27,15 +28,16 @@ export async function GET(){
  if(context.status!==200)return json({error:context.status===401?"Authentication required.":context.status===403?"Administrator access required.":"Unable to verify administrator access."},context.status)
  try{
   const db=createServiceClient() as unknown as SupabaseClient
-  const [clientsResult,projectsResult,servicesResult,milestonesResult,deliverablesResult,changeRequestsResult]=await Promise.all([
+  const [clientsResult,projectsResult,servicesResult,milestonesResult,deliverablesResult,changeRequestsResult,accountsResult]=await Promise.all([
    db.from("clients").select("id,user_id,company_name,status,created_at").order("created_at",{ascending:false}).limit(500),
    db.from("projects").select("id,client_id,name,description,status,deadline,created_at,updated_at").order("updated_at",{ascending:false}).limit(500),
    db.from("client_services").select("id,client_id,project_id,customer_id,service_type,name,status,renews_at,currency,created_at").order("created_at",{ascending:false}).limit(500),
    db.from("project_milestones").select("id,project_id,title,status,due_at,sort_order").order("sort_order").limit(1000),
    db.from("project_deliverables").select("id,project_id,title,status,filename,created_at").neq("status","draft").order("created_at",{ascending:false}).limit(1000),
    db.from("project_change_requests").select("id,project_id,customer_id,title,description,status,decision_note,created_at").order("created_at",{ascending:false}).limit(1000),
+   db.from("profiles").select("id,email,full_name,role").neq("role","admin").order("email").limit(500),
   ])
-  if(clientsResult.error||projectsResult.error)throw clientsResult.error||projectsResult.error
+  if(clientsResult.error||projectsResult.error||accountsResult.error)throw clientsResult.error||projectsResult.error||accountsResult.error
   const missing=(error: {code?:string;message?:string}|null,table:string)=>Boolean(error&&(error.code==="PGRST205"||error.code==="42P01"||String(error.message||"").toLowerCase().includes(table)))
   const serviceMissing=missing(servicesResult.error,"client_services")
   const milestonesMissing=missing(milestonesResult.error,"project_milestones")
@@ -47,7 +49,7 @@ export async function GET(){
   const profilesResult=userIds.length?await db.from("profiles").select("id,email,full_name").in("id",userIds):{data:[],error:null}
   if(profilesResult.error)throw profilesResult.error
   const profiles=new Map((profilesResult.data??[]).map((profile)=>[profile.id,profile]))
-  return json({clients:clients.map((client)=>({...client,profile:client.user_id?profiles.get(client.user_id)??null:null})),projects:projectsResult.data??[],services:serviceMissing?[]:servicesResult.data??[],milestones:milestonesMissing?[]:milestonesResult.data??[],deliverables:deliverablesMissing?[]:deliverablesResult.data??[],changeRequests:changeRequestsMissing?[]:changeRequestsResult.data??[],servicesAvailable:!serviceMissing,milestonesAvailable:!milestonesMissing,deliverablesAvailable:!deliverablesMissing,changeRequestsAvailable:!changeRequestsMissing})
+  return json({clients:clients.map((client)=>({...client,profile:client.user_id?profiles.get(client.user_id)??null:null})),availableAccounts:accountsResult.data??[],projects:projectsResult.data??[],services:serviceMissing?[]:servicesResult.data??[],milestones:milestonesMissing?[]:milestonesResult.data??[],deliverables:deliverablesMissing?[]:deliverablesResult.data??[],changeRequests:changeRequestsMissing?[]:changeRequestsResult.data??[],servicesAvailable:!serviceMissing,milestonesAvailable:!milestonesMissing,deliverablesAvailable:!deliverablesMissing,changeRequestsAvailable:!changeRequestsMissing})
  }catch(error){console.error("[Admin client workspace] Read failed:",error);return json({error:"Client workspace management data is unavailable."},503)}
 }
 
@@ -59,6 +61,17 @@ export async function POST(request:Request){
  if(context.status!==200)return json({error:context.status===401?"Authentication required.":context.status===403?"Administrator access required.":"Unable to verify administrator access."},context.status)
  try{
   const db=createServiceClient() as unknown as SupabaseClient
+  if(parsed.data.action==="create_client"){
+   const {data:account,error:accountError}=await db.from("profiles").select("id,role").eq("id",parsed.data.userId).maybeSingle()
+   if(accountError)throw accountError
+   if(!account||account.role==="admin")return json({error:"Choose an existing customer account, not an administrator."},400)
+   const {data:existing,error:existingError}=await db.from("clients").select("id").eq("user_id",account.id).limit(1).maybeSingle()
+   if(existingError)throw existingError
+   if(existing)return json({error:"This account already has a client record. Use that record to manage its projects and services."},409)
+   const {data:client,error}=await db.from("clients").insert({user_id:account.id,company_name:parsed.data.companyName,industry:parsed.data.industry||null,website:parsed.data.website||null,status:"active"}).select("id,user_id,company_name,status,created_at").single()
+   if(error)throw error
+   return json({client,message:"Client workspace created and linked to the selected account."},201)
+  }
   if(parsed.data.action==="review_change_request"){
    const {data:changeRequest,error:changeError}=await db.from("project_change_requests").select("id,project_id,customer_id,title").eq("id",parsed.data.changeRequestId).maybeSingle()
    if(changeError)throw changeError
