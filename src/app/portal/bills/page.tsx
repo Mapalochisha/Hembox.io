@@ -2,7 +2,7 @@
 
 import Link from "next/link"
 import { useCallback, useEffect, useMemo, useState } from "react"
-import { Navbar } from "@/components/landing/navbar"
+import { PortalShell } from "@/components/portal/portal-shell"
 import { useAuth } from "@/components/providers/auth-provider"
 import { createClient, isSupabaseConfigured } from "@/lib/supabase/client"
 import { AlertCircle, CheckCircle2, Clock3, CreditCard, FileText, Loader2, RefreshCw, Search, Wallet } from "lucide-react"
@@ -253,13 +253,12 @@ export default function BillsPage() {
 
   const selectedMethod = methods.find((method) => method.id === methodId)
 
-  if (authLoading || loading) return <div className="min-h-screen bg-slate-50"><Navbar /><div className="mx-auto flex min-h-[60vh] max-w-6xl items-center justify-center px-6"><Loader2 className="h-7 w-7 animate-spin text-teal" /><span className="ml-3 text-sm text-slate-500">Loading your bills…</span></div></div>
-  if (!user) return <div className="min-h-screen bg-slate-50"><Navbar /><main className="mx-auto max-w-3xl px-6 pb-20 pt-36 text-center"><h1 className="text-3xl font-bold text-navy">Sign in to view your bills</h1><p className="mt-3 text-slate-600">Your invoices and payment claims are private to your account.</p><Link href="/login" className="mt-6 inline-flex rounded-xl bg-navy px-5 py-3 font-semibold text-white">Sign in</Link></main></div>
+  if (authLoading || loading) return <PortalShell title="Bills & payments"><div className="flex min-h-[45vh] items-center justify-center px-6"><Loader2 className="h-7 w-7 animate-spin text-teal" /><span className="ml-3 text-sm text-slate-500">Loading your bills…</span></div></PortalShell>
+  if (!user) return <PortalShell title="Bills & payments"><div className="py-16 text-center"><h2 className="text-xl font-bold text-navy">Sign in to view your bills</h2><p className="mt-3 text-slate-600">Your invoices and payment claims are private to your account.</p><Link href="/login" className="mt-6 inline-flex rounded-xl bg-navy px-5 py-3 font-semibold text-white">Sign in</Link></div></PortalShell>
 
   return (
-    <div className="min-h-screen bg-slate-50 text-slate-900">
-      <Navbar />
-      <main className="mx-auto max-w-7xl px-4 pb-20 pt-28 sm:px-6 lg:px-8">
+    <PortalShell title="Bills & payments">
+      <div className="mx-auto max-w-7xl">
         <div className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
           <div><p className="text-xs font-bold uppercase tracking-[0.18em] text-teal">Account centre</p><h1 className="mt-2 text-3xl font-bold tracking-tight text-navy sm:text-4xl">Bills & payments</h1><p className="mt-2 max-w-2xl text-sm leading-6 text-slate-600">Review invoices, track payment claims, and discuss alternative payment arrangements directly with HEMBOX.</p></div>
           <button onClick={() => void load()} className="inline-flex items-center justify-center gap-2 self-start rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-semibold text-slate-700 shadow-sm hover:bg-slate-50 sm:self-auto"><RefreshCw className="h-4 w-4" /> Refresh</button>
@@ -315,7 +314,7 @@ export default function BillsPage() {
         </section>
 
         <div className="mt-5 flex items-start gap-3 rounded-2xl border border-slate-200 bg-white p-4 text-xs leading-5 text-slate-500"><AlertCircle className="mt-0.5 h-4 w-4 shrink-0 text-slate-400" /><p>Submitting payment details only creates a claim for review. Your invoice balance changes after HEMBOX verifies the funds and records the allocation. Never send passwords, PINs, or one-time codes in a payment note.</p></div>
-      </main>
+      </div>
 
       {arrangementInvoice && <div className="fixed inset-0 z-[100] flex items-end justify-center bg-slate-950/50 p-0 sm:items-center sm:p-4" role="presentation" onMouseDown={(event) => { if (event.target === event.currentTarget && !arrangementSubmitting) setArrangementInvoice(null) }}><section role="dialog" aria-modal="true" aria-labelledby="arrangement-modal-title" className="max-h-[92vh] w-full max-w-xl overflow-y-auto rounded-t-3xl bg-white p-5 shadow-2xl sm:rounded-3xl sm:p-7"><p className="text-xs font-bold uppercase tracking-wider text-teal">In-portal request</p><h2 id="arrangement-modal-title" className="mt-1 text-2xl font-bold text-navy">Request an arrangement</h2><p className="mt-2 text-sm text-slate-500">{arrangementInvoice.invoice_number} · Balance {money(outstanding(arrangementInvoice),arrangementInvoice.currency)}</p><p className="mt-3 text-sm text-slate-600">Explain what would work for you. HEMBOX will review the request in its existing message inbox. Submitting does not change the invoice balance.</p><div className="mt-5 space-y-4"><label className="block"><span className="mb-1.5 block text-sm font-semibold">Requested terms</span><textarea value={arrangementTerms} onChange={e=>setArrangementTerms(e.target.value)} rows={4} maxLength={3000} required placeholder="For example, request to pay in two instalments on agreed dates…" className="w-full rounded-xl border border-slate-200 p-3 text-sm outline-none focus:border-teal"/></label><label className="block"><span className="mb-1.5 block text-sm font-semibold">Requested payment amount (optional, {arrangementInvoice.currency})</span><input value={arrangementAmount} onChange={e=>setArrangementAmount(e.target.value)} inputMode="decimal" placeholder="0.00" className="w-full rounded-xl border border-slate-200 p-3 text-sm outline-none focus:border-teal"/></label><label className="block"><span className="mb-1.5 block text-sm font-semibold">Preferred method (optional)</span><input value={arrangementMethod} onChange={e=>setArrangementMethod(e.target.value)} maxLength={40} placeholder="e.g. MTN Mobile Money" className="w-full rounded-xl border border-slate-200 p-3 text-sm outline-none focus:border-teal"/></label></div><div className="mt-6 flex flex-col-reverse gap-3 sm:flex-row sm:justify-end"><button onClick={()=>setArrangementInvoice(null)} disabled={arrangementSubmitting} className="rounded-xl border border-slate-200 px-4 py-3 text-sm font-semibold">Cancel</button><button onClick={()=>void requestArrangement()} disabled={arrangementSubmitting} className="rounded-xl bg-navy px-5 py-3 text-sm font-semibold text-white disabled:opacity-50">{arrangementSubmitting?"Submitting…":"Send request"}</button></div></section></div>}
       {selectedInvoice && <div className="fixed inset-0 z-[100] flex items-end justify-center bg-slate-950/50 p-0 sm:items-center sm:p-4" role="presentation" onMouseDown={(event) => { if (event.target === event.currentTarget && !submitting) setSelectedInvoice(null) }}>
@@ -334,6 +333,6 @@ export default function BillsPage() {
         </section>
       </div>}
       <div className="hidden print:block"><p>HEMBOX.io billing statement</p></div>
-    </div>
+    </PortalShell>
   )
 }
