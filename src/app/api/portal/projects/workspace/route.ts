@@ -18,11 +18,14 @@ async function getOwnedProject(db: SupabaseClient, projectId: string, customerId
   if (clientsError) throw clientsError
   const clientIds = (clients ?? []).map((client) => client.id)
   if (!clientIds.length) return null
-  const { data: project, error } = await db.from("projects")
+  let result = await db.from("projects")
     .select("id,client_id,name,description,category,status,deadline,created_at,updated_at")
     .eq("id", projectId).in("client_id", clientIds).maybeSingle()
-  if (error) throw error
-  return project
+  if (result.error && (result.error.code === "PGRST204" || result.error.code === "42703" || String(result.error.message || "").toLowerCase().includes("category"))) {
+    result = await db.from("projects").select("id,client_id,name,description,status,deadline,created_at,updated_at").eq("id", projectId).in("client_id", clientIds).maybeSingle()
+  }
+  if (result.error) throw result.error
+  return result.data ? { ...result.data, category: result.data.category || "custom" } : null
 }
 
 export async function GET(request: Request) {
