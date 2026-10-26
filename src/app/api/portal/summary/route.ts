@@ -61,7 +61,7 @@ export async function GET() {
     }
     const allocatedByInvoice: Record<string, number> = {}
     for (const allocation of allocations ?? []) {
-      const amount = Number(allocation.amount_minor || 0) * (allocation.allocation_type === "reverse" ? -1 : 1)
+      const amount = Number(allocation.amount_minor || 0) * (allocation.allocation_type === "allocate" ? 1 : -1)
       allocatedByInvoice[allocation.invoice_id] = (allocatedByInvoice[allocation.invoice_id] ?? 0) + amount
     }
     const dueByCurrency: Record<string, number> = {}
