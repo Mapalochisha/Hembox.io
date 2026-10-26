@@ -16,6 +16,7 @@ type Summary = {
   billing: { outstanding_by_currency: Record<string, number>; invoices: Array<{ id: string; invoice_number: string; status: string; currency: string; total_minor: number; due_at: string | null }>; outstanding_count: number }
   domains: { count: number; recent: Array<{ id: string; domain_name: string; status: string; expires_at: string | null }> }
   conversations: { count: number }
+  notifications: { tracked: boolean; unread_count: number | null }
   activity: Array<{ id: string; kind: string; title: string; detail: string; at: string | null }>
 }
 
@@ -117,7 +118,8 @@ export default function ClientWorkspacePage() {
               <span className="mt-0.5 grid h-8 w-8 shrink-0 place-items-center rounded-lg bg-white text-violet-700"><CheckCircle2 className="h-4 w-4"/></span>
               <span className="min-w-0 flex-1"><span className="block text-xs font-bold text-slate-800">Project ready for review</span><span className="mt-1 block text-[11px] text-slate-600">{project.name}</span></span><ArrowUpRight className="mt-1 h-4 w-4 shrink-0 text-violet-700"/>
             </Link>)}
-            {!(summary?.billing.invoices.length) && !(summary?.projects.recent ?? []).some((project) => project.status === "review") && <div className="rounded-xl bg-[#f3faf8] px-4 py-5 text-center">
+            {summary?.notifications.tracked && (summary.notifications.unread_count ?? 0) > 0 && <Link href="/portal/notifications" className="flex items-start gap-3 rounded-xl border border-blue-100 bg-blue-50/70 p-3.5 transition hover:border-blue-200"><span className="mt-0.5 grid h-8 w-8 shrink-0 place-items-center rounded-lg bg-white text-blue-700"><MessageSquare className="h-4 w-4"/></span><span className="min-w-0 flex-1"><span className="block text-xs font-bold text-slate-800">New workspace updates</span><span className="mt-1 block text-[11px] leading-5 text-slate-600">{summary.notifications.unread_count} unread notification(s).</span></span><ArrowUpRight className="mt-1 h-4 w-4 shrink-0 text-blue-700"/></Link>}
+            {summary && !(summary.billing.invoices.length) && !(summary.projects.recent ?? []).some((project) => project.status === "review") && !(summary.notifications.tracked && (summary.notifications.unread_count ?? 0) > 0) && <div className="rounded-xl bg-[#f3faf8] px-4 py-5 text-center">
               <CheckCircle2 className="mx-auto h-5 w-5 text-[#16867b]"/>
               <p className="mt-2 text-xs font-semibold text-slate-800">You’re all caught up</p>
               <p className="mt-1 text-[11px] leading-5 text-slate-500">We’ll surface invoices and project reviews here when action is needed.</p>
