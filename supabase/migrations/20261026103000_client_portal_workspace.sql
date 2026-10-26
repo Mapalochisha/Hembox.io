@@ -36,9 +36,9 @@ language sql
 security definer
 stable
 set search_path = ''
-as $
+as $role$
   select role from public.profiles where id = user_id limit 1;
-$;
+$role$;
 revoke all on function public.get_user_role(uuid) from public, anon;
 grant execute on function public.get_user_role(uuid) to authenticated, service_role;
 
