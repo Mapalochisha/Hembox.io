@@ -50,6 +50,18 @@ insert into public.client_notification_preferences(customer_id) values
   ('77777777-7777-4777-8777-777777777771'),
   ('77777777-7777-4777-8777-777777777772');
 
+do $ownership$
+begin
+  begin
+    insert into public.client_services(customer_id,client_id,service_type,name,status)
+    values ('77777777-7777-4777-8777-777777777771','77777777-7777-4777-8777-777777777782','hosting','Mismatched service','active');
+    raise exception 'A service linked to a different customer account was unexpectedly accepted';
+  exception when foreign_key_violation then
+    null;
+  end;
+end
+$ownership$;
+
 do $test$
 declare
   table_name text;
@@ -90,6 +102,7 @@ begin
   if (select count(*) from public.project_activity) <> 1 then raise exception 'Client can read another customer project activity'; end if;
   if (select count(*) from public.client_files) <> 1 then raise exception 'Client can read another customer file'; end if;
   if (select count(*) from public.client_notifications) <> 1 then raise exception 'Client can read another customer notification'; end if;
+  if (select count(*) from public.client_notification_preferences) <> 1 then raise exception 'Client can read another customer notification preference'; end if;
 end
 $rls$;
 reset role;
