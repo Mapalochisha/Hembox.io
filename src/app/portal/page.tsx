@@ -11,7 +11,7 @@ import {
 
 type Summary = {
   client: { id: string; company_name: string | null; status: string | null } | null
-  projects: { active: number; total: number; recent: Array<{ id: string; name: string; description: string | null; status: string; deadline: string | null; updated_at: string | null }> }
+  projects: { active: number; total: number; recent: Array<{ id: string; name: string; description: string | null; category: string; status: string; deadline: string | null; updated_at: string | null }> }
   services: { tracked: boolean; active: number | null }
   billing: { outstanding_by_currency: Record<string, number>; invoices: Array<{ id: string; invoice_number: string; status: string; currency: string; total_minor: number; due_at: string | null }>; outstanding_count: number }
   domains: { count: number; recent: Array<{ id: string; domain_name: string; status: string; expires_at: string | null }> }
@@ -94,7 +94,7 @@ export default function ClientWorkspacePage() {
           : summary?.projects.recent.length ? <div className="divide-y divide-slate-100">
             {summary.projects.recent.map((project) => <Link key={project.id} href={"/portal/projects/" + project.id} className="flex items-center gap-3 px-5 py-4 transition hover:bg-slate-50/80 sm:px-6">
               <span className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-[#edf8f6] text-[#16867b]"><FolderKanban className="h-[18px] w-[18px]"/></span>
-              <span className="min-w-0 flex-1"><span className="block truncate text-sm font-semibold text-slate-800">{project.name}</span><span className="mt-1 block truncate text-xs text-slate-500">{project.description || "Project with HEMBOX"} · Updated {date(project.updated_at)}</span></span>
+              <span className="min-w-0 flex-1"><span className="block truncate text-sm font-semibold text-slate-800">{project.name}</span><span className="mt-1 block truncate text-xs text-slate-500">{titleCase(project.category)} · {project.description || "Project with HEMBOX"} · Updated {date(project.updated_at)}</span></span>
               <span className="hidden rounded-full bg-slate-100 px-2.5 py-1 text-[10px] font-semibold text-slate-600 sm:inline-flex">{titleCase(project.status)}</span>
               <ArrowUpRight className="h-4 w-4 shrink-0 text-slate-400"/>
             </Link>)}
