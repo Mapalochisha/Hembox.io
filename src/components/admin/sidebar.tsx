@@ -31,6 +31,7 @@ const menuItems = [
   { icon: BarChart3, label: "Analytics", href: "/admin/analytics" },
   { icon: Users, label: "Clients", href: "/admin/clients" },
   { icon: FolderKanban, label: "Projects", href: "/admin/projects" },
+  { icon: Briefcase, label: "Client Workspace", href: "/admin/client-workspace" },
   { icon: Briefcase, label: "Services", href: "/admin/services" },
   { icon: Star, label: "Portfolio", href: "/admin/portfolio" },
   { icon: DollarSign, label: "Pricing", href: "/admin/pricing" },
