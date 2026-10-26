@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server"
 import { z } from "zod"
-import type { SupabaseClient } from "@supabase/supabase-js"
 import { createClient as createAuthClient } from "@/lib/supabase/server"
+import { createServiceClient } from "@/lib/supabase/service"
 
 export const dynamic = "force-dynamic"
 const sendSchema = z.object({ conversationId: z.string().uuid(), body: z.string().trim().min(1).max(5000) }).strict()
@@ -12,7 +12,7 @@ export async function GET() {
     const auth = createAuthClient()
     const { data: { user }, error: authError } = await auth.auth.getUser()
     if (authError || !user) return json({ error: "Sign in to view your messages." }, 401)
-    const db = auth as unknown as SupabaseClient
+    const db: any = createServiceClient()
     const { data: threads, error } = await db.from("inquiries")
       .select("id,type,status,source,message,created_at,updated_at")
       .eq("customer_id", user.id).order("updated_at", { ascending: false }).limit(100)
