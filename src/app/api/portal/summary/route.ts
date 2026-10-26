@@ -19,9 +19,10 @@ export async function GET() {
     // session. Every customer-data query is explicitly scoped to that user or
     // to client records owned by that user; never accept an owner ID from input.
     const db = createServiceClient() as unknown as SupabaseClient
-    const [clientResult, invoiceResult, domainResult, conversationResult, serviceResult, notificationResult] = await Promise.all([
+    const [clientResult, invoiceResult, recentInvoiceResult, domainResult, conversationResult, serviceResult, notificationResult] = await Promise.all([
       db.from("clients").select("id,company_name,status").eq("user_id", user.id).limit(20),
       db.from("billing_invoices").select("id,invoice_number,status,currency,total_minor,due_at,created_at").eq("customer_id", user.id).in("status", ["unpaid", "partially_paid", "overdue"]).order("created_at", { ascending: false }).limit(100),
+      db.from("billing_invoices").select("id,invoice_number,status,currency,total_minor,due_at,created_at").eq("customer_id", user.id).order("created_at", { ascending: false }).limit(20),
       db.from("domain_orders").select("id,domain_name,status,expires_at,created_at").eq("customer_id", user.id).order("created_at", { ascending: false }).limit(100),
       db.from("inquiries").select("id,type,status,source,message,created_at").eq("customer_id", user.id).order("created_at", { ascending: false }).limit(100),
       db.from("client_services").select("id,status,renews_at,name").eq("customer_id", user.id).limit(200),
@@ -38,7 +39,7 @@ export async function GET() {
       notificationResult.error.code === "42P01" ||
       String(notificationResult.error.message || "").toLowerCase().includes("client_notifications")
     ))
-    const failure = clientResult.error || invoiceResult.error || domainResult.error || conversationResult.error || (serviceTableMissing ? null : serviceResult.error) || (notificationTableMissing ? null : notificationResult.error)
+    const failure = clientResult.error || invoiceResult.error || recentInvoiceResult.error || domainResult.error || conversationResult.error || (serviceTableMissing ? null : serviceResult.error) || (notificationTableMissing ? null : notificationResult.error)
     if (failure) {
       console.error("[Portal] Summary query failed:", failure)
       return json({ error: "Your workspace summary is temporarily unavailable." }, 503)
@@ -121,7 +122,7 @@ export async function GET() {
       activity: [
         ...(projectActivityTableMissing ? [] : (projectActivityResult.data ?? []).map((item) => ({ id: "project-activity-" + item.id, kind: "project", title: item.title, detail: item.event_type.replaceAll("_", " "), at: item.created_at }))),
         ...projects.slice(0, 4).map((item) => ({ id: "project-" + item.id, kind: "project", title: item.name, detail: "Project status: " + item.status.replaceAll("_", " "), at: item.updated_at })),
-        ...invoices.slice(0, 3).map((item) => ({ id: "invoice-" + item.id, kind: "billing", title: "Invoice " + item.invoice_number, detail: "Status: " + item.status.replaceAll("_", " "), at: item.created_at })),
+        ...(recentInvoiceResult.data ?? []).slice(0, 4).map((item) => ({ id: "invoice-" + item.id, kind: "billing", title: "Invoice " + item.invoice_number, detail: "Status: " + item.status.replaceAll("_", " "), at: item.created_at })),
         ...domains.slice(0, 3).map((item) => ({ id: "domain-" + item.id, kind: "domain", title: item.domain_name, detail: "Domain order: " + item.status.replaceAll("_", " "), at: item.created_at })),
       ].filter((item) => item.at).sort((a, b) => new Date(b.at as string).getTime() - new Date(a.at as string).getTime()).slice(0, 6),
     })
