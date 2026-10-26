@@ -20,7 +20,7 @@ export async function POST(request:Request){
  if(role!=="admin")return json({error:"Administrator access required."},403)
  try{
   const db=createServiceClient() as unknown as SupabaseClient
-  const {data:client,error:clientError}=await db.from("clients").select("user_id").eq("user_id",parsed.data.customerId).maybeSingle()
+  const {data:client,error:clientError}=await db.from("clients").select("user_id").eq("user_id",parsed.data.customerId).limit(1).maybeSingle()
   if(clientError)throw clientError
   // Customer IDs are auth user IDs; only notify accounts represented by an owned client record.
   if(!client)return json({error:"Customer account not found."},404)
