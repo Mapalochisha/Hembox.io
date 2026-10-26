@@ -21,14 +21,19 @@ export async function GET(request: Request) {
     let query = db.from("projects").select("id,client_id,name,description,category,status,deadline,created_at,updated_at").in("client_id", clientIds).order("updated_at", { ascending: false }).limit(200)
     const projectId = new URL(request.url).searchParams.get("projectId")
     if (projectId) query = query.eq("id", projectId)
-    let result = await query
-    if (result.error && (result.error.code === "PGRST204" || result.error.code === "42703" || String(result.error.message || "").toLowerCase().includes("category"))) {
+    type ProjectRow = { id:string; client_id:string; name:string; description:string|null; category?:string|null; status:string; deadline:string|null; created_at:string; updated_at:string }
+    const initial = await query
+    let data = initial.data as unknown as ProjectRow[] | null
+    let queryError = initial.error as {code?:string;message?:string}|null
+    if (queryError && (queryError.code === "PGRST204" || queryError.code === "42703" || String(queryError.message || "").toLowerCase().includes("category"))) {
       let fallback = db.from("projects").select("id,client_id,name,description,status,deadline,created_at,updated_at").in("client_id", clientIds).order("updated_at", { ascending: false }).limit(200)
       if (projectId) fallback = fallback.eq("id", projectId)
-      result = await fallback
+      const fallbackResult = await fallback
+      data = fallbackResult.data as unknown as ProjectRow[] | null
+      queryError = fallbackResult.error
     }
-    if (result.error) throw result.error
-    const projects = (result.data ?? []).map((project) => ({ ...project, category: project.category || "custom" }))
+    if (queryError) throw queryError
+    const projects = (data ?? []).map((project) => ({ ...project, category: project.category || "custom" }))
     if (projectId && !projects.length) return json({ error: "Project not found." }, 404)
     return json({ projects, clients: clients ?? [] })
   } catch (error) {
