@@ -18,7 +18,7 @@ export async function GET(request: Request) {
     const clientIds = (clients ?? []).map((client) => client.id)
     if (!clientIds.length) return json({ projects: [] })
 
-    let query = db.from("projects").select("id,client_id,name,description,status,deadline,created_at,updated_at").in("client_id", clientIds).order("updated_at", { ascending: false }).limit(200)
+    let query = db.from("projects").select("id,client_id,name,description,category,status,deadline,created_at,updated_at").in("client_id", clientIds).order("updated_at", { ascending: false }).limit(200)
     const projectId = new URL(request.url).searchParams.get("projectId")
     if (projectId) query = query.eq("id", projectId)
     const { data, error } = await query
