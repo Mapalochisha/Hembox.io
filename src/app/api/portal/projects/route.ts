@@ -1,7 +1,6 @@
 import { NextResponse } from "next/server"
 import type { SupabaseClient } from "@supabase/supabase-js"
 import { createClient as createAuthClient } from "@/lib/supabase/server"
-import { createServiceClient } from "@/lib/supabase/service"
 
 export const dynamic = "force-dynamic"
 function json(body: unknown, status = 200) { return NextResponse.json(body, { status, headers: { "Cache-Control": "no-store" } }) }
@@ -12,7 +11,7 @@ export async function GET(request: Request) {
     const { data: { user }, error: authError } = await auth.auth.getUser()
     if (authError || !user) return json({ error: "Sign in to view your projects." }, 401)
 
-    const db = createServiceClient() as unknown as SupabaseClient
+    const db = auth as unknown as SupabaseClient
     const { data: clients, error: clientError } = await db.from("clients").select("id,company_name").eq("user_id", user.id).limit(20)
     if (clientError) throw clientError
     const clientIds = (clients ?? []).map((client) => client.id)
