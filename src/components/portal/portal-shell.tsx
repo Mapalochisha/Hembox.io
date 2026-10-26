@@ -6,7 +6,7 @@ import { useState } from "react"
 import { useAuth } from "@/components/providers/auth-provider"
 import { cn } from "@/lib/utils"
 import {
-  Activity, BriefcaseBusiness, ChevronDown, CreditCard, Files, FolderKanban,
+  BriefcaseBusiness, ChevronDown, CreditCard, Files, FolderKanban,
   Globe2, LayoutDashboard, LifeBuoy, Menu, MessageSquare, Settings2, Sparkles,
   X, LogOut, ArrowUpRight
 } from "lucide-react"
