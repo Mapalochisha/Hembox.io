@@ -17,14 +17,14 @@ export async function GET() {
       .select("id,type,status,source,message,created_at,updated_at")
       .eq("customer_id", user.id).order("updated_at", { ascending: false }).limit(100)
     if (error) throw error
-    const ids = (threads ?? []).map((thread) => thread.id)
+    const ids = (threads ?? []).map((thread: any) => thread.id)
     const { data: messages, error: messagesError } = ids.length
       ? await db.from("inquiry_messages").select("id,inquiry_id,sender_role,body,created_at").in("inquiry_id", ids).order("created_at", { ascending: true }).limit(1000)
       : { data: [], error: null }
     if (messagesError) throw messagesError
     const byThread: Record<string, typeof messages> = {}
     for (const message of messages ?? []) byThread[message.inquiry_id] = [...(byThread[message.inquiry_id] ?? []), message]
-    return json({ threads: (threads ?? []).map((thread) => ({ ...thread, messages: byThread[thread.id]?.length ? byThread[thread.id] : thread.message ? [{ id: "initial-" + thread.id, inquiry_id: thread.id, sender_role: "customer", body: thread.message, created_at: thread.created_at }] : [] })) })
+    return json({ threads: (threads ?? []).map((thread: any) => ({ ...thread, messages: byThread[thread.id]?.length ? byThread[thread.id] : thread.message ? [{ id: "initial-" + thread.id, inquiry_id: thread.id, sender_role: "customer", body: thread.message, created_at: thread.created_at }] : [] })) })
   } catch (error) {
     console.error("[Portal] Message inbox failed:", error)
     return json({ error: "Messages are temporarily unavailable." }, 503)
@@ -39,7 +39,7 @@ export async function POST(request: Request) {
     const auth = createAuthClient()
     const { data: { user }, error: authError } = await auth.auth.getUser()
     if (authError || !user) return json({ error: "Sign in to send a message." }, 401)
-    const db = auth as unknown as SupabaseClient
+    const db: any = createServiceClient()
     const { data: thread, error: threadError } = await db.from("inquiries").select("id,status")
       .eq("id", parsed.data.conversationId).eq("customer_id", user.id).maybeSingle()
     if (threadError) throw threadError
