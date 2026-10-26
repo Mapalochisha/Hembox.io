@@ -2,7 +2,6 @@ import { NextResponse } from "next/server"
 import { z } from "zod"
 import type { SupabaseClient } from "@supabase/supabase-js"
 import { createClient as createAuthClient } from "@/lib/supabase/server"
-import { createServiceClient } from "@/lib/supabase/service"
 
 export const dynamic="force-dynamic"
 const schema=z.object({customerId:z.string().uuid(),category:z.enum(["project","service","billing","domain","message","system"]),title:z.string().trim().min(2).max(180),body:z.string().trim().min(1).max(1000),href:z.string().regex(/^\/portal\/(?!\/).*/).optional().nullable()}).strict()
@@ -19,7 +18,7 @@ export async function POST(request:Request){
  if(roleError)return json({error:"Unable to verify administrator access."},503)
  if(role!=="admin")return json({error:"Administrator access required."},403)
  try{
-  const db=createServiceClient() as unknown as SupabaseClient
+  const db=auth as unknown as SupabaseClient
   const {data:client,error:clientError}=await db.from("clients").select("user_id").eq("user_id",parsed.data.customerId).limit(1).maybeSingle()
   if(clientError)throw clientError
   // Customer IDs are auth user IDs; only notify accounts represented by an owned client record.
