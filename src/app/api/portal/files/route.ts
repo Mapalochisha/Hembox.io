@@ -17,7 +17,7 @@ function json(body: unknown, status = 200) { return NextResponse.json(body, { st
 async function currentUser() {
   const auth = createAuthClient()
   const { data: { user }, error } = await auth.auth.getUser()
-  return error || !user ? null : user
+  return error || !user ? null : { auth, user }
 }
 
 async function ownedProject(db: SupabaseClient, projectId: string, customerId: string) {
@@ -32,8 +32,9 @@ async function ownedProject(db: SupabaseClient, projectId: string, customerId: s
 
 export async function GET(request: Request) {
   try {
-    const user = await currentUser()
-    if (!user) return json({ error: "Sign in to view your files." }, 401)
+    const session = await currentUser()
+    if (!session) return json({ error: "Sign in to view your files." }, 401)
+    const { auth, user } = session
     const db = auth as unknown as SupabaseClient
     const params = new URL(request.url).searchParams
     const fileId = params.get("fileId")
@@ -86,8 +87,9 @@ export async function GET(request: Request) {
 
 export async function POST(request: Request) {
   try {
-    const user = await currentUser()
-    if (!user) return json({ error: "Sign in to upload a file." }, 401)
+    const session = await currentUser()
+    if (!session) return json({ error: "Sign in to upload a file." }, 401)
+    const { auth, user } = session
     const form = await request.formData()
     const candidate = form.get("file")
     const projectId = String(form.get("projectId") ?? "").trim()
