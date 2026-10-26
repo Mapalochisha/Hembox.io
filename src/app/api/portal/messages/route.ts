@@ -25,7 +25,7 @@ export async function GET() {
     if (messagesError) throw messagesError
     const byThread: Record<string, typeof messages> = {}
     for (const message of messages ?? []) byThread[message.inquiry_id] = [...(byThread[message.inquiry_id] ?? []), message]
-    return json({ threads: (threads ?? []).map((thread) => ({ ...thread, messages: byThread[thread.id] ?? [] })) })
+    return json({ threads: (threads ?? []).map((thread) => ({ ...thread, messages: byThread[thread.id]?.length ? byThread[thread.id] : thread.message ? [{ id: "initial-" + thread.id, inquiry_id: thread.id, sender_role: "customer", body: thread.message, created_at: thread.created_at }] : [] })) })
   } catch (error) {
     console.error("[Portal] Message inbox failed:", error)
     return json({ error: "Messages are temporarily unavailable." }, 503)
