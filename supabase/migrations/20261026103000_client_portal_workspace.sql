@@ -42,6 +42,8 @@ $;
 revoke all on function public.get_user_role(uuid) from public, anon;
 grant execute on function public.get_user_role(uuid) to authenticated, service_role;
 
+alter table public.projects add column if not exists category text not null default 'custom';
+create index if not exists projects_category_idx on public.projects(category);
 alter table public.clients enable row level security;
 alter table public.projects enable row level security;
 
