@@ -117,4 +117,28 @@ end
 $admin$;
 reset role;
 
+-- Message notification triggers must respect the customer's saved preferences.
+update public.client_notification_preferences set message_updates=false where customer_id='77777777-7777-4777-8777-777777777771';
+insert into public.inquiries(id,type,email,name,message,source,status,customer_id)
+values ('77777777-7777-4777-8777-777777777851','contact','portal-customer-one@example.test','Client One','Test conversation','client-portal','new','77777777-7777-4777-8777-777777777771');
+insert into public.inquiry_messages(inquiry_id,sender_role,sender_id,body)
+values ('77777777-7777-4777-8777-777777777851','admin','77777777-7777-4777-8777-777777777773','Test admin reply');
+do $preference_test$
+begin
+  if exists(select 1 from public.client_notifications where customer_id='77777777-7777-4777-8777-777777777771' and title='New reply from HEMBOX') then
+    raise exception 'Message notifications ignored the customer preference';
+  end if;
+end
+$preference_test$;
+update public.client_notification_preferences set message_updates=true where customer_id='77777777-7777-4777-8777-777777777771';
+insert into public.inquiry_messages(inquiry_id,sender_role,sender_id,body)
+values ('77777777-7777-4777-8777-777777777851','admin','77777777-7777-4777-8777-777777777773','Second admin reply');
+do $notification_test$
+begin
+  if (select count(*) from public.client_notifications where customer_id='77777777-7777-4777-8777-777777777771' and title='New reply from HEMBOX') <> 1 then
+    raise exception 'Admin reply did not create a customer notification';
+  end if;
+end
+$notification_test$;
+
 rollback;
