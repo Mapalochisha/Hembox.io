@@ -33,7 +33,7 @@ export async function PATCH(request: Request) {
     const auth = createAuthClient()
     const { data: { user }, error: authError } = await auth.auth.getUser()
     if (authError || !user) return json({ error: "Sign in to update notifications." }, 401)
-    const db = createServiceClient() as unknown as SupabaseClient
+    const db = auth as unknown as SupabaseClient
     let query = db.from("client_notifications").update({ read_at: new Date().toISOString() }).eq("customer_id", user.id).is("read_at", null)
     if (parsed.data.notificationId) query = query.eq("id", parsed.data.notificationId)
     const { error } = await query
