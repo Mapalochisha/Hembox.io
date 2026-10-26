@@ -118,7 +118,7 @@ export async function GET() {
     return json({
       client: clients[0] ?? null,
       projects: { active: activeProjects.length, total: projects.length, recent: recentProjects },
-      services: { tracked: !serviceTableMissing, active: serviceTableMissing ? null : (serviceResult.data ?? []).filter((service) => service.status === "active").length },
+      services: { tracked: !serviceTableMissing, active: serviceTableMissing ? null : (serviceResult.data ?? []).filter((service: any) => service.status === "active").length },
       billing: { outstanding_by_currency: dueByCurrency, invoices: recentInvoices, outstanding_count: outstandingInvoices.length },
       domains: { count: domains.length, recent: recentDomains },
       conversations: { count: conversations.length },
