@@ -20,7 +20,7 @@ export default function ServiceCataloguePage() {
         <div className="flex flex-col gap-6 md:flex-row md:items-end md:justify-between">
           <div className="max-w-2xl"><span className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/[0.06] px-3 py-1.5 text-[10px] font-bold tracking-[0.14em] text-teal"><Sparkles className="h-3.5 w-3.5"/> MADE AROUND YOUR GOALS</span>
             <h2 className="mt-5 text-3xl font-extrabold tracking-[-0.04em] sm:text-4xl">What can we help you create?</h2>
-            <p className="mt-3 max-w-xl text-sm leading-6 text-slate-300">From brand identity to applications and digital infrastructure, explore the ways HEMBOX can help move your idea forward.</p>
+            <p className="mt-3 max-w-xl text-sm leading-6 text-slate-300">From brand identity to applications and digital infrastructure, explore the ways Hembox Tech can help move your idea forward.</p>
           </div>
           <Link href="/portal/services/request" className="inline-flex h-11 shrink-0 items-center justify-center gap-2 rounded-xl bg-teal px-4 text-sm font-bold text-[#102033] transition hover:bg-teal/90">Tell us what you need <ArrowRight className="h-4 w-4"/></Link>
         </div>
