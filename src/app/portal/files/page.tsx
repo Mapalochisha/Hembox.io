@@ -1,5 +1,7 @@
 "use client"
 
+import { BRAND_NAME } from "@/lib/brand"
+
 import { ChangeEvent, FormEvent, useEffect, useState } from "react"
 import Link from "next/link"
 import { PortalShell } from "@/components/portal/portal-shell"
