@@ -63,9 +63,9 @@ export default function ClientWorkspacePage() {
   return <PortalShell title="Overview">
     <div className="mb-7 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
       <div>
-        <p className="text-[10px] font-bold tracking-[0.18em] text-[#15877d]">YOUR HEMBOX TECH TECH WORKSPACE</p>
+        <p className="text-[10px] font-bold tracking-[0.18em] text-[#15877d]">YOUR HEMBOX TECH WORKSPACE</p>
         <h2 className="mt-2 text-2xl font-extrabold tracking-[-0.04em] text-[#152238] sm:text-[32px]">Your work, all in one place.</h2>
-        <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-500">Projects, services and the next steps for everything you do with HEMBOX TECH TECH.</p>
+        <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-500">Projects, services and the next steps for everything you do with HEMBOX TECH.</p>
         {summary?.client?.company_name && <p className="mt-2 text-xs font-semibold text-slate-600">{summary.client.company_name}</p>}
       </div>
       <Link href="/portal/services/catalogue" className="inline-flex h-11 shrink-0 items-center justify-center gap-2 rounded-xl bg-[#142239] px-4 text-sm font-semibold text-white shadow-sm transition hover:bg-[#203653] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-teal focus-visible:ring-offset-2">
@@ -81,7 +81,7 @@ export default function ClientWorkspacePage() {
       <SummaryCard title="Active projects" icon={FolderKanban} value={loading || !summary ? "—" : String(summary.projects.active)} note={loading ? "Loading project status" : summary ? summary.projects.total + " projects in your workspace" : "Project summary unavailable"} href="/portal/projects" accent="teal"/>
       <SummaryCard title="Active services" icon={BriefcaseBusiness} value={loading ? "—" : summary?.services.tracked ? String(summary.services.active ?? 0) : "—"} note={loading ? "Loading services" : summary?.services.tracked ? "Currently active" : "Service inventory is being connected"} href="/portal/services" accent="blue"/>
       <SummaryCard title="Outstanding balance" icon={Wallet} value={loading || !summary ? "—" : Object.keys(summary.billing.outstanding_by_currency).length ? Object.entries(summary.billing.outstanding_by_currency).map(([currency, amount]) => money(amount, currency)).join(" · ") : money(0, "ZMW")} note={loading ? "Loading billing" : summary ? summary.billing.outstanding_count + " invoices to review" : "Billing summary unavailable"} href="/portal/bills" accent="amber"/>
-      <SummaryCard title="Conversations" icon={MessageSquare} value={loading || !summary ? "—" : String(summary.conversations.count)} note={summary ? "Your conversations with HEMBOX TECH TECH" : "Conversation summary unavailable"} href="/portal/messages" accent="violet"/>
+      <SummaryCard title="Conversations" icon={MessageSquare} value={loading || !summary ? "—" : String(summary.conversations.count)} note={summary ? "Your conversations with HEMBOX TECH" : "Conversation summary unavailable"} href="/portal/messages" accent="violet"/>
     </section>
 
     <div className="mt-6 grid gap-5 xl:grid-cols-[minmax(0,1.45fr)_minmax(300px,0.85fr)]">
@@ -94,7 +94,7 @@ export default function ClientWorkspacePage() {
           : summary?.projects.recent.length ? <div className="divide-y divide-slate-100">
             {summary.projects.recent.map((project) => <Link key={project.id} href={"/portal/projects/" + project.id} className="flex items-center gap-3 px-5 py-4 transition hover:bg-slate-50/80 sm:px-6">
               <span className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-[#edf8f6] text-[#16867b]"><FolderKanban className="h-[18px] w-[18px]"/></span>
-              <span className="min-w-0 flex-1"><span className="block truncate text-sm font-semibold text-slate-800">{project.name}</span><span className="mt-1 block truncate text-xs text-slate-500">{titleCase(project.category)} · {project.description || "Project with HEMBOX TECH TECH"} · Updated {date(project.updated_at)}</span></span>
+              <span className="min-w-0 flex-1"><span className="block truncate text-sm font-semibold text-slate-800">{project.name}</span><span className="mt-1 block truncate text-xs text-slate-500">{titleCase(project.category)} · {project.description || "Project with HEMBOX TECH"} · Updated {date(project.updated_at)}</span></span>
               <span className="hidden rounded-full bg-slate-100 px-2.5 py-1 text-[10px] font-semibold text-slate-600 sm:inline-flex">{titleCase(project.status)}</span>
               <ArrowUpRight className="h-4 w-4 shrink-0 text-slate-400"/>
             </Link>)}
@@ -125,7 +125,7 @@ export default function ClientWorkspacePage() {
               <p className="mt-1 text-[11px] leading-5 text-slate-500">We’ll surface invoices and project reviews here when action is needed.</p>
             </div>}
             {summary && !summary.notifications.tracked && !(summary.billing.invoices.length) && !(summary.projects.recent ?? []).some((project) => project.status === "review") && <div className="rounded-xl bg-slate-50 px-4 py-4 text-center"><Clock3 className="mx-auto h-5 w-5 text-slate-500"/><p className="mt-2 text-xs font-semibold text-slate-800">Workspace alerts are being connected</p><p className="mt-1 text-[11px] leading-5 text-slate-500">Project and service notifications will appear here once the workspace schema is enabled.</p></div>}
-            <Link href="/portal/messages" className="flex items-center justify-between rounded-xl px-3 py-3 text-xs font-semibold text-slate-600 transition hover:bg-slate-50 hover:text-[#16867b]"><span className="inline-flex items-center gap-2"><MessageSquare className="h-4 w-4"/> Contact your HEMBOX TECH TECH team</span><ArrowRight className="h-3.5 w-3.5"/></Link>
+            <Link href="/portal/messages" className="flex items-center justify-between rounded-xl px-3 py-3 text-xs font-semibold text-slate-600 transition hover:bg-slate-50 hover:text-[#16867b]"><span className="inline-flex items-center gap-2"><MessageSquare className="h-4 w-4"/> Contact your HEMBOX TECH team</span><ArrowRight className="h-3.5 w-3.5"/></Link>
           </div>}
       </section>
     </div>
