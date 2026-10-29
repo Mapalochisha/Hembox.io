@@ -2,6 +2,7 @@
 
 import { useState } from "react"
 import Link from "next/link"
+import { BRAND_NAME } from "@/lib/brand"
 import { useAuth } from "@/components/providers/auth-provider"
 import {
   DropdownMenu,
