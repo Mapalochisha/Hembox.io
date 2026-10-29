@@ -45,7 +45,7 @@ The homepage composition is `src/app/(public)/page.tsx`, which assembles the sha
 
 - [x] `src/app/admin/services/page.tsx` reads/writes the existing Supabase `services` table and supports service creation, editing, active/inactive status, icon selection, ordering, and deletion. **Preserve this functionality and data model; no replacement or schema change is planned.**
 - [x] `src/app/admin/settings/page.tsx` manages the existing `agency_settings` row. The shared provider uses that row when available, so visible business name and “about” content may come from production database values rather than code defaults.
-- [ ] Once code changes are reviewed and ready, decide how to update the existing agency settings value safely through the existing admin UI. Do not mutate production records as part of this initial audit or introduce a branding migration without a separate review.
+- [x] Owner decision: the company name is code-defined, not editable in admin settings. The existing `agency_name` database column is left unused to avoid a production schema change; other settings remain database-managed.
 
 ### Other old-brand references requiring classification
 
@@ -81,7 +81,7 @@ The homepage composition is `src/app/(public)/page.tsx`, which assembles the sha
 ### M1 — Brand foundations
 - [ ] Update global metadata and brand copy to Hembox Tech and the new tagline where appropriate.
 - [ ] Establish a consistent brand-name/asset approach without requiring a final user-provided logo file.
-- [ ] Update shared brand defaults and accessible labels.
+- [x] Define a shared code-level `BRAND_NAME` constant and remove the agency-name field from the admin settings UI, provider interface, and save payload. Other settings remain database-managed.
 - [ ] Keep domain URLs and runtime configuration unchanged.
 
 ### M2 — Public website positioning
@@ -118,7 +118,7 @@ The homepage composition is `src/app/(public)/page.tsx`, which assembles the sha
 
 ## Progress log
 
-### 2026-10-29 — M0 complete; M1 not started
+### 2026-10-29 — M0 complete; M1 in progress
 - Confirmed `main` baseline: `dcbeac0b4c149a37e677b6a38d5c515b85c2a45e`.
 - Created feature branch `rebrand/hembox-tech` from `main`.
 - Added this tracked plan before modifying application code.
@@ -127,3 +127,11 @@ The homepage composition is `src/app/(public)/page.tsx`, which assembles the sha
 - Identified the database-backed `agency_settings` row as a separate source of brand copy; it needs deliberate review later so existing production content is not silently overwritten.
 - No application code, production data, DNS, Vercel domain settings, or environment variables have been changed in this milestone.
 - Next: begin M1 brand foundations on this branch, leaving all domain configuration untouched.
+
+
+### 2026-10-29 — Code-defined company name decision
+- Owner chose to remove the editable agency/company name field and use the code-defined brand.
+- Implementation removes `agency_name` from the shared settings contract, provider data mapping, admin settings form/state/save payload, footer, contact CTA, and About/Terms/Privacy fallback copy.
+- The shared `BRAND_NAME` constant is set to `Hembox Tech`.
+- Existing Supabase `agency_settings.agency_name` column/value is intentionally left untouched and unused; no production database mutation or schema migration is needed for this UI change.
+- Other agency settings and the dynamic `services` table remain intact.
