@@ -44,7 +44,7 @@ export function AgencyProvider({ children }: { children: React.ReactNode }) {
       try {
         const { data, error } = await supabase
         .from('agency_settings')
-        .select('*')
+        .select('contact_email, phone_number, whatsapp_number, whatsapp_message, about_us_content, terms_conditions, privacy_policy, instagram_url, facebook_url, twitter_url, linkedin_url')
         .single()
 
         if (error || !data) return
