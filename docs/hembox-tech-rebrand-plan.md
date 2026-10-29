@@ -101,12 +101,12 @@ The homepage composition is `src/app/(public)/page.tsx`, which assembles the sha
 - [x] Classify retained references: repository/project IDs, current domain/runtime URLs pending M6, Cloudinary asset folders, auth identifiers, admin email rules, historical SQL/migrations, and test fixtures.
 
 ### M5 — Verification on the existing deployment
-- [ ] Run CI checks: lint, TypeScript, relevant tests, and production build.
-- [ ] Fix regressions introduced by this branch.
-- [ ] Verify the Vercel deployment for the rebrand branch if the configured workflow provides a preview.
-- [ ] Smoke-test homepage, dynamic services, pricing, login/register, customer portal, admin services management, billing, and messaging.
-- [ ] Confirm no DNS or Vercel custom-domain settings were changed.
-- [ ] Review the finished rebrand before proceeding to domain connection.
+- [x] Run CI checks: lint, TypeScript, relevant tests, and production build; GitHub Actions passed on the merged main commit.
+- [x] Fix regressions introduced by this branch; corrected the missing `BRAND_NAME` import caught by CI before final verification.
+- [x] Verify a Vercel Preview (`READY`) for the final feature-branch commit and a Vercel Production deployment (`READY`) for the merged main commit.
+- [x] Smoke-test route responses and branding for homepage, pricing, domains, login/register, About/Terms/Privacy, portal, bills, messages, admin dashboard, admin services, favicon, and wordmark on the production Vercel alias. All returned HTTP 200; no old visible brand string was found in the tested HTML/assets. Dynamic service retrieval/admin CRUD code was preserved and not structurally changed; no authenticated transaction was submitted.
+- [x] Confirm no DNS or Vercel custom-domain settings were changed; no project domain assignments or DNS records were edited.
+- [x] Pre-domain rebrand implementation and route-level smoke verification complete. Domain connection is the next separate phase and is intentionally not started here.
 
 ### M6 — Separate domain migration (not started; do not begin during M0–M5 without a deliberate handoff)
 - [ ] Inventory current Vercel project/domain configuration and DNS provider instructions.
@@ -122,8 +122,8 @@ The homepage composition is `src/app/(public)/page.tsx`, which assembles the sha
 - **M2 Public website positioning:** implementation complete; existing dynamic services and pricing data remain database-driven.
 - **M3 Authenticated application surfaces:** implementation complete; no route, permission, or production-data changes.
 - **M4 Documentation/reference cleanup:** implementation complete; historical/technical references retained where required.
-- **M5 Verification:** awaiting final CI and a preview deployment built from the latest branch head.
-- **M6 Domain migration:** not started; requires a separate handoff and must not begin until the owner is ready.
+- **M5 Verification:** complete — CI passed and the production Vercel deployment is READY; route-level smoke checks passed.
+- **M6 Domain migration:** next phase, not started; requires owner input before any domain, DNS, canonical URL, or auth redirect changes.
 
 ## Progress log
 
@@ -158,3 +158,13 @@ The homepage composition is `src/app/(public)/page.tsx`, which assembles the sha
 - Dynamic service retrieval, service admin CRUD, pricing retrieval, customer/admin routes, billing, messaging, and domain operations were not structurally changed.
 - No production data, DNS, Vercel domain assignments, environment variables, or authentication redirect settings were modified.
 - Next: complete final CI, deploy a preview for the latest commit, and smoke-test public routes plus expected unauthenticated behavior for protected customer/admin routes. Stop before connecting `hembox.tech`.
+
+
+### 2026-10-29 — M5 verification complete; ready for domain-phase handoff
+- Merged PR #11 to `main` as `326b6761d010cef1b36437254d761055b50b3f41` after the final feature-branch CI run passed.
+- Main-branch GitHub Actions passed (lint/type check, domain schema integration tests, and production build): run `40910700275`.
+- Vercel Preview is READY for final feature-branch commit `d2c28987eeb13d2b144e8520dc5eb8a5f0ea3090`; Vercel Production deployment is READY for merged main commit `326b6761d010cef1b36437254d761055b50b3f41` at the project's production alias `https://hembox-io.vercel.app`.
+- Route-level smoke tests on the production alias returned HTTP 200 for homepage, pricing, domains, login, registration, About, Terms, Privacy, portal, bills, messages, admin dashboard, admin services, favicon, and logo asset. Tested HTML/assets showed the new brand and no obvious old visible brand strings.
+- The preview environment has no Supabase variables scoped to `rebrand/hembox-tech`, so protected admin routes returned a configuration error on that preview. No preview or production environment variables were changed. Verification was completed against the production Vercel alias, where the tested routes returned HTTP 200.
+- No interactive sign-in/payment transaction was performed. No production data, Supabase schema, DNS records, custom-domain assignments, or authentication redirect settings were changed.
+- M0–M5 are complete. Stop here before M6; the next task is the separate domain-connection phase for `hembox.tech`.
