@@ -18,23 +18,45 @@
 - [x] Preserve customer, admin, authentication, billing, messaging, domain-management, and other existing workflows.
 - [x] Work one milestone at a time. Keep current domain/DNS configuration unchanged until a later, separately verified migration phase.
 
-## Initial repository audit
+## Repository baseline and architecture
 
 The repository is `Mapalochisha/Hembox.io`, a Next.js 14 / TypeScript application using Supabase, Tailwind CSS, and Vercel. The default branch at the start of this task was `main`, at baseline commit `dcbeac0b4c149a37e677b6a38d5c515b85c2a45e`.
 
-### Confirmed areas requiring review
+The homepage composition is `src/app/(public)/page.tsx`, which assembles the shared navbar, hero, services, process, portfolio, contact CTA, footer, and mockup modal. The shared logo asset is `public/hembox-logo.svg`; the favicon is `public/favicon.svg`. The current wordmark SVG itself identifies the old `HEM BOX.io` logo, and the favicon has a separate square mark treatment. This will be reviewed as part of the visual update rather than changed through blind text replacement.
 
-- [x] Root metadata in `src/app/layout.tsx` contains the old brand and website-only positioning.
-- [x] Landing navigation in `src/components/landing/navbar.tsx` has an old-brand accessible label and references `/hembox-logo.svg`.
-- [x] Login and registration screens include old-brand text and/or a separate inline logo treatment.
-- [x] `src/components/providers/agency-provider.tsx` has a default agency name using the old brand.
-- [x] `src/components/landing/mockup-modal.tsx` uses the old brand in accessible labels.
-- [x] Cloudinary upload paths/defaults include `Hembox.io`; changing these may affect asset organization and should not be done as a blind replacement.
-- [x] Repository docs and setup files use the old brand in titles and explanatory text.
-- [x] SQL scripts and environment examples contain old-brand references. These need classification before editing; historical migration/setup scripts, configured admin email values, and database logic must not be altered casually.
-- [x] The public service management UI is implemented at `src/app/admin/services/page.tsx`. It reads and writes the existing Supabase `services` table, including service title, description, icon, active/inactive status, and sort order. Preserve this dynamic workflow and its data model.
+## Initial audit inventory
 
-### Classification rule for references
+### Customer-facing and brand presentation
+
+- [x] `src/app/layout.tsx`: global title and description use the old brand and website-only positioning.
+- [x] `src/components/landing/navbar.tsx`: old-brand accessible label; logo rendered from `/hembox-logo.svg`; hover styling uses the existing navy-to-teal/coral treatment.
+- [x] `src/components/landing/hero-section.tsx`: hero implementation needs review for new broad positioning and tagline.
+- [x] `src/components/landing/services-section.tsx`: public service cards are loaded dynamically from Supabase `services`, filtered to active records and ordered by `sort_order`.
+- [x] `src/app/(public)/services/[slug]/page.tsx`: individual service details also load from the existing `services` table.
+- [x] `src/components/landing/footer.tsx`: displays the `agency_name` setting from the shared agency provider.
+- [x] `src/components/landing/mockup-modal.tsx`: old-brand accessible labels.
+- [x] `src/app/(public)/domains/page.tsx`: visible “Domains by HEMBOX.io” copy.
+- [x] `src/app/(auth)/login/page.tsx` and `src/app/(auth)/register/page.tsx`: old-brand text and a separate inline mark rather than the shared full wordmark.
+- [x] `src/components/admin/sidebar.tsx`: old-brand label in admin navigation.
+- [x] `src/components/providers/agency-provider.tsx`: fallback agency name and website-only default “about” content use the old positioning.
+- [x] Public About, Terms, and Privacy pages consume `agency_name` and editable content from agency settings.
+
+### Dynamic content and production-data consideration
+
+- [x] `src/app/admin/services/page.tsx` reads/writes the existing Supabase `services` table and supports service creation, editing, active/inactive status, icon selection, ordering, and deletion. **Preserve this functionality and data model; no replacement or schema change is planned.**
+- [x] `src/app/admin/settings/page.tsx` manages the existing `agency_settings` row. The shared provider uses that row when available, so visible business name and “about” content may come from production database values rather than code defaults.
+- [ ] Once code changes are reviewed and ready, decide how to update the existing agency settings value safely through the existing admin UI. Do not mutate production records as part of this initial audit or introduce a branding migration without a separate review.
+
+### Other old-brand references requiring classification
+
+- [x] `src/lib/cloudinary.ts`, `src/app/api/upload/route.ts`, `src/components/admin/image-upload.tsx`, and `src/app/admin/media/page.tsx` contain `Hembox.io` Cloudinary folder names. These may be existing asset organization paths; do not rename folders or break existing assets as a side effect of rebranding.
+- [x] `README.md`, `SETUP.md`, `package.json`, and current planning/operational documentation contain old-brand labels.
+- [x] SQL scripts, Supabase migration comments, `.env.example`, and tests contain old-brand strings. Classify each before editing. Historical migration/setup records, test fixtures, configured admin email values, and database logic must not be mass-replaced.
+- [x] `supabase_rebuild.sql` includes a legacy email-based role condition using `admin@hembox.io`. This is security-sensitive historical/setup logic and must not be changed as a brand-copy edit. Authentication and authorization must not be made dependent on the new domain by this rebrand.
+- [x] Existing app URL examples and tests may include the old domain. Preserve operational URLs in this phase; review canonical/public URLs during the later domain migration.
+- [x] Current CI workflow runs lint, TypeScript checks, domain/provider tests, disposable PostgreSQL schema tests, and production build. The push trigger currently lists `main`, `develop`, and selected feature branches, but not `rebrand/hembox-tech`; pull requests targeting `main` do trigger CI. Verification must account for that rather than assuming a push to this branch automatically starts CI.
+
+## Classification rule for references
 
 1. **Customer-visible brand copy:** update to Hembox Tech.
 2. **Brand presentation assets and accessible labels:** update consistently; retain the current hover behaviour and responsive sizing where practical.
@@ -42,15 +64,19 @@ The repository is `Mapalochisha/Hembox.io`, a Next.js 14 / TypeScript applicatio
 4. **Technical hostnames and URLs:** preserve during the branding phase. Change only in the later domain-migration phase after explicit inventory and validation.
 5. **Authentication identifiers, admin email values, secrets, database policies, SQL migration history, API contracts, Cloudinary folders, and stored data:** do not mass-replace. Evaluate each separately and change only where necessary and safe.
 6. **Repository name and GitHub/Vercel project identifiers:** not part of this first milestone.
+7. **Dynamic content:** preserve existing admin-managed service records and rendering. Treat the `agency_settings` database row as a separate, explicitly reviewed content update, not a code-level replacement.
 
 ## Milestones
 
 ### M0 — Audit and plan
 - [x] Confirm brand decisions and non-negotiable constraints.
-- [x] Inspect repository metadata, global metadata, landing navigation, authentication branding, and admin services management.
+- [x] Inspect repository metadata, global metadata, landing navigation, logo/favicon assets, authentication branding, homepage composition, and admin services management.
+- [x] Trace public services cards and service-detail pages to the existing Supabase `services` table.
+- [x] Identify agency settings that dynamically control visible business name and editable public content.
 - [x] Create this tracked plan on a dedicated feature branch.
-- [ ] Complete a broader search for all user-facing old-brand references and current logo/hero/service-page implementations.
-- [ ] Record the final audit inventory and implementation sequence.
+- [x] Record known customer-visible references and sensitive technical references that require careful handling.
+- [x] Record the CI workflow's current branch-trigger limitation.
+- [ ] During implementation, continue checking for remaining old-brand references and document intentional exceptions; repository search is not a substitute for reviewing all UI surfaces.
 
 ### M1 — Brand foundations
 - [ ] Update global metadata and brand copy to Hembox Tech and the new tagline where appropriate.
@@ -67,7 +93,7 @@ The repository is `Mapalochisha/Hembox.io`, a Next.js 14 / TypeScript applicatio
 ### M3 — Authenticated application surfaces
 - [ ] Update customer portal, admin dashboard, authentication pages, billing/invoices, messaging, and notifications where the old brand is visible.
 - [ ] Preserve existing routes, permissions, database records, and workflows.
-- [ ] Avoid production database changes for branding-only work.
+- [ ] Avoid production database changes for branding-only code work; any required agency-settings content update must be separately reviewed and performed deliberately.
 
 ### M4 — Repository documentation and reference cleanup
 - [ ] Update relevant current documentation and setup instructions.
@@ -92,10 +118,12 @@ The repository is `Mapalochisha/Hembox.io`, a Next.js 14 / TypeScript applicatio
 
 ## Progress log
 
-### 2026-10-29 — M0 started
+### 2026-10-29 — M0 complete; M1 not started
 - Confirmed `main` baseline: `dcbeac0b4c149a37e677b6a38d5c515b85c2a45e`.
 - Created feature branch `rebrand/hembox-tech` from `main`.
-- Initial code search found old-brand references in root metadata, landing navigation, login/register pages, agency defaults, mockup modal accessible labels, Cloudinary upload folders, SQL/setup material, and docs.
-- Inspected `src/app/admin/services/page.tsx`: the current admin-managed services flow reads/writes Supabase `services` records and supports create/edit, active status, icon selection, and deletion. It is explicitly in preservation scope.
+- Added this tracked plan before modifying application code.
+- Inspected global metadata, public homepage composition, navbar, logo SVG, favicon SVG, login/register pages, agency provider, admin sidebar, admin services page, public service cards and service-detail route, admin agency settings, and CI workflow.
+- Confirmed that the current dynamic services workflow already fits the requirement. No replacement, schema change, or service-data migration is planned.
+- Identified the database-backed `agency_settings` row as a separate source of brand copy; it needs deliberate review later so existing production content is not silently overwritten.
 - No application code, production data, DNS, Vercel domain settings, or environment variables have been changed in this milestone.
-- Next: complete the broader audit and record the implementation inventory before modifying application code.
+- Next: begin M1 brand foundations on this branch, leaving all domain configuration untouched.
