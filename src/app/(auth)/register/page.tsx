@@ -1,6 +1,7 @@
 import { RegisterForm } from "@/components/auth/register-form"
 import { GoogleAuthButton } from "@/components/auth/google-auth"
 import Link from "next/link"
+import { BRAND_NAME } from "@/lib/brand"
 
 export default function RegisterPage() {
   return (
@@ -13,10 +14,10 @@ export default function RegisterPage() {
                 <path d="M4 4h7v7H4zM13 4h7v4h-7zM4 13h4v7H4zM13 11h7v9h-7z" fill="white" />
               </svg>
             </div>
-            <span className="text-[19px] font-[800] tracking-tight">Hembox Tech</span>
+            <span className="text-[19px] font-[800] tracking-tight">{BRAND_NAME}</span>
           </Link>
           <h1 className="text-2xl font-bold tracking-tight">Create account</h1>
-          <p className="text-gray-600 mt-1">Get started with Hembox Tech</p>
+          <p className="text-gray-600 mt-1">Get started with {BRAND_NAME}</p>
         </div>
 
         <div className="bg-white rounded-2xl border border-gray-100 shadow-xl shadow-navy/5 p-8 space-y-6">
