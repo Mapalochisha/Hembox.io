@@ -20,6 +20,17 @@ const inter = Inter({
 export const metadata: Metadata = {
   title: `${BRAND_NAME} — ${BRAND_TAGLINE}`,
   description: `${BRAND_NAME} builds beyond boundaries with branding, websites, applications, and digital solutions that help businesses move forward.`,
+  openGraph: {
+    title: `${BRAND_NAME} — ${BRAND_TAGLINE}`,
+    description: `${BRAND_NAME} builds beyond boundaries with branding, websites, applications, and digital solutions that help businesses move forward.`,
+    siteName: BRAND_NAME,
+    type: "website",
+  },
+  twitter: {
+    card: "summary",
+    title: `${BRAND_NAME} — ${BRAND_TAGLINE}`,
+    description: `${BRAND_NAME} builds beyond boundaries with branding, websites, applications, and digital solutions that help businesses move forward.`,
+  },
   icons: {
     icon: [{ url: "/favicon.svg", type: "image/svg+xml" }],
     shortcut: [{ url: "/favicon.svg", type: "image/svg+xml" }],
