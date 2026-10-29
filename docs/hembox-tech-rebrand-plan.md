@@ -79,16 +79,16 @@ The homepage composition is `src/app/(public)/page.tsx`, which assembles the sha
 - [ ] During implementation, continue checking for remaining old-brand references and document intentional exceptions; repository search is not a substitute for reviewing all UI surfaces.
 
 ### M1 — Brand foundations
-- [ ] Update global metadata and brand copy to Hembox Tech and the new tagline where appropriate.
+- [x] Update global metadata and homepage hero brand copy to Hembox Tech and the new tagline.
 - [ ] Establish a consistent brand-name/asset approach without requiring a final user-provided logo file.
 - [x] Define a shared code-level `BRAND_NAME` constant and remove the agency-name field from the admin settings UI, provider interface, and save payload. Other settings remain database-managed.
 - [ ] Keep domain URLs and runtime configuration unchanged.
 
 ### M2 — Public website positioning
-- [ ] Refresh homepage messaging to position Hembox Tech as a broader digital solutions company.
+- [x] Refresh homepage messaging to position Hembox Tech as a broader digital solutions company.
 - [ ] Preserve the dynamic service retrieval/rendering flow.
 - [ ] Ensure the services page continues to reflect services entered and published through the admin dashboard.
-- [ ] Review pricing, contact, portfolio, SEO metadata, and social preview copy for brand consistency.
+- [ ] Review pricing, contact, portfolio, and social preview copy for brand consistency.
 
 ### M3 — Authenticated application surfaces
 - [ ] Update customer portal, admin dashboard, authentication pages, billing/invoices, messaging, and notifications where the old brand is visible.
@@ -135,3 +135,6 @@ The homepage composition is `src/app/(public)/page.tsx`, which assembles the sha
 - The shared `BRAND_NAME` constant is set to `Hembox Tech`.
 - Existing Supabase `agency_settings.agency_name` column/value is intentionally left untouched and unused; no production database mutation or schema migration is needed for this UI change.
 - Other agency settings and the dynamic `services` table remain intact.
+
+- Updated the global page title/description, homepage hero, navigation accessible label, domain page copy, admin sidebar brand, mockup contact accessible labels, and login/register brand text.
+- Admin settings and shared provider now select only explicit non-brand settings columns; the old `agency_name` column is not fetched by the app. Existing database schema and stored values remain unchanged.
