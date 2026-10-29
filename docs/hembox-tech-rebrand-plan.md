@@ -76,29 +76,29 @@ The homepage composition is `src/app/(public)/page.tsx`, which assembles the sha
 - [x] Create this tracked plan on a dedicated feature branch.
 - [x] Record known customer-visible references and sensitive technical references that require careful handling.
 - [x] Record the CI workflow's current branch-trigger limitation.
-- [ ] During implementation, continue checking for remaining old-brand references and document intentional exceptions; repository search is not a substitute for reviewing all UI surfaces.
+- [x] During implementation, checked the main public, authentication, client workspace, billing, and admin brand surfaces; classified technical/historical exceptions rather than blindly replacing them.
 
 ### M1 — Brand foundations
 - [x] Update global metadata and homepage hero brand copy to Hembox Tech and the new tagline.
-- [ ] Establish a consistent brand-name/asset approach without requiring a final user-provided logo file.
+- [x] Establish a consistent brand-name/asset approach without requiring a final user-provided logo file; retain the recognizable HEM mark and update the wordmark to HEMBOX TECH.
 - [x] Define a shared code-level `BRAND_NAME` constant and remove the agency-name field from the admin settings UI, provider interface, and save payload. Other settings remain database-managed.
-- [ ] Keep domain URLs and runtime configuration unchanged.
+- [x] Keep domain URLs and runtime configuration unchanged.
 
 ### M2 — Public website positioning
 - [x] Refresh homepage messaging to position Hembox Tech as a broader digital solutions company.
-- [ ] Preserve the dynamic service retrieval/rendering flow.
-- [ ] Ensure the services page continues to reflect services entered and published through the admin dashboard.
-- [ ] Review pricing, contact, portfolio, and social preview copy for brand consistency.
+- [x] Preserve the dynamic service retrieval/rendering flow.
+- [x] Ensure the services page continues to reflect services entered and published through the admin dashboard; the existing Supabase query and admin CRUD workflow were left intact.
+- [x] Review pricing, contact, portfolio, and social preview copy for brand consistency; update global, Open Graph, and Twitter metadata without setting a new canonical host.
 
 ### M3 — Authenticated application surfaces
-- [ ] Update customer portal, admin dashboard, authentication pages, billing/invoices, messaging, and notifications where the old brand is visible.
-- [ ] Preserve existing routes, permissions, database records, and workflows.
-- [ ] Avoid production database changes for branding-only code work; any required agency-settings content update must be separately reviewed and performed deliberately.
+- [x] Update customer portal, admin dashboard, authentication pages, billing/invoices, messaging, and notifications where the old brand was visible.
+- [x] Preserve existing routes, permissions, database records, and workflows.
+- [x] Avoid production database changes for branding-only code work; `agency_name` is no longer selected or saved by the app, while the existing column/value remain untouched.
 
 ### M4 — Repository documentation and reference cleanup
-- [ ] Update relevant current documentation and setup instructions.
-- [ ] Keep historical migration notes and immutable operational records accurate; annotate rather than rewrite historical facts where necessary.
-- [ ] Classify remaining technical references and record any intentionally retained occurrences.
+- [x] Update relevant current documentation and setup instructions, including README, setup guide, client-portal blueprint, billing blueprint, and domain-reselling plan headings/current sections.
+- [x] Keep historical progress entries, repository paths, deployment URLs, SQL history, and operational records accurate; add notes where current brand differs.
+- [x] Classify retained references: repository/project IDs, current domain/runtime URLs pending M6, Cloudinary asset folders, auth identifiers, admin email rules, historical SQL/migrations, and test fixtures.
 
 ### M5 — Verification on the existing deployment
 - [ ] Run CI checks: lint, TypeScript, relevant tests, and production build.
@@ -115,6 +115,15 @@ The homepage composition is `src/app/(public)/page.tsx`, which assembles the sha
 - [ ] Review Supabase authentication redirect allowlists, OAuth callback URLs if used, email links, and `NEXT_PUBLIC_APP_URL` only after inventory.
 - [ ] Test customer and admin journeys on the new domain before considering the migration complete.
 - [ ] Retain the existing Vercel subdomain as a safe fallback/redirect until verification is complete.
+
+## Current status
+
+- **M1 Brand foundations:** implementation complete; verification pending.
+- **M2 Public website positioning:** implementation complete; existing dynamic services and pricing data remain database-driven.
+- **M3 Authenticated application surfaces:** implementation complete; no route, permission, or production-data changes.
+- **M4 Documentation/reference cleanup:** implementation complete; historical/technical references retained where required.
+- **M5 Verification:** awaiting final CI and a preview deployment built from the latest branch head.
+- **M6 Domain migration:** not started; requires a separate handoff and must not begin until the owner is ready.
 
 ## Progress log
 
@@ -138,3 +147,14 @@ The homepage composition is `src/app/(public)/page.tsx`, which assembles the sha
 
 - Updated the global page title/description, homepage hero, navigation accessible label, domain page copy, admin sidebar brand, mockup contact accessible labels, and login/register brand text.
 - Admin settings and shared provider now select only explicit non-brand settings columns; the old `agency_name` column is not fetched by the app. Existing database schema and stored values remain unchanged.
+
+
+### 2026-10-29 — M1–M4 implementation complete; M5 verification in progress
+- Added `src/lib/brand.ts` as the shared source for `BRAND_NAME` and `BRAND_TAGLINE`.
+- Updated the shared wordmark SVG to read HEMBOX TECH while retaining the existing HEM mark and navbar hover-gradient behavior; refreshed favicon accessible metadata.
+- Updated global metadata, Open Graph/Twitter preview copy, homepage hero/tagline, public domain copy, login/register, About/Terms/Privacy, footer, admin navigation, client portal, messaging, notifications, billing statements, and other visible application labels.
+- Removed the agency-name field from admin settings and excluded `agency_name` from the app's settings query, provider type, and save payload. The Supabase column/value were not changed.
+- Updated current README/setup and product blueprint wording. Historical progress logs, repository paths, Cloudinary folder paths, technical hostnames, auth identifiers, SQL history, and existing configuration remain intentionally unchanged until their appropriate migration/maintenance task.
+- Dynamic service retrieval, service admin CRUD, pricing retrieval, customer/admin routes, billing, messaging, and domain operations were not structurally changed.
+- No production data, DNS, Vercel domain assignments, environment variables, or authentication redirect settings were modified.
+- Next: complete final CI, deploy a preview for the latest commit, and smoke-test public routes plus expected unauthenticated behavior for protected customer/admin routes. Stop before connecting `hembox.tech`.
