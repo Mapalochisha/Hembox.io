@@ -1,11 +1,11 @@
 "use client"
 
-import { useAgency } from "@/components/providers/agency-provider"
+import { BRAND_NAME, useAgency } from "@/components/providers/agency-provider"
 import { Navbar } from "@/components/landing/navbar"
 import { Footer } from "@/components/landing/footer"
 
 export default function TermsPage() {
-  const { terms_conditions, agency_name } = useAgency()
+  const { terms_conditions } = useAgency()
 
   return (
     <div className="min-h-screen bg-white">
@@ -19,7 +19,7 @@ export default function TermsPage() {
                 {terms_conditions}
               </div>
             ) : (
-              <p className="text-gray-500 italic">Terms and conditions for {agency_name} are being updated.</p>
+              <p className="text-gray-500 italic">Terms and conditions for {BRAND_NAME} are being updated.</p>
             )}
           </div>
         </div>
