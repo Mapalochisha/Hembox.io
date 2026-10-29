@@ -162,7 +162,7 @@ export default function DomainsPage() {
           <div className="mx-auto max-w-3xl text-center">
             <div className="mb-6 inline-flex items-center gap-2 rounded-full border border-teal/20 bg-white/80 px-4 py-2 text-xs font-bold uppercase tracking-[0.14em] text-navy shadow-sm">
               <Sparkles className="h-4 w-4 text-teal" />
-              Domains by HEMBOX.io
+              Domains by Hembox Tech
             </div>
             <h1 className="text-balance text-4xl font-black leading-[1.06] tracking-[-0.045em] sm:text-6xl lg:text-7xl">
               Your next big idea
@@ -210,7 +210,7 @@ export default function DomainsPage() {
                 </button>
               </div>
               <p id="domain-note" className="px-1 text-left text-xs leading-5 text-slate-500">
-                This sends an enquiry to HEMBOX.io; it does not reserve or register a domain.
+                This sends an enquiry to Hembox Tech; it does not reserve or register a domain.
               </p>
 
               <div className="grid gap-3 border-t border-slate-100 pt-4 sm:grid-cols-2">
