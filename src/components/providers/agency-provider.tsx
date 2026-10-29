@@ -77,7 +77,7 @@ export function AgencyProvider({ children }: { children: React.ReactNode }) {
       phone_number: "+260 969 868508",
       whatsapp_number: "+260 969 868508",
       whatsapp_message: "Hi, I'm interested in your services!",
-      about_us_content: "We build fast, beautiful sites that actually convert. No templates. No bloat. Just results.",
+      about_us_content: "Hembox Tech helps businesses build beyond boundaries with digital experiences, branding, applications, and technology solutions.",
       terms_conditions: "",
       privacy_policy: "",
       instagram_url: "",
