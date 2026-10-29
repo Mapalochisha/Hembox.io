@@ -1,4 +1,4 @@
-# HEMBOX.io Unified Billing — Blueprint & Progress Record
+# Hembox Tech Unified Billing — Blueprint & Progress Record
 
 > Canonical implementation handoff. Update this document as decisions, milestones, and verification results change.
 >
@@ -10,7 +10,7 @@
 
 ## 1. Objective
 
-Build one auditable billing system for every HEMBOX charge: website plans, domain registration and renewals, add-ons, and custom work. Customers need one place to view invoices, understand balances, submit payment claims, request alternative arrangements, and track reviews. Administrators need controlled review and reconciliation.
+Build one auditable billing system for every Hembox Tech charge: website plans, domain registration and renewals, add-ons, and custom work. Customers need one place to view invoices, understand balances, submit payment claims, request alternative arrangements, and track reviews. Administrators need controlled review and reconciliation.
 
 The billing engine must be independent of any registrar or future payment gateway. Launch uses manually collected payments; gateway checkout and signed webhooks remain deferred until separately approved and funded.
 
@@ -22,8 +22,8 @@ The billing engine must be independent of any registrar or future payment gatewa
 - **Invoice currency is immutable** after issuance, except through an explicit, audited amendment/credit/reissue process. Keep client currency preference separate from a specific quote or invoice currency.
 - **Partial payments are supported from launch.** Track invoiced amount, verified payments, allocations, and remaining balance independently.
 - **A submitted receipt/transaction reference is a claim, not proof of settlement.** An invoice balance changes only when an authorized administrator verifies funds and a payment allocation is recorded.
-- **Custom payment arrangements begin in HEMBOX messaging.** A request is linked to the customer, invoice, and relevant conversation; states are pending, approved, declined, or cancelled. Agreement is not payment.
-- **External communication** (e.g. WhatsApp) is optional fallback only. Agreed terms must be recorded in HEMBOX and confirmed in the portal.
+- **Custom payment arrangements begin in Hembox Tech messaging.** A request is linked to the customer, invoice, and relevant conversation; states are pending, approved, declined, or cancelled. Agreement is not payment.
+- **External communication** (e.g. WhatsApp) is optional fallback only. Agreed terms must be recorded in Hembox Tech and confirmed in the portal.
 - **All methods use the same verification and allocation controls.** Alternative arrangements never bypass review.
 - **Domain fulfilment remains separate.** Verified payment/allocation can make an order eligible for fulfilment; it does not prove domain registration succeeded.
 - **No production migration, real payment collection, registrar mutation, or merge** without explicit approval and completed release gates.
@@ -78,7 +78,7 @@ The billing engine must be independent of any registrar or future payment gatewa
 3. Admin may approve or decline with a recorded note. Approval snapshots accepted terms and due dates/schedule; it does not mark anything paid.
 4. Customer confirms proposed terms in the portal. If they do not accept, the arrangement stays unconfirmed or is cancelled.
 5. Every resulting payment claim follows normal evidence review and verified-payment allocation.
-6. If communication moved to WhatsApp or another channel, final terms and customer confirmation are still recorded in HEMBOX.
+6. If communication moved to WhatsApp or another channel, final terms and customer confirmation are still recorded in Hembox Tech.
 
 The conversation/message is a communication record, not a financial ledger. Inspect the current messaging schema before binding arrangement requests to exact foreign keys; do not invent a parallel messaging system.
 
@@ -149,6 +149,9 @@ The conversation/message is a communication record, not a financial ledger. Insp
 - [ ] Verify Vercel Preview deployment is READY for the exact same final commit and inspect relevant deployment checks/logs where available.
 - [ ] Record commit SHA, CI run URL, and Preview deployment URL here.
 - [ ] No merge, production migration, production deployment promotion, live payment collection, or registrar mutation without explicit user approval.
+
+
+> **Brand note (2026-10-29):** Current company name is Hembox Tech. Dated entries below retain the wording and URLs used at the time they were recorded; the GitHub repository and existing deployment identifiers remain unchanged during the rebrand.
 
 ## 10. Progress log
 
