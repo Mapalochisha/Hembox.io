@@ -17,7 +17,6 @@ export default function SettingsPage() {
   const [isSaving, setIsSaving] = useState(false)
   const [settingsId, setSettingsId] = useState<string | null>(null)
   const [settings, setSettings] = useState({
-    agency_name: "",
     contact_email: "",
     phone_number: "",
     about_us_content: "",
@@ -49,7 +48,6 @@ export default function SettingsPage() {
       if (data) {
         setSettingsId(data.id)
         setSettings({
-          agency_name: data.agency_name || "",
           contact_email: data.contact_email || "",
           phone_number: data.phone_number || "",
           about_us_content: data.about_us_content || "",
@@ -119,7 +117,7 @@ export default function SettingsPage() {
     <div className="space-y-8 pb-20">
       <div>
         <h1 className="text-3xl font-bold tracking-tight text-navy">Settings</h1>
-        <p className="text-gray-600 mt-1">Manage your agency profile, contact details, and legal documents.</p>
+        <p className="text-gray-600 mt-1">Manage contact details, social links, and legal documents.</p>
       </div>
 
       <form onSubmit={handleSave} className="space-y-8 max-w-4xl">
@@ -128,20 +126,11 @@ export default function SettingsPage() {
           <CardHeader className="border-b border-black/5">
             <CardTitle className="text-lg flex items-center gap-2">
               <Info className="w-5 h-5 text-teal" />
-              Agency Information
+              Business Contact Information
             </CardTitle>
           </CardHeader>
           <CardContent className="p-6 space-y-6">
             <div className="grid sm:grid-cols-2 gap-6">
-              <div className="space-y-2">
-                <Label htmlFor="agencyName" className="text-[13px] font-bold uppercase tracking-wider text-gray-500">Agency Name</Label>
-                <Input 
-                  id="agencyName" 
-                  value={settings.agency_name} 
-                  onChange={(e) => setSettings({...settings, agency_name: e.target.value})}
-                  className="rounded-xl" 
-                />
-              </div>
               <div className="space-y-2">
                 <Label htmlFor="contactEmail" className="text-[13px] font-bold uppercase tracking-wider text-gray-500">Contact Email</Label>
                 <Input 
