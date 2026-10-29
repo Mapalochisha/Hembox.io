@@ -1,6 +1,7 @@
 "use client"
 
 import Link from "next/link"
+import { BRAND_NAME } from "@/lib/brand"
 import { usePathname } from "next/navigation"
 import { cn } from "@/lib/utils"
 import {
@@ -78,7 +79,7 @@ export function Sidebar() {
             </svg>
           </div>
           {!isCollapsed && (
-            <span className="text-[17px] font-bold text-white tracking-tight whitespace-nowrap">Hembox Tech</span>
+            <span className="text-[17px] font-bold text-white tracking-tight whitespace-nowrap">{BRAND_NAME}</span>
           )}
         </Link>
         
