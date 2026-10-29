@@ -152,7 +152,7 @@ The homepage composition is `src/app/(public)/page.tsx`, which assembles the sha
 ### 2026-10-29 — M1–M4 implementation complete; M5 verification in progress
 - Added `src/lib/brand.ts` as the shared source for `BRAND_NAME` and `BRAND_TAGLINE`.
 - Updated the shared wordmark SVG to read HEMBOX TECH while retaining the existing HEM mark and navbar hover-gradient behavior; refreshed favicon accessible metadata.
-- Updated global metadata, Open Graph/Twitter preview copy, homepage hero/tagline, public domain copy, login/register, About/Terms/Privacy, footer, admin navigation, client portal, messaging, notifications, billing statements, and other visible application labels.
+- Updated global metadata, Open Graph/Twitter preview copy, homepage hero/tagline, public domain copy, login/register, About/Terms/Privacy, footer, admin navigation, client portal, messaging, notifications, billing statements, user-facing API messages, and other visible application labels.
 - Removed the agency-name field from admin settings and excluded `agency_name` from the app's settings query, provider type, and save payload. The Supabase column/value were not changed.
 - Updated current README/setup and product blueprint wording. Historical progress logs, repository paths, Cloudinary folder paths, technical hostnames, auth identifiers, SQL history, and existing configuration remain intentionally unchanged until their appropriate migration/maintenance task.
 - Dynamic service retrieval, service admin CRUD, pricing retrieval, customer/admin routes, billing, messaging, and domain operations were not structurally changed.
