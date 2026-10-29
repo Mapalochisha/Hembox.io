@@ -1,6 +1,7 @@
 "use client"
 
-import { BRAND_NAME, useAgency } from "@/components/providers/agency-provider"
+import { useAgency } from "@/components/providers/agency-provider"
+import { BRAND_NAME } from "@/lib/brand"
 import { Navbar } from "@/components/landing/navbar"
 import { Footer } from "@/components/landing/footer"
 
