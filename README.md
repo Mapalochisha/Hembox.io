@@ -1,6 +1,6 @@
-# Hembox.io
+# Hembox Tech
 
-A modern, fully-modular Next.js 14 application with TypeScript, featuring:
+Hembox Tech — Build Beyond Boundaries. A modular Next.js 14 application with TypeScript, featuring:
 
 - **Landing Page** with animated hero section
 - **Multi-method Authentication** (Email, Phone OTP, Google OAuth)
