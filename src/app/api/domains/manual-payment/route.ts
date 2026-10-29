@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server"
+import { BRAND_NAME } from "@/lib/brand"
 import { z } from "zod"
 import type { SupabaseClient } from "@supabase/supabase-js"
 import { createClient } from "@/lib/supabase/server"
@@ -52,7 +53,7 @@ export async function POST(request: Request) {
       // including the first payment. Do not let domain-specific claims race with
       // billing claims or bypass partial-payment and reconciliation rules.
       return json({
-        error: "This order is billed through HEMBOX Bills. Continue there to submit or manage payment claims.",
+        error: `This order is billed through ${BRAND_NAME} Bills. Continue there to submit or manage payment claims.`,
         code: "unified_billing_in_use",
         invoiceId: billingInvoiceId,
         billsPath: "/portal/bills",
@@ -75,7 +76,7 @@ export async function POST(request: Request) {
 
     if (parsed.data.action === "begin") {
       if (!instructions) {
-        return json({ error: "Manual payment instructions are not configured yet. Please contact HEMBOX support.", code: "manual_payment_not_configured" }, 503)
+        return json({ error: `Manual payment instructions are not configured yet. Please contact ${BRAND_NAME} support.`, code: "manual_payment_not_configured" }, 503)
       }
       if (order.status === "quoted") {
         const { data: updated, error: updateError } = await db
@@ -97,7 +98,7 @@ export async function POST(request: Request) {
         amountMinor: quote.total_due_minor,
         currency: "ZMW",
         instructions,
-        message: "Use this reference with your transfer. Payment is not confirmed until HEMBOX verifies the funds.",
+        message: `Use this reference with your transfer. Payment is not confirmed until ${BRAND_NAME} verifies the funds.`,
       })
     }
 
