@@ -1,6 +1,6 @@
 "use client"
 
-import { BRAND_NAME } from "@/components/providers/agency-provider"
+import { BRAND_NAME } from "@/lib/brand"
 
 export function Footer() {
   const year = new Date().getFullYear()
