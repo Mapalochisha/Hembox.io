@@ -1,4 +1,4 @@
-# Hembox.io — Production Setup Guide
+# Hembox Tech — Production Setup Guide
 
 ## Prerequisites
 
