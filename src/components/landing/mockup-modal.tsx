@@ -199,7 +199,7 @@ export function MockupModal() {
                     {contact_email && (
                       <a
                         href={`mailto:${contact_email}`}
-                        aria-label="Email Hembox.io"
+                        aria-label="Email Hembox Tech"
                         title="Email us"
                         className="w-11 h-11 rounded-xl bg-gray-50 border border-gray-200 grid place-items-center text-navy hover:bg-teal/10 hover:border-teal/30 hover:text-teal transition"
                       >
@@ -209,7 +209,7 @@ export function MockupModal() {
                     {phone_number && (
                       <a
                         href={`tel:${phone_number}`}
-                        aria-label="Call Hembox.io"
+                        aria-label="Call Hembox Tech"
                         title="Call us"
                         className="w-11 h-11 rounded-xl bg-gray-50 border border-gray-200 grid place-items-center text-navy hover:bg-teal/10 hover:border-teal/30 hover:text-teal transition"
                       >
@@ -221,7 +221,7 @@ export function MockupModal() {
                         href={whatsappUrl}
                         target="_blank"
                         rel="noopener noreferrer"
-                        aria-label="Message Hembox.io on WhatsApp"
+                        aria-label="Message Hembox Tech on WhatsApp"
                         title="WhatsApp us"
                         className="w-11 h-11 rounded-xl bg-gray-50 border border-gray-200 grid place-items-center text-[#25D366] hover:bg-[#25D366]/10 hover:border-[#25D366]/30 transition"
                       >
