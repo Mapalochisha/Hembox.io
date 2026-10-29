@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server"
+import { BRAND_NAME } from "@/lib/brand"
 import { z } from "zod"
 import { createClient as createAuthClient } from "@/lib/supabase/server"
 import { createServiceClient } from "@/lib/supabase/service"
@@ -51,7 +52,7 @@ export async function POST(request: Request) {
     if (messageError) {
       console.error("[Portal] Request saved but conversation seed failed:", messageError)
     }
-    return json({ request: { id: inquiry.id, created_at: inquiry.created_at }, message: "Your request has been sent to HEMBOX. It is awaiting review; no project or quote is confirmed yet." }, 201)
+    return json({ request: { id: inquiry.id, created_at: inquiry.created_at }, message: `Your request has been sent to ${BRAND_NAME}. It is awaiting review; no project or quote is confirmed yet.` }, 201)
   } catch (error) {
     console.error("[Portal] Service request failed:", error)
     return json({ error: "We could not submit your request right now. Please try again." }, 503)
