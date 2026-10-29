@@ -78,7 +78,7 @@ export function Sidebar() {
             </svg>
           </div>
           {!isCollapsed && (
-            <span className="text-[17px] font-bold text-white tracking-tight whitespace-nowrap">Hembox.io</span>
+            <span className="text-[17px] font-bold text-white tracking-tight whitespace-nowrap">Hembox Tech</span>
           )}
         </Link>
         
