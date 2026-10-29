@@ -1,5 +1,7 @@
 "use client"
 
+import { BRAND_NAME } from "@/lib/brand"
+
 import Link from "next/link"
 import { PortalShell } from "@/components/portal/portal-shell"
 import { ArrowRight, ArrowUpRight, CheckCircle2, Code2, Globe2, Layers3, Palette, Smartphone, Sparkles, Wrench } from "lucide-react"
