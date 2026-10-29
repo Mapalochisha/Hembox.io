@@ -24,7 +24,7 @@ export function Navbar() {
         <div className="flex h-16 items-center justify-between sm:h-[72px]">
           <Link
             href="/"
-            aria-label="Hembox Tech home"
+            aria-label={`${BRAND_NAME} home`}
             onClick={closeMobileMenu}
             className="group inline-flex shrink-0 items-center"
           >
