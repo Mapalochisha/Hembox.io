@@ -92,7 +92,7 @@ export default function AdminDomainOrdersPage() {
       if (!response.ok) throw new Error(result.error || "Unable to record the registration.")
       await loadOrders()
       setFulfillOrderId("")
-      setNotice(`Manual registration recorded for ${selectedFulfillmentOrder.domain_name}. The registrar was not called by HEMBOX.`)
+      setNotice(`Manual registration recorded for ${selectedFulfillmentOrder.domain_name}. The registrar was not called by HEMBOX TECH.`)
     } catch (e) {
       setFulfillError(e instanceof Error ? e.message : "Unable to record the registration.")
     } finally { setFulfillBusy(false) }

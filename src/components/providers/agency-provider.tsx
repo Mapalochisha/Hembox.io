@@ -2,9 +2,9 @@
 
 import { createContext, useContext, useEffect, useMemo, useState } from "react"
 import { createClient, isSupabaseConfigured } from "@/lib/supabase/client"
+import { BRAND_NAME } from "@/lib/brand"
 
 export interface AgencySettings {
-  agency_name: string
   contact_email: string
   phone_number: string
   whatsapp_number?: string
@@ -19,12 +19,11 @@ export interface AgencySettings {
 }
 
 const AgencyContext = createContext<AgencySettings>({
-  agency_name: "Hembox.io",
   contact_email: "Mapalochisha@execs.com",
   phone_number: "+260 969 868508",
   whatsapp_number: "+260 969 868508",
   whatsapp_message: "Hi, I'm interested in your services!",
-  about_us_content: "We build fast, beautiful sites that actually convert. No templates. No bloat. Just results.",
+  about_us_content: `${BRAND_NAME} helps businesses build beyond boundaries with digital experiences, branding, applications, and technology solutions.`,
   terms_conditions: "",
   privacy_policy: "",
   instagram_url: "",
@@ -44,13 +43,12 @@ export function AgencyProvider({ children }: { children: React.ReactNode }) {
       try {
         const { data, error } = await supabase
         .from('agency_settings')
-        .select('*')
+        .select('contact_email, phone_number, whatsapp_number, whatsapp_message, about_us_content, terms_conditions, privacy_policy, instagram_url, facebook_url, twitter_url, linkedin_url')
         .single()
 
         if (error || !data) return
 
         setSettings({
-          agency_name: data.agency_name,
           contact_email: data.contact_email,
           phone_number: data.phone_number,
           whatsapp_number: data.whatsapp_number || "",
@@ -74,12 +72,11 @@ export function AgencyProvider({ children }: { children: React.ReactNode }) {
 
   return (
     <AgencyContext.Provider value={settings || {
-      agency_name: "Hembox.io",
       contact_email: "Mapalochisha@execs.com",
       phone_number: "+260 969 868508",
       whatsapp_number: "+260 969 868508",
       whatsapp_message: "Hi, I'm interested in your services!",
-      about_us_content: "We build fast, beautiful sites that actually convert. No templates. No bloat. Just results.",
+      about_us_content: `${BRAND_NAME} helps businesses build beyond boundaries with digital experiences, branding, applications, and technology solutions.`,
       terms_conditions: "",
       privacy_policy: "",
       instagram_url: "",

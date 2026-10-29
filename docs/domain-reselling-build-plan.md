@@ -1,4 +1,4 @@
-# HEMBOX.io Domain Reselling — Build Plan & Progress Record
+# Hembox Tech Domain Reselling — Build Plan & Progress Record
 
 > **Purpose:** This is the canonical handoff document for the domain-reselling project. Read it before continuing implementation after a context switch. Update this file as milestones are completed, decisions change, or verification results become available.
 >
@@ -10,7 +10,7 @@
 
 ## 1. Product objective
 
-Build a reliable, self-service domain-reselling product within HEMBOX.io. Customers must be able to discover domains, understand the registration and renewal costs, pay securely, register domains, and manage supported domain settings without being required to buy HEMBOX web-development services.
+Build a reliable, self-service domain-reselling product within Hembox Tech. Customers must be able to discover domains, understand the registration and renewal costs, pay securely, register domains, and manage supported domain settings without being required to buy Hembox Tech web-development services.
 
 The first market is Zambia, with **ZMW as the primary customer-facing currency**. The project has no existing customers yet, so do not build customer-loyalty discounts without a demonstrated business need.
 
@@ -84,7 +84,7 @@ Use `[x]` only after the milestone's acceptance criteria have been met and verif
 - Sandbox access and required credentials/account prerequisites are understood.
 - No critical commercial blocker is hidden or assumed away.
 
-**Decision (updated 2026-10-20): NameSilo is the selected initial provider.** Domain Name API is retired from the active provider path because its OT&E access/contract troubleshooting was blocking progress. NameSilo documents a free API and private-label reseller options; however, its Discount Program requires account funds and the documented top-up minimum is $50, so the funding economics still need to be confirmed for HEMBOX.io. NameSilo API documentation: [API reference](https://www.namesilo.com/api-reference), [reseller options](https://www.namesilo.com/support/v2/articles/about/reseller-options), [API Manager](https://www.namesilo.com/support/v2/articles/account-options/api-manager), and [reseller FAQ](https://www.namesilo.com/support/v2/articles/domain-manager/reseller-frequently-asked). Sandbox credentials must be requested from NameSilo support before any state-changing operation is tested. The application-facing NameSilo adapter remains read-only availability only; live registration and prices remain disabled. NameSilo support provisioned an API-only OTE sandbox at `https://ote.namesilo.com/api`. The first authenticated Preview smoke test succeeded on 2026-10-22: POST /api/domains/search for example.com returned provider namesilo, environment test, and live=false; OTE reported unavailable. That status is sandbox-only, not real registry truth. Use .com or .net for tests and only the supported NS1.NAMESILO.COM through NS8.NAMESILO.COM nameservers. Sandbox credentials remain separate from NAMESILO_API_KEY.
+**Decision (updated 2026-10-20): NameSilo is the selected initial provider.** Domain Name API is retired from the active provider path because its OT&E access/contract troubleshooting was blocking progress. NameSilo documents a free API and private-label reseller options; however, its Discount Program requires account funds and the documented top-up minimum is $50, so the funding economics still need to be confirmed for Hembox Tech. NameSilo API documentation: [API reference](https://www.namesilo.com/api-reference), [reseller options](https://www.namesilo.com/support/v2/articles/about/reseller-options), [API Manager](https://www.namesilo.com/support/v2/articles/account-options/api-manager), and [reseller FAQ](https://www.namesilo.com/support/v2/articles/domain-manager/reseller-frequently-asked). Sandbox credentials must be requested from NameSilo support before any state-changing operation is tested. The application-facing NameSilo adapter remains read-only availability only; live registration and prices remain disabled. NameSilo support provisioned an API-only OTE sandbox at `https://ote.namesilo.com/api`. The first authenticated Preview smoke test succeeded on 2026-10-22: POST /api/domains/search for example.com returned provider namesilo, environment test, and live=false; OTE reported unavailable. That status is sandbox-only, not real registry truth. Use .com or .net for tests and only the supported NS1.NAMESILO.COM through NS8.NAMESILO.COM nameservers. Sandbox credentials remain separate from NAMESILO_API_KEY.
 
 **Current verification status (2026-10-23):** The authenticated NameSilo OTE key/endpoint is now verified for read-only account probes: `getAccountBalance` and `listDomains` both returned provider code 300; the availability endpoint returned normalized OTE results; and a grouped-decimal balance response was normalized successfully. This confirms the sandbox connection and those response parsers, **not** live credentials, live registry availability, or production pricing. The OTE account currently has no active domains, so a successful `getDomainInfo` response for a domain inside the account has not been tested. Account funding/payment options from Zambia, actual registration/renewal prices, and production readiness remain unverified.
 
@@ -135,7 +135,7 @@ Use `[x]` only after the milestone's acceptance criteria have been met and verif
 
 ### [ ] M5 — Manual payment workflow (initial launch)
 
-**Decision (2026-10-23):** Defer payment-gateway integration until HEMBOX.io can fund a custom domain and complete the provider's onboarding requirements. This is a planned deferral, not a claim that payment-gateway work is complete. Keep the gateway visibly deferred in the plan and do not make it a blocker for the initial manual-payment release.
+**Decision (2026-10-23):** Defer payment-gateway integration until Hembox Tech can fund a custom domain and complete the provider's onboarding requirements. This is a planned deferral, not a claim that payment-gateway work is complete. Keep the gateway visibly deferred in the plan and do not make it a blocker for the initial manual-payment release.
 
 **Scope**
 - Provide customer-facing instructions for manual payment and a unique order/payment reference.
@@ -160,7 +160,7 @@ Use `[x]` only after the milestone's acceptance criteria have been met and verif
 ### [ ] M6 — Registration and provisioning
 
 **Scope**
-- Initial release: an administrator completes registration in the registrar's own console after verified manual payment and a fresh availability/final-price check, then records the actual registrar references and dates through the guarded, audited manual-fulfillment action. HEMBOX must not claim to have registered a domain based only on a payment claim.
+- Initial release: an administrator completes registration in the registrar's own console after verified manual payment and a fresh availability/final-price check, then records the actual registrar references and dates through the guarded, audited manual-fulfillment action. Hembox Tech must not claim to have registered a domain based only on a payment claim.
 - The manual fulfillment action does not call the registrar and only accepts payment-confirmed orders with a verified manual-payment claim.
 - Automated registrar registration, durable provisioning jobs, provider mutation idempotency, and ambiguous API-timeout recovery remain deferred until state-changing provider operations are verified in a safe environment.
 - Persist real provider references and registration/expiry information; keep failed or ambiguous outcomes in manual review rather than blindly retrying.
@@ -261,6 +261,9 @@ Do not skip these gates even if UI work can continue in parallel.
 7. **Launch gate:** intended commit has green CI and Vercel checks, production readiness is verified, and explicit authorization is obtained.
 
 A green build proves only the checks that ran. It does not independently prove real payment, registrar, production database, renewal or operational workflows.
+
+
+> **Brand note (2026-10-29):** Current company name is Hembox Tech. Historical progress entries retain the brand name, repository paths, and URLs that were accurate when recorded. Cloudinary asset folders, domain-provider configuration, and existing technical identifiers are not renamed as part of the brand-copy phase.
 
 ## 6. Progress log
 

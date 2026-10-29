@@ -3,6 +3,7 @@ import { GoogleAuthButton } from "@/components/auth/google-auth"
 import { PhoneAuthForm } from "@/components/auth/phone-auth"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import Link from "next/link"
+import { BRAND_NAME } from "@/lib/brand"
 
 export default function LoginPage() {
   return (
@@ -15,7 +16,7 @@ export default function LoginPage() {
                 <path d="M4 4h7v7H4zM13 4h7v4h-7zM4 13h4v7H4zM13 11h7v9h-7z" fill="white" />
               </svg>
             </div>
-            <span className="text-[19px] font-[800] tracking-tight">Hembox.io</span>
+            <span className="text-[19px] font-[800] tracking-tight">{BRAND_NAME}</span>
           </Link>
           <h1 className="text-2xl font-bold tracking-tight">Welcome back</h1>
           <p className="text-gray-600 mt-1">Sign in to your account</p>

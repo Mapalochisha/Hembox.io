@@ -1,11 +1,12 @@
 "use client"
 
 import { useAgency } from "@/components/providers/agency-provider"
+import { BRAND_NAME } from "@/lib/brand"
 import { Navbar } from "@/components/landing/navbar"
 import { Footer } from "@/components/landing/footer"
 
 export default function PrivacyPage() {
-  const { privacy_policy, agency_name } = useAgency()
+  const { privacy_policy } = useAgency()
 
   return (
     <div className="min-h-screen bg-white">
@@ -19,7 +20,7 @@ export default function PrivacyPage() {
                 {privacy_policy}
               </div>
             ) : (
-              <p className="text-gray-500 italic">Privacy policy for {agency_name} is being updated.</p>
+              <p className="text-gray-500 italic">Privacy policy for {BRAND_NAME} is being updated.</p>
             )}
           </div>
         </div>

@@ -1,10 +1,10 @@
-# Hembox.io
+# Hembox Tech
 
-A modern, fully-modular Next.js 14 application with TypeScript, featuring:
+**Build Beyond Boundaries.** Hembox Tech provides branding, website development, applications, and digital systems. This repository contains the modular Next.js 14 application with TypeScript that powers its website and client/admin workspaces.
 
-- **Landing Page** with animated hero section
+- **Public website** for branding, websites, applications, domains, and broader digital services
 - **Multi-method Authentication** (Email, Phone OTP, Google OAuth)
-- **Admin Dashboard** for client & project management
+- **Client workspace and admin dashboard** for projects, services, billing, domains, and messaging
 - **Supabase** backend with PostgreSQL
 - **Cloudinary** for media management
 - **Tailwind CSS** with custom design system

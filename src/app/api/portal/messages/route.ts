@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server"
+import { BRAND_NAME } from "@/lib/brand"
 import { z } from "zod"
 import { createClient as createAuthClient } from "@/lib/supabase/server"
 import { createServiceClient } from "@/lib/supabase/service"
@@ -44,7 +45,7 @@ export async function POST(request: Request) {
       .eq("id", parsed.data.conversationId).eq("customer_id", user.id).maybeSingle()
     if (threadError) throw threadError
     if (!thread) return json({ error: "Conversation not found." }, 404)
-    if (thread.status === "archived") return json({ error: "This conversation is archived. Start a new request to contact HEMBOX." }, 409)
+    if (thread.status === "archived") return json({ error: `This conversation is archived. Start a new request to contact ${BRAND_NAME}.` }, 409)
     const { data: message, error } = await db.from("inquiry_messages").insert({
       inquiry_id: thread.id, sender_role: "customer", sender_id: user.id, body: parsed.data.body.trim(),
     }).select("id,inquiry_id,sender_role,body,created_at").single()

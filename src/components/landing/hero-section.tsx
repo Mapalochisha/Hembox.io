@@ -49,11 +49,12 @@ export function HeroSection() {
       <div className="grid lg:grid-cols-[1.05fr_0.95fr] gap-16 lg:gap-12 items-center">
         {/* Left Content */}
         <div className="relative">
+          <p className="mb-5 text-xs sm:text-sm font-bold uppercase tracking-[0.22em] text-teal">Build Beyond Boundaries.</p>
           <h1 className="text-[44px] leading-[1.05] sm:text-[56px] lg:text-[68px] xl:text-[76px] font-[900] tracking-[-0.02em] text-navy">
-            Your website
-            <span className="block">shouldn&apos;t be</span>
+            Ideas into
+            <span className="block">digital</span>
             <span className="relative inline-block">
-              boring.
+              impact.
               <svg className="absolute -bottom-2 left-0 w-full h-3 text-coral" viewBox="0 0 200 12" fill="none">
                 <path d="M2 8c40-6 80-8 120-6 26 1 52 3 76 5" stroke="currentColor" strokeWidth="4" strokeLinecap="round" fill="none"/>
               </svg>
@@ -61,7 +62,7 @@ export function HeroSection() {
           </h1>
 
           <p className="mt-6 text-[18px] sm:text-[20px] leading-relaxed text-gray-600 max-w-[520px]">
-            We build fast, beautiful sites that <span className="text-navy font-medium">actually convert.</span> No templates. No bloat. Just results.
+            From standout branding and high-performing websites to custom applications and digital systems, we turn ambitious ideas into practical digital experiences.
           </p>
 
           <div className="mt-9 flex flex-col sm:flex-row gap-3">

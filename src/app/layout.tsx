@@ -3,7 +3,8 @@ import { Inter } from "next/font/google";
 import "./globals.css";
 import { Toaster } from "@/components/ui/toaster";
 import { AuthProvider } from "@/components/providers/auth-provider";
-import { AgencyProvider } from "@/components/providers/agency-provider";
+import { AgencyProvider } from "@/components/providers/agency-provider"
+import { BRAND_NAME, BRAND_TAGLINE } from "@/lib/brand";
 
 // Supabase is used by the client-side auth provider. Keep the application
 // request-driven so Next.js does not execute that client provider while
@@ -17,8 +18,19 @@ const inter = Inter({
 });
 
 export const metadata: Metadata = {
-  title: "Hembox.io — Your website shouldn't be boring",
-  description: "We build fast, beautiful sites that actually convert. No templates. No bloat. Just results.",
+  title: `${BRAND_NAME} — ${BRAND_TAGLINE}`,
+  description: `${BRAND_NAME} builds beyond boundaries with branding, websites, applications, and digital solutions that help businesses move forward.`,
+  openGraph: {
+    title: `${BRAND_NAME} — ${BRAND_TAGLINE}`,
+    description: `${BRAND_NAME} builds beyond boundaries with branding, websites, applications, and digital solutions that help businesses move forward.`,
+    siteName: BRAND_NAME,
+    type: "website",
+  },
+  twitter: {
+    card: "summary",
+    title: `${BRAND_NAME} — ${BRAND_TAGLINE}`,
+    description: `${BRAND_NAME} builds beyond boundaries with branding, websites, applications, and digital solutions that help businesses move forward.`,
+  },
   icons: {
     icon: [{ url: "/favicon.svg", type: "image/svg+xml" }],
     shortcut: [{ url: "/favicon.svg", type: "image/svg+xml" }],

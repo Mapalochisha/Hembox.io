@@ -1,4 +1,4 @@
-# HEMBOX.io domain reselling: implementation plan
+# Hembox Tech domain reselling: implementation plan
 
 ## Current stage
 
@@ -17,7 +17,7 @@ The pricing layer now uses integer minor-unit arithmetic, an explicit FX scaling
 ## Product decisions
 
 - Primary customer-facing currency: ZMW. Keep provider wholesale amounts and currency separate from retail prices; apply an explicit, reviewable FX and margin policy before displaying quotes.
-- Domain purchase must be possible without buying a HEMBOX website-development package.
+- Domain purchase must be possible without buying a Hembox Tech website-development package.
 - Do not introduce existing-customer discount logic until there are customers and actual unit economics to justify it.
 - Start with an enquiry-led customer journey. Do not accept payment for a domain until provider availability, final pricing, payment confirmation, and registration reconciliation are implemented.
 - DNS is a provider capability behind the adapter; it is not exposed as a customer control until authorization, auditability, and provider support are ready.
@@ -28,7 +28,7 @@ The pricing layer now uses integer minor-unit arithmetic, an explicit FX scaling
 2. **Provider verification:** configure the separate server-side NameSilo sandbox key and `DOMAIN_PROVIDER_MODE=namesilo-sandbox` in Preview; run read-only `.com`/`.net` availability checks and confirm response shape and fail-closed behavior. Sandbox availability is not live registry truth. State-changing operations are not implemented; do not enable them until provider-backed idempotency/reconciliation, sandbox coverage, and explicit release approval exist.
 3. **Quotes and orders:** server-calculated ZMW retail quotes, separately stored wholesale costs, expiry on quotes, idempotent order creation, and recoverable order states.
 4. **Initial manual payments:** customer-facing payment instructions/reference, transaction reference and optional note, admin verification/rejection, idempotency and audit trail. Keep unverified claims separate from paid order state. **~~Deferred gateway~~:** gateway selection/onboarding, hosted checkout, API integration, signed webhooks and gateway reconciliation are greyed out and excluded until custom-domain funding is available. Never trust a browser redirect as proof of payment.
-5. **Initial manual registration:** after an admin verifies payment and rechecks live availability/final price, the admin registers in the registrar's own console and records the actual result through a guarded, audited HEMBOX action. This action never calls the registrar. Automated registration, provider mutations and ambiguous API-timeout recovery remain deferred until safe provider verification is complete.
+5. **Initial manual registration:** after an admin verifies payment and rechecks live availability/final price, the admin registers in the registrar's own console and records the actual result through a guarded, audited Hembox Tech action. This action never calls the registrar. Automated registration, provider mutations and ambiguous API-timeout recovery remain deferred until safe provider verification is complete.
 6. **Customer domain area:** domain status, registration/expiry dates, renewal reminders and later DNS controls.
 7. **Operations console:** provider health, failed orders, renewals, margin reporting, reconciliation and immutable audit events.
 
@@ -42,6 +42,9 @@ The pricing layer now uses integer minor-unit arithmetic, an explicit FX scaling
 - Apply RLS to exposed tables and scope customer reads/writes to the authenticated owner.
 - Add migrations to the feature branch first; review schema and policies before applying anything to the production Supabase project.
 
+
+
+> **Brand note (2026-10-29):** Current company name is Hembox Tech. Dated progress notes below retain historical names and technical URLs for traceability.
 
 ## 2026-10-18 implementation note
 

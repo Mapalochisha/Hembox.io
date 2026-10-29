@@ -7,7 +7,6 @@ import { ArrowRight, Mail, Phone, Instagram, Facebook, Twitter, Linkedin, Messag
 
 export function ContactCTA() {
   const {
-    agency_name,
     contact_email,
     phone_number,
     whatsapp_number,
