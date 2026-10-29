@@ -332,7 +332,7 @@ export default function BillsPage() {
           <div className="mt-6 flex flex-col-reverse gap-3 sm:flex-row sm:justify-end"><button onClick={() => setSelectedInvoice(null)} disabled={submitting} className="rounded-xl border border-slate-200 px-4 py-3 text-sm font-semibold text-slate-700">Cancel</button><button onClick={() => void submitClaim()} disabled={submitting || !methodId} className="inline-flex items-center justify-center gap-2 rounded-xl bg-navy px-5 py-3 text-sm font-semibold text-white disabled:cursor-not-allowed disabled:opacity-60">{submitting ? <Loader2 className="h-4 w-4 animate-spin" /> : <CreditCard className="h-4 w-4" />} {resubmittingClaimId ? "Resubmit claim" : "Submit payment claim"}</button></div>
         </section>
       </div>}
-      <div className="hidden print:block"><p>HEMBOX.io billing statement</p></div>
+      <div className="hidden print:block"><p>Hembox Tech billing statement</p></div>
     </PortalShell>
   )
 }
