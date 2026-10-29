@@ -1,4 +1,4 @@
-# HEMBOX.io Client Portal — Product Blueprint
+# Hembox Tech Client Portal — Product Blueprint
 
 > Design and implementation handoff. This is a planning document only: no application code, schema, production data, environment variables, payment configuration, or registrar settings are changed by this blueprint.
 >
@@ -10,14 +10,14 @@
 
 ## 1. Product goal
 
-Build a unified, premium client workspace for the full range of HEMBOX services—not a website-only dashboard. It must support creative, digital, and technical engagements, including branding and graphic design, websites, mobile and web applications, software development, domains, hosting/maintenance, and future services.
+Build a unified, premium client workspace for the full range of Hembox Tech services—not a website-only dashboard. It must support creative, digital, and technical engagements, including branding and graphic design, websites, mobile and web applications, software development, domains, hosting/maintenance, and future services.
 
 The client should be able to answer four questions quickly:
 
-1. What work is HEMBOX doing for me?
+1. What work is Hembox Tech doing for me?
 2. What services/assets do I currently have?
 3. Is there anything I need to pay, review, approve, or provide?
-4. Where do I find my files and communicate with HEMBOX?
+4. Where do I find my files and communicate with Hembox Tech?
 
 **Design direction agreed with the user:** a blend of modern SaaS, premium agency, and technical clarity; a balanced overview that is useful without being overwhelming; a full client portal; a service catalogue plus guided service requests; a central Files area plus project-level access; collaborative project management; and context-sensitive technical information.
 
@@ -69,13 +69,13 @@ A persistent desktop sidebar and a deliberately designed mobile navigation are p
 ### Global actions
 
 - **Request a service** — opens the service catalogue and guided request flow.
-- **Contact HEMBOX** — opens the existing communication entry point or starts an appropriately categorized conversation.
+- **Contact Hembox Tech** — opens the existing communication entry point or starts an appropriately categorized conversation.
 - Search may be added when it can search meaningful portal entities (projects, files, invoices, domains) with ownership enforced server-side.
 
 ### Visual system
 
 - Light content canvas with a deep navy navigation surface.
-- Restrained HEMBOX brand accent; neutral borders and subtle depth.
+- Restrained Hembox Tech brand accent; neutral borders and subtle depth.
 - Premium typography and spacing; no excessive gradients, shadows, nested cards, or decorative charts.
 - Status colour is semantic and consistently labelled; colour is never the only status indicator.
 - Monospaced styling only for technical identifiers and values where it improves legibility.
@@ -86,12 +86,12 @@ A persistent desktop sidebar and a deliberately designed mobile navigation are p
 
 ### 4.1 Overview — proposed route: `/portal`
 
-**Purpose:** a concise summary of the client relationship with HEMBOX.
+**Purpose:** a concise summary of the client relationship with Hembox Tech.
 
 **Top area**
 - Greeting and short workspace context.
 - Primary action: Request a service.
-- Optional secondary action: Contact HEMBOX.
+- Optional secondary action: Contact Hembox Tech.
 
 **Four summary cards**
 1. Active Projects.
@@ -109,7 +109,7 @@ Cards link to their corresponding filtered destination. Counts and balances must
 **Rules**
 - Keep the default view balanced; do not show every project, invoice, and event on the landing page.
 - If no action is required, show a calm positive empty state rather than invented alerts.
-- New clients get guided first steps (browse services, request work, or contact HEMBOX).
+- New clients get guided first steps (browse services, request work, or contact Hembox Tech).
 - Do not imply that a payment claim is a verified payment or that a paid domain order is already registered.
 
 ### 4.2 My Projects — proposed route: `/portal/projects`
@@ -161,10 +161,10 @@ A completed project can result in one or more active services, but that transiti
 
 ### 4.4 Service catalogue and request flow — proposed routes: `/portal/services/catalogue`, `/portal/services/request`
 
-**Purpose:** allow clients to explore HEMBOX capabilities and submit a request that captures the right context.
+**Purpose:** allow clients to explore Hembox Tech capabilities and submit a request that captures the right context.
 
 **Catalogue**
-- Group services by outcome/category, not by an assumption that HEMBOX only builds websites.
+- Group services by outcome/category, not by an assumption that Hembox Tech only builds websites.
 - Initial groups: Brand & Creative; Websites & Digital Experiences; Apps & Software; Domains & Infrastructure; Ongoing Support; Custom Work.
 - Each service explains what it is, likely deliverables, what information is needed, and whether pricing is fixed, indicative, or quote-based.
 - Catalogue entries should be data/configuration driven where practical so adding a service does not require redesigning the portal.
@@ -200,7 +200,7 @@ A completed project can result in one or more active services, but that transiti
 
 ### 4.7 Bills & Payments — existing route: `/portal/bills`
 
-**Purpose:** one auditable billing centre for every HEMBOX charge.
+**Purpose:** one auditable billing centre for every Hembox Tech charge.
 
 Preserve the existing unified billing workflow and its established rules:
 - Covers websites/plans, domains and renewals, add-ons, custom work, and other supported invoice sources.
@@ -291,7 +291,7 @@ Sequence may change after the audit reveals dependencies. No phase should bypass
 
 ## 9. Acceptance criteria
 
-- The portal clearly represents HEMBOX as a creative and technical services company, not a website-only firm.
+- The portal clearly represents Hembox Tech as a creative and technical services company, not a website-only firm.
 - A client can discover and request branding, design, website, app/software, domain/infrastructure, and custom services through one coherent request experience.
 - Projects and ongoing services are distinct, linked where appropriate, and have clear statuses.
 - The overview contains four primary summary cards plus projects, genuine attention items, and recent activity without overwhelming the client.
