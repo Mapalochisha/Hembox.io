@@ -1,5 +1,7 @@
 # Hembox Tech — Production Setup Guide
 
+The public-facing company name is defined in `src/lib/brand.ts`; it is not edited through Supabase `agency_settings`. Contact information, social links, WhatsApp settings, and legal content remain managed through the existing settings workflow. The intended `hembox.tech` domain is a separate migration step; do not change DNS, Vercel domain assignments, or authentication redirect settings until that migration is explicitly started.
+
 ## Prerequisites
 
 - Node.js 22+
