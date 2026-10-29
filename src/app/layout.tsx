@@ -17,8 +17,8 @@ const inter = Inter({
 });
 
 export const metadata: Metadata = {
-  title: "Hembox.io — Your website shouldn't be boring",
-  description: "We build fast, beautiful sites that actually convert. No templates. No bloat. Just results.",
+  title: "Hembox Tech — Build Beyond Boundaries",
+  description: "Hembox Tech builds beyond boundaries with branding, websites, applications, and digital solutions that help businesses move forward.",
   icons: {
     icon: [{ url: "/favicon.svg", type: "image/svg+xml" }],
     shortcut: [{ url: "/favicon.svg", type: "image/svg+xml" }],
