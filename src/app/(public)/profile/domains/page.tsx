@@ -129,7 +129,7 @@ export default function CustomerDomainsPage() {
         paymentReference: result.paymentReference, amountMinor: result.amountMinor,
         currency: result.currency, instructions: result.instructions,
       } }))
-      setPaymentNotice("Use the exact order reference in your transfer. Your payment is not confirmed until HEMBOX TECH verifies settled funds.")
+      setPaymentNotice("Use the exact order reference in your transfer. Your payment is not confirmed until HEMBOX TECH TECH verifies settled funds.")
       void loadOrders()
     } catch (e) {
       setPaymentError(e instanceof Error ? e.message : "Manual payment instructions are unavailable.")
@@ -402,7 +402,7 @@ export default function CustomerDomainsPage() {
                       <p className="font-bold">Payment claim: {statusLabel(claim.status)}</p>
                       <p className="mt-1 text-xs text-slate-500">Reference {claim.payment_reference} · Transaction {claim.transaction_reference}</p>
                       {claim.review_note ? <p className="mt-2 text-slate-600">Review note: {claim.review_note}</p> : null}
-                      {claim.status === "verified" ? <p className="mt-2 text-xs text-teal">Funds were verified by HEMBOX TECH. This does not mean the domain has been registered.</p> : null}
+                      {claim.status === "verified" ? <p className="mt-2 text-xs text-teal">Funds were verified by HEMBOX TECH TECH. This does not mean the domain has been registered.</p> : null}
                     </div>
                   ))}
                 </div>
