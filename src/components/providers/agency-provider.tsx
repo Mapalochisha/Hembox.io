@@ -2,8 +2,7 @@
 
 import { createContext, useContext, useEffect, useMemo, useState } from "react"
 import { createClient, isSupabaseConfigured } from "@/lib/supabase/client"
-
-export const BRAND_NAME = "Hembox Tech"
+import { BRAND_NAME } from "@/lib/brand"
 
 export interface AgencySettings {
   contact_email: string
@@ -24,7 +23,7 @@ const AgencyContext = createContext<AgencySettings>({
   phone_number: "+260 969 868508",
   whatsapp_number: "+260 969 868508",
   whatsapp_message: "Hi, I'm interested in your services!",
-  about_us_content: "Hembox Tech helps businesses build beyond boundaries with digital experiences, branding, applications, and technology solutions.",
+  about_us_content: `${BRAND_NAME} helps businesses build beyond boundaries with digital experiences, branding, applications, and technology solutions.`,
   terms_conditions: "",
   privacy_policy: "",
   instagram_url: "",
@@ -77,7 +76,7 @@ export function AgencyProvider({ children }: { children: React.ReactNode }) {
       phone_number: "+260 969 868508",
       whatsapp_number: "+260 969 868508",
       whatsapp_message: "Hi, I'm interested in your services!",
-      about_us_content: "Hembox Tech helps businesses build beyond boundaries with digital experiences, branding, applications, and technology solutions.",
+      about_us_content: `${BRAND_NAME} helps businesses build beyond boundaries with digital experiences, branding, applications, and technology solutions.`,
       terms_conditions: "",
       privacy_policy: "",
       instagram_url: "",
