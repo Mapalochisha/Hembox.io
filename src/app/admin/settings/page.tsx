@@ -121,7 +121,7 @@ export default function SettingsPage() {
       </div>
 
       <form onSubmit={handleSave} className="space-y-8 max-w-4xl">
-        {/* Agency Profile */}
+        {/* Business Contact Information */}
         <Card className="rounded-[24px] border-black/5 shadow-sm">
           <CardHeader className="border-b border-black/5">
             <CardTitle className="text-lg flex items-center gap-2">
@@ -130,7 +130,7 @@ export default function SettingsPage() {
             </CardTitle>
           </CardHeader>
           <CardContent className="p-6 space-y-6">
-            <div className="grid sm:grid-cols-2 gap-6">
+            <div className="space-y-2 max-w-xl">
               <div className="space-y-2">
                 <Label htmlFor="contactEmail" className="text-[13px] font-bold uppercase tracking-wider text-gray-500">Contact Email</Label>
                 <Input 
