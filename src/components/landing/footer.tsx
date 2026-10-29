@@ -1,9 +1,8 @@
 "use client"
 
-import { useAgency } from "@/components/providers/agency-provider"
+import { BRAND_NAME } from "@/components/providers/agency-provider"
 
 export function Footer() {
-  const { agency_name } = useAgency()
   const year = new Date().getFullYear()
 
   return (
@@ -16,9 +15,9 @@ export function Footer() {
                 <path d="M4 4h7v7H4zM13 4h7v4h-7zM4 13h4v7H4zM13 11h7v9h-7z" fill="white" />
               </svg>
             </div>
-            <span className="font-bold tracking-tight text-navy">{agency_name}</span>
+            <span className="font-bold tracking-tight text-navy">{BRAND_NAME}</span>
           </div>
-          <p className="text-gray-500 text-sm">© {year} {agency_name}. All rights reserved.</p>
+          <p className="text-gray-500 text-sm">© {year} {BRAND_NAME}. All rights reserved.</p>
           <div className="flex gap-8">
             <a href="/about" className="text-sm text-gray-500 hover:text-navy transition">About</a>
             <a href="/domains" className="text-sm text-gray-500 hover:text-navy transition">Domains</a>
