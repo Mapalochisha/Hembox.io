@@ -2,6 +2,7 @@
 
 import Link from "next/link"
 import { usePathname } from "next/navigation"
+import { BRAND_NAME } from "@/lib/brand"
 import { useEffect, useState } from "react"
 import { useAuth } from "@/components/providers/auth-provider"
 import { cn } from "@/lib/utils"
@@ -64,13 +65,13 @@ export function PortalShell({ children, title, eyebrow = "CLIENT WORKSPACE" }: {
   const navContents = (
     <>
       <div className="px-5 pb-6 pt-5">
-        <Link href="/" className="inline-flex items-center gap-3" onClick={() => setMobileOpen(false)} aria-label="Hembox Tech home">
+        <Link href="/" className="inline-flex items-center gap-3" onClick={() => setMobileOpen(false)} aria-label={`${BRAND_NAME} home`}>
           <span className="grid h-10 w-10 place-items-center rounded-xl bg-teal text-[#102033] shadow-lg shadow-teal/10">
             <svg aria-hidden="true" width="22" height="22" viewBox="0 0 24 24" fill="none">
               <path d="M3 3h8v8H3zM13 3h8v5h-8zM3 13h5v8H3zM10 13h11v8H10z" fill="currentColor"/>
             </svg>
           </span>
-          <span className="text-[18px] font-extrabold tracking-tight text-white">Hembox Tech</span>
+          <span className="text-[18px] font-extrabold tracking-tight text-white">{BRAND_NAME}</span>
         </Link>
         <div className="mt-6 rounded-2xl border border-white/[0.08] bg-white/[0.04] p-3">
           <div className="flex items-center gap-3">
@@ -153,7 +154,7 @@ export function PortalShell({ children, title, eyebrow = "CLIENT WORKSPACE" }: {
           </div>
         </header>
         <main className="mx-auto w-full max-w-[1440px] px-4 py-6 sm:px-6 sm:py-8 lg:px-9 lg:py-9">{children}</main>
-        <footer className="px-4 pb-6 text-center text-[11px] text-slate-400 sm:px-6 lg:px-9">Hembox Tech Workspace <span className="mx-1.5">·</span> Creative, digital &amp; technical services</footer>
+        <footer className="px-4 pb-6 text-center text-[11px] text-slate-400 sm:px-6 lg:px-9">{BRAND_NAME} Workspace <span className="mx-1.5">·</span> Creative, digital &amp; technical services</footer>
       </div>
     </div>
   )
