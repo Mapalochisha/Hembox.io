@@ -3,6 +3,7 @@
 import Link from "next/link"
 import { useCallback, useEffect, useMemo, useState } from "react"
 import { PortalShell } from "@/components/portal/portal-shell"
+import { BRAND_NAME } from "@/lib/brand"
 import { useAuth } from "@/components/providers/auth-provider"
 import { createClient, isSupabaseConfigured } from "@/lib/supabase/client"
 import { AlertCircle, CheckCircle2, Clock3, CreditCard, FileText, Loader2, RefreshCw, Search, Wallet } from "lucide-react"
