@@ -30,5 +30,7 @@ export function createClient() {
     )
   }
 
-  return createBrowserClient(url, anonKey)
+  return createBrowserClient(url, anonKey, {
+    cookieOptions: { secure: process.env.NODE_ENV === 'production', sameSite: 'lax' },
+  })
 }
