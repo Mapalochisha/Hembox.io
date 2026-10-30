@@ -60,7 +60,9 @@ export async function middleware(request: NextRequest) {
     })
 
     if (roleError || role !== 'admin') {
-      return NextResponse.redirect(new URL('/', request.url))
+      const deniedUrl = new URL('/access-denied', request.url)
+      deniedUrl.searchParams.set('from', pathname)
+      return NextResponse.redirect(deniedUrl)
     }
 
     return response
