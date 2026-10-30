@@ -104,9 +104,12 @@ export default function AdminDomainsPage() {
             Enter costs and FX inputs only after verifying them from a documented source. Retail prices are calculated server-side in ZMW.
           </p>
         </div>
-        <button onClick={() => void loadCatalog()} className="inline-flex h-10 items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white px-4 text-sm font-bold text-navy">
-          <RefreshCw className="h-4 w-4" /> Refresh
-        </button>
+        <div className="flex flex-wrap gap-2">
+          <a href="/admin/domains/provider-prices" className="inline-flex h-10 items-center justify-center rounded-xl border border-slate-200 bg-white px-4 text-sm font-bold text-navy">NameSilo wholesale rates</a>
+          <button onClick={() => void loadCatalog()} className="inline-flex h-10 items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white px-4 text-sm font-bold text-navy">
+            <RefreshCw className="h-4 w-4" /> Refresh
+          </button>
+        </div>
       </div>
 
       <div className="rounded-2xl border border-amber-200 bg-amber-50 p-4 text-sm leading-6 text-amber-950">

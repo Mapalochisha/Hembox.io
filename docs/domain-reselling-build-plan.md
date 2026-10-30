@@ -701,3 +701,41 @@ When resuming this project:
 - Instructions require the customer to pay the exact invoice amount, use the invoice number as a reference where supported, submit the transaction reference and amount through Portal → Bills, and wait for HEMBOX verification. A claim is explicitly not proof of settled funds. Mobile money methods support ZMW only; bank transfer is configured for ZMW/USD but inactive.
 - Migration uses `ON CONFLICT (method_key) DO NOTHING` to avoid overwriting any existing admin-edited methods when applied.
 - **Safety boundary:** this commit adds the seed migration to the feature branch only. It does not apply a migration to production or enable live domain registration/payment-gateway processing. Confirm CI and the exact-commit Vercel Preview before treating the code change as complete.
+
+
+### 2026-10-30 — M3 pricing investigation resumed
+
+- Created working branch `feat/domain-pricing-policy` from the current `main` head (`d72b05e81d7d75b228c691d6a07590802da2c2a4`). This intentionally avoids continuing from the historical domain branch, which predates later main-branch work.
+- Re-read the current pricing implementation. The repository already contains integer-minor-unit ZMW pricing math, upward rounding, registration/renewal wholesale fields, a manually verified FX snapshot, markup basis points, append-only price history, admin catalogue management, and a 24-hour freshness gate. The M3 code foundation exists; the milestone is not complete because the inputs and operational source path are not yet verified.
+- Official NameSilo documentation confirms:
+  - The API is free and supports custom reseller storefront integrations; there is no special reseller-only price tier.
+  - The Discount Program requires purchases to use NameSilo Account Funds. Each top-up while enrolled must be at least USD 50; this is not a general minimum balance for ordinary pay-as-you-go purchases.
+  - Standard account funding documentation says no minimum deposit for ordinary funding, while wire transfers have a USD 50 minimum and USD 15 fee. Funding methods and availability for a Zambia-based Hembox account still need direct confirmation.
+  - The read-only `getPrices` API returns registration, transfer and renewal prices by TLD and can return account-specific pricing; this is the preferred machine-readable wholesale-cost source once the production API credential is available.
+- Official references reviewed: NameSilo [API getPrices](https://www.namesilo.com/api-reference/pages?uid=account%2Fget-prices), [reseller options](https://www.namesilo.com/support/v2/articles/about/reseller-options), [reseller FAQ](https://www.namesilo.com/support/v2/articles/domain-manager/reseller-frequently-asked), [Discount Program](https://www.namesilo.com/discount-program), [account funding](https://www.namesilo.com/support/v2/articles/account-options/account-funds-manager), and [published pricing](https://www.namesilo.com/pricing).
+- Commercial interpretation: do not assume Discount Program prices in the Hembox margin model unless the business chooses to pre-fund the account and confirms a viable funding route. Model the actual account-specific `getPrices` result, not promotional pricing-page examples. Keep first-year registration and renewal prices separate.
+- No NameSilo live credential was used or exposed, no provider API was called, no customer price was published, no migration was applied, and no live registrar or payment action was performed.
+- **M3 remains in progress.** Remaining work: add a server-only, read-only `getPrices` adapter and admin retrieval path; validate its response parser with fixtures; record the provider quote timestamp/source; establish a defensible USD/ZMW FX source/update cadence and Hembox markup/rounding policy; then seed only TLDs with verified registration and renewal costs. Do not enable a TLD merely because a price can be fetched.
+- **Decision required before publishing prices:** confirm whether Hembox is willing and able to use the NameSilo Discount Program's USD 50 minimum top-up for discounted purchases, or whether to price from standard pay-as-you-go account rates. Until that is decided and a live account-specific price response is available, keep all TLDs disabled.
+
+
+### 2026-10-30 — Standard pay-as-you-go pricing selected
+
+- **Commercial decision:** use NameSilo's standard pay-as-you-go/public retail rates for the initial Hembox launch. Do not enroll in or model Discount Program prices and do not require the USD 50 minimum top-up.
+- Added `src/lib/domains/providers/namesilo-prices.ts`, a server-only, read-only NameSilo `getPrices` client. It explicitly sends `retail_prices=1` so the returned price list is the standard retail schedule rather than Discount Program account rates.
+- The parser normalizes registration and renewal values into integer USD cents, rejects malformed/incomplete/non-success responses, and never guesses missing prices. It does not log or expose the API-key URL.
+- Added fixture tests for successful parsing, error/incomplete responses, and the explicit standard-retail request contract.
+- **Safety:** the client is not yet wired to a public/customer route or a write operation. It only retrieves prices. No catalogue rows were changed, no ZMW conversion or markup assumptions were invented, no production database migration was applied, and no registration/payment operation was invoked.
+- **Next M3 work:** expose the read-only result to authorized admins, define and document an FX source/rate timestamp policy and Hembox margin/rounding policy, then create an explicit human-reviewed price-snapshot action. TLDs remain disabled until both registration and renewal prices, FX and margin are approved and recorded.
+
+
+### 2026-10-30 — Admin-only standard wholesale price review
+
+- Added an administrator-authenticated, no-store endpoint at `GET /api/admin/domains/provider-prices`. It calls the server-only NameSilo `getPrices` adapter and returns only normalized TLD registration/renewal costs, currency, source and retrieval timestamp. The API key and request URL are never returned.
+- Added the admin screen at `/admin/domains/provider-prices` and linked it from the TLD catalogue. It presents standard pay-as-you-go rates as a review reference; it does not persist rates, create catalogue rows, or enable TLDs.
+- Tightened parsing to reject zero as well as malformed, missing, unsafe or non-success prices. Added a credential non-disclosure regression test.
+- **FX policy for the initial launch:** use an administrator-entered, manually verified USD/ZMW rate. The admin must record the source and observation date in the pricing source/verification note when saving a price snapshot. No undocumented rate is fetched or assumed. Recheck the rate before each new price snapshot; the existing 24-hour catalogue freshness gate prevents stale published prices from being quoted.
+- **Markup policy in code:** keep markup configurable per TLD in basis points, with the current form's 20% value as a convenience default only. The admin must explicitly review the markup before saving; it is not silently imposed on provider prices. Retail calculations use integer minor units and round upward to the next ZMW 1.00. Registration and renewal costs remain separate.
+- **Approval boundary:** saving a pricing snapshot remains an explicit admin action. The current admin form disables the TLD while writing the catalogue row and immutable snapshot, then applies the requested enabled state only after the snapshot succeeds. The provider retrieval screen itself is strictly read-only.
+- **Outstanding external prerequisites:** configure `NAMESILO_API_KEY` in the server environment and confirm the live NameSilo account's operational funding route. Until then the new endpoint safely returns a configuration error. No live provider call, catalogue publication, production migration, registration, or payment was performed by this code change.
+- **Verification:** CI and the exact-head Vercel Preview must pass before this increment is complete. A successful build does not prove the production NameSilo credential is configured or that any TLD is commercially approved.
