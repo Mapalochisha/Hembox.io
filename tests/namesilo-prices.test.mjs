@@ -15,7 +15,8 @@ test("rejects non-success, incomplete, malformed, zero and empty price responses
   assert.throws(() => parseNameSiloStandardPrices({ reply: { code: 110 } }), /did not confirm/)
   assert.throws(() => parseNameSiloStandardPrices({ reply: { code: 300, com: { registration: "10.00" } } }), /incomplete/)
   assert.throws(() => parseNameSiloStandardPrices({ reply: { code: 300, com: { registration: "10.999", renew: "10.00" } } }), /invalid/)
-  assert.throws(() => parseNameSiloStandardPrices({ reply: { code: 300, com: { registration: "0", renew: "10.00" } } }), /positive/)\n  assert.throws(() => parseNameSiloStandardPrices({ reply: { code: 300, detail: "success" } }), /no usable/)
+  assert.throws(() => parseNameSiloStandardPrices({ reply: { code: 300, com: { registration: "0", renew: "10.00" } } }), /positive/)
+  assert.throws(() => parseNameSiloStandardPrices({ reply: { code: 300, detail: "success" } }), /no usable/)
 })
 
 test("requests the explicit standard retail price list from the live API host", async () => {
