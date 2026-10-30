@@ -1,10 +1,10 @@
-import { createClient } from "@/lib/supabase/server"
+import { createServiceClient } from "@/lib/supabase/service"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Users, FolderKanban, DollarSign, TrendingUp } from "lucide-react"
 import { cn } from "@/lib/utils"
 
 async function getStats() {
-  const supabase = createClient()
+  const supabase = createServiceClient()
 
   const [
     { count: totalClients },
@@ -13,11 +13,11 @@ async function getStats() {
     { data: revenueData },
     { data: recentClients },
   ] = await Promise.all([
-    supabase.from("clients").select("*", { count: "exact", head: true }),
+    supabase.from("profiles").select("*", { count: "exact", head: true }).eq("role", "user"),
     supabase.from("projects").select("*", { count: "exact", head: true }),
     supabase.from("projects").select("*", { count: "exact", head: true }).eq("status", "in_progress"),
     supabase.from("projects").select("budget"),
-    supabase.from("clients").select("*, profiles(full_name, email)").order("created_at", { ascending: false }).limit(5),
+    supabase.from("profiles").select("id, full_name, email, created_at, role").eq("role", "user").order("created_at", { ascending: false }).limit(5),
   ])
 
   const totalRevenue = (revenueData as any[])?.reduce((acc, p) => acc + (Number(p.budget) || 0), 0) || 0
@@ -49,7 +49,7 @@ export default async function AdminDashboardPage() {
           </CardHeader>
           <CardContent>
             <div className="text-3xl font-bold">{stats.totalClients}</div>
-            <p className="text-xs text-gray-500 mt-1">Acquired clients</p>
+            <p className="text-xs text-gray-500 mt-1">Registered customer accounts</p>
           </CardContent>
         </Card>
 
@@ -90,31 +90,29 @@ export default async function AdminDashboardPage() {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <Card className="rounded-[32px]">
           <CardHeader>
-            <CardTitle>Recent Clients</CardTitle>
+            <CardTitle>Recent Customer Accounts</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
               {stats.recentClients.length === 0 ? (
-                <p className="text-sm text-gray-500 text-center py-4">No clients found.</p>
+                <p className="text-sm text-gray-500 text-center py-4">No customer accounts found.</p>
               ) : (
                 stats.recentClients.map((client: any) => (
                   <div key={client.id} className="flex items-center justify-between">
                     <div className="flex items-center gap-3">
                       <div className="w-9 h-9 rounded-full bg-navy/10 grid place-items-center text-xs font-bold text-navy">
-                        {client.profiles?.full_name?.charAt(0) || client.profiles?.email?.charAt(0) || "C"}
+                        {client.full_name?.charAt(0) || client.email?.charAt(0) || "C"}
                       </div>
                       <div>
-                        <p className="text-sm font-medium">{client.profiles?.full_name || client.profiles?.email || "Unknown"}</p>
-                        <p className="text-xs text-gray-500">{client.company_name || "No company"}</p>
+                        <p className="text-sm font-medium">{client.full_name || client.email || "Unnamed account"}</p>
+                        <p className="text-xs text-gray-500">{"Customer account"}</p>
                       </div>
                     </div>
                     <span className={cn(
                       "px-2 py-1 rounded-full text-xs font-medium",
-                      client.status === "active" && "bg-teal/10 text-teal",
-                      client.status === "inactive" && "bg-gray-100 text-gray-600",
-                      client.status === "pending" && "bg-coral/10 text-coral",
+                      "bg-teal/10 text-teal",
                     )}>
-                      {client.status}
+                      Customer
                     </span>
                   </div>
                 ))
