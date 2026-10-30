@@ -3,6 +3,7 @@
 import Link from "next/link"
 import { useEffect, useState } from "react"
 import { PortalShell } from "@/components/portal/portal-shell"
+import { createClient, isSupabaseConfigured } from "@/lib/supabase/client"
 import {
   ArrowRight, ArrowUpRight, BriefcaseBusiness, CheckCircle2,
   CircleDollarSign, Clock3, FileText, FolderKanban, Globe2, MessageSquare,
@@ -31,17 +32,13 @@ function date(value: string | null) {
 }
 function titleCase(value: string) { return value.replaceAll("_", " ").replace(/\b\w/g, (letter) => letter.toUpperCase()) }
 
-const services = [
-  { title: "Brand & creative", detail: "Identity, design systems and visual assets", icon: Sparkles },
-  { title: "Websites & digital", detail: "Websites, web apps and digital experiences", icon: Globe2 },
-  { title: "Apps & software", detail: "Mobile apps, platforms and custom software", icon: BriefcaseBusiness },
-  { title: "Domains & infrastructure", detail: "Domains and ongoing technical services", icon: CircleDollarSign },
-]
+type CatalogService = { id:string; title:string; description:string|null; icon_name:string|null; slug:string|null }
 
 export default function ClientWorkspacePage() {
   const [summary, setSummary] = useState<Summary | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState("")
+  const [catalogServices, setCatalogServices] = useState<CatalogService[]>([])
 
   async function loadSummary() {
     setLoading(true)
@@ -59,6 +56,21 @@ export default function ClientWorkspacePage() {
   }
 
   useEffect(() => { void loadSummary() }, [])
+  useEffect(() => {
+    let active = true
+    void (async () => {
+      try {
+        if (!isSupabaseConfigured()) return
+        const db = createClient()
+        const { data, error } = await db.from("services").select("id,title,description,icon_name,slug").eq("status", "active").order("sort_order", { ascending: true }).limit(4)
+        if (error) throw error
+        if (active) setCatalogServices((data || []) as CatalogService[])
+      } catch (catalogError) {
+        console.warn("[Portal] Published service catalogue unavailable:", catalogError)
+      }
+    })()
+    return () => { active = false }
+  }, [])
 
   return <PortalShell title="Overview">
     <div className="mb-7 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
@@ -133,10 +145,10 @@ export default function ClientWorkspacePage() {
     <section className="mt-6 overflow-hidden rounded-2xl border border-slate-200/80 bg-white">
       <div className="flex items-center justify-between border-b border-slate-100 px-5 py-4 sm:px-6"><div><h3 className="text-sm font-bold text-[#172338]">Explore what we can build together</h3><p className="mt-1 text-xs text-slate-500">Creative, digital and technical services under one roof.</p></div><Link href="/portal/services/catalogue" className="hidden items-center gap-1 text-xs font-semibold text-[#16867b] hover:underline sm:inline-flex">View catalogue <ArrowRight className="h-3.5 w-3.5"/></Link></div>
       <div className="grid divide-y divide-slate-100 sm:grid-cols-2 sm:divide-x sm:divide-y-0 xl:grid-cols-4">
-        {services.map((service) => { const Icon = service.icon; return <Link key={service.title} href="/portal/services/catalogue" className="group flex items-start gap-3 p-5 transition hover:bg-slate-50/80 sm:p-6">
-          <span className="grid h-10 w-10 shrink-0 place-items-center rounded-xl border border-slate-200 bg-white text-slate-600 transition group-hover:border-teal/30 group-hover:bg-teal/5 group-hover:text-[#16867b]"><Icon className="h-[18px] w-[18px]"/></span>
-          <span className="min-w-0 flex-1"><span className="block text-xs font-bold text-slate-800">{service.title}</span><span className="mt-1.5 block text-[11px] leading-5 text-slate-500">{service.detail}</span><span className="mt-3 inline-flex items-center gap-1 text-[11px] font-semibold text-[#16867b]">Explore <ArrowRight className="h-3 w-3 transition group-hover:translate-x-0.5"/></span></span>
-        </Link>})}
+        {catalogServices.map((service) => <Link key={service.id} href={"/services/"+(service.slug||service.id)} className="group flex items-start gap-3 p-5 transition hover:bg-slate-50/80 sm:p-6">
+          <span className="grid h-10 w-10 shrink-0 place-items-center rounded-xl border border-slate-200 bg-white text-slate-600 transition group-hover:border-teal/30 group-hover:bg-teal/5 group-hover:text-[#16867b]"><CatalogueIcon name={service.icon_name}/></span>
+          <span className="min-w-0 flex-1"><span className="block text-xs font-bold text-slate-800">{service.title}</span><span className="mt-1.5 block text-[11px] leading-5 text-slate-500">{service.description||"Explore this Hembox Tech service."}</span><span className="mt-3 inline-flex items-center gap-1 text-[11px] font-semibold text-[#16867b]">Explore <ArrowRight className="h-3 w-3 transition group-hover:translate-x-0.5"/></span></span>
+        </Link>)}
       </div>
     </section>
 
@@ -161,3 +173,8 @@ function SummaryCard({ title, value, note, href, icon: Icon, accent }: { title: 
   </Link>
 }
 function ActivityIcon() { return <Clock3 className="h-4 w-4"/> }
+function CatalogueIcon({name}:{name:string|null}) {
+  const icons:Record<string,typeof Globe2>={Globe:Globe2,Search:Globe2,Palette:Sparkles,ShoppingCart:CircleDollarSign,Megaphone:Sparkles,LifeBuoy:MessageSquare,Code:BriefcaseBusiness,Smartphone:BriefcaseBusiness,Rocket:Sparkles,Layers:BriefcaseBusiness}
+  const Icon=icons[name||""]||Sparkles
+  return <Icon className="h-[18px] w-[18px]"/>
+}
