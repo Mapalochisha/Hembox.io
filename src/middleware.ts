@@ -32,6 +32,7 @@ export async function middleware(request: NextRequest) {
     supabaseUrl,
     supabaseAnonKey,
     {
+      cookieOptions: { secure: process.env.NODE_ENV === 'production', sameSite: 'lax' },
       cookies: {
         get(name: string) {
           return request.cookies.get(name)?.value
