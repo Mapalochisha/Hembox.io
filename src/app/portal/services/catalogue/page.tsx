@@ -6,7 +6,7 @@ import { PortalShell } from "@/components/portal/portal-shell"
 import { createClient, isSupabaseConfigured } from "@/lib/supabase/client"
 import { ArrowRight, ArrowUpRight, CheckCircle2, Code, Globe, Layers, Palette, Smartphone, Sparkles, Wrench, Loader2 } from "lucide-react"
 
-type Service = { id:string; title:string; description:string|null; icon_name:string|null; slug:string|null; category?:string|null }
+type Service = { id:string; title:string; description:string|null; icon_name:string|null; slug:string|null;  }
 const iconMap:Record<string,any>={Globe,Palette,Smartphone,Code,Layers,Wrench}
 function ServiceIcon({name}:{name:string|null}) { const Icon=iconMap[name||""]||Sparkles; return <Icon className="h-5 w-5"/> }
 
@@ -20,7 +20,7 @@ export default function ServiceCataloguePage() {
       try {
         if(!isSupabaseConfigured()) throw new Error("The service catalogue is temporarily unavailable.")
         const db=createClient()
-        const {data,error:queryError}=await db.from("services").select("id,title,description,icon_name,slug,category").eq("status","active").order("sort_order",{ascending:true})
+        const {data,error:queryError}=await db.from("services").select("id,title,description,icon_name,slug").eq("status","active").order("sort_order",{ascending:true})
         if(queryError) throw queryError
         if(active) setServices((data||[]) as Service[])
       } catch(e) {
@@ -46,9 +46,8 @@ export default function ServiceCataloguePage() {
       :services.length?<div className="mt-5 grid gap-4 md:grid-cols-2 xl:grid-cols-3">
         {services.map(service=><article key={service.id} className="flex flex-col rounded-2xl border border-slate-200/80 bg-white p-5 shadow-[0_2px_12px_rgba(15,23,42,0.025)] transition hover:border-slate-300 hover:shadow-sm sm:p-6">
           <span className="grid h-11 w-11 place-items-center rounded-xl bg-[#e9f8f5] text-[#16867b]"><ServiceIcon name={service.icon_name}/></span>
-          {service.category&&<p className="mt-4 text-[9px] font-bold uppercase tracking-[0.15em] text-[#15877d]">{service.category}</p>}
           <h4 className="mt-2 text-sm font-bold text-[#172338]">{service.title}</h4><p className="mt-2 min-h-10 flex-1 text-xs leading-5 text-slate-500">{service.description||"A Hembox Tech service tailored to your goals."}</p>
-          <Link href={"/portal/services/request?service="+encodeURIComponent(service.title)+"&category="+encodeURIComponent(service.category||"")} className="mt-5 inline-flex items-center gap-1.5 border-t border-slate-100 pt-4 text-xs font-bold text-[#16867b] hover:text-[#105f58]">Request this service <ArrowUpRight className="h-3.5 w-3.5"/></Link>
+          <Link href={"/portal/services/request?service="+encodeURIComponent(service.title)+"&category="+encodeURIComponent("Published service")} className="mt-5 inline-flex items-center gap-1.5 border-t border-slate-100 pt-4 text-xs font-bold text-[#16867b] hover:text-[#105f58]">Request this service <ArrowUpRight className="h-3.5 w-3.5"/></Link>
         </article>)}
       </div>:<div className="mt-6 rounded-2xl border border-dashed border-slate-300 bg-white px-6 py-14 text-center"><Sparkles className="mx-auto h-8 w-8 text-[#16867b]"/><h4 className="mt-3 text-sm font-bold text-slate-800">No services are currently published</h4><p className="mt-1 text-xs text-slate-500">Please check back later or contact our team.</p></div>}
       <div className="mt-6 flex flex-col gap-3 rounded-2xl border border-slate-200 bg-white p-5 sm:flex-row sm:items-center sm:justify-between sm:px-6"><div><p className="text-sm font-bold text-slate-800">Not sure where to start?</p><p className="mt-1 text-xs text-slate-500">Describe the outcome you need. We can help work out the right approach.</p></div><Link href="/portal/services/request" className="inline-flex h-10 items-center justify-center gap-2 rounded-xl bg-[#142239] px-4 text-xs font-semibold text-white hover:bg-[#203653]">Request custom quote <ArrowRight className="h-3.5 w-3.5"/></Link></div>
