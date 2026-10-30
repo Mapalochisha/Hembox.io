@@ -1,7 +1,6 @@
 "use client"
 
 import { useMemo, useState } from "react"
-import { useSearchParams } from "next/navigation"
 import { createClient, isSupabaseConfigured } from "@/lib/supabase/client"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -14,7 +13,6 @@ export function LoginForm() {
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
   const [isLoading, setIsLoading] = useState(false)
-  const searchParams = useSearchParams()
   const supabase = useMemo(() => isSupabaseConfigured() ? createClient() : null, [])
   const { toast } = useToast()
 
@@ -47,7 +45,7 @@ export function LoginForm() {
         .eq("id", data.user.id)
         .single()
 
-      const requestedDestination = searchParams.get("next")
+      const requestedDestination = new URLSearchParams(window.location.search).get("next")
       const safeDestination =
         requestedDestination &&
         requestedDestination.startsWith("/") &&
