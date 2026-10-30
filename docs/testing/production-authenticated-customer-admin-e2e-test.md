@@ -3,7 +3,7 @@
 **Target:** Production — https://hembox.tech  
 **Repository:** `Mapalochisha/Hembox.io`  
 **Test type:** Full authenticated functional, authorization, workflow-continuity, regression, responsive and security acceptance test  
-**Execution:** Independent tester; record evidence for every test  
+**Execution:** Independent tester; owner provisions accounts before handoff; record evidence for every test  
 **Important:** This is a production test plan. Use only the two disposable test identities and records explicitly created for this run. Do not edit, delete, refund, fulfil, or otherwise touch real customer records.
 
 ---
@@ -33,31 +33,79 @@ Verify the complete customer-to-admin-to-customer lifecycle, not merely whether 
 - Never put passwords, access tokens, cookies, service-role keys, API keys, or payment secrets in this repository, screenshots, test notes, or issue reports.
 - Stop and report immediately if a test unexpectedly exposes or modifies another customer's data, changes a real payment/domain state, or performs an irreversible action.
 
-## 3. Disposable test identities — provisioning required
+## 3. Disposable test identities — owner-provisioned, tester-ready
 
-Create two separate identities in the **Hembox.io production Supabase project** (`jygxbernkptzhoyksoie`):
+The tester receives **no access** to the Supabase project, GitHub repository, Vercel, SQL Editor, source code, environment variables, service-role/secret keys, or administrative consoles.
 
-| Identity | Suggested email | Required role | Purpose |
-|---|---|---|---|
-| Customer | `qa.customer+<run-id>@<controlled-test-mailbox-domain>` | `user` | Full client journey |
-| Administrator | `qa.admin+<run-id>@<controlled-test-mailbox-domain>` | `admin` | Full admin journey and cross-role continuity |
+Before handing over the test, the project owner/test coordinator must create two dedicated Auth users in the production Supabase project and privately provide the credentials:
 
-Use mailboxes controlled by the project owner/test coordinator. Do not use an address that belongs to an unrelated person.
+| Identity | Suggested email | Required application role |
+|---|---|---|
+| Customer | A unique owner-controlled QA mailbox/alias | `user` |
+| Administrator | A separate unique owner-controlled QA mailbox/alias | `admin` |
 
-### Provisioning procedure
+### Recommended provisioning: Supabase Auth Admin API
 
-1. In Supabase Dashboard → Authentication → Users, create the two users with unique, randomly generated passwords. Enable email confirmation for these test accounts only if required by the project's current auth configuration.
-2. Confirm each identity has a corresponding `public.profiles` row. The customer profile must have `role = 'user'`; the administrator profile must have `role = 'admin'`.
-3. Set the admin role only on the dedicated disposable admin profile. Never change the role of an existing human account. Confirm the application role resolver (`get_user_role`) returns admin for this identity.
-4. Sign in once with each identity and verify the expected landing route. If a profile row is not created automatically, stop and investigate the signup/profile trigger rather than inserting a profile or changing auth tables manually.
-5. Deliver the two credentials to the tester through a password manager or another private, expiring channel. **Do not add credentials to this Markdown file, GitHub, email threads, or test screenshots.**
-6. Record the two Auth user UUIDs in the private test evidence, not in this public-to-repository test document.
+Use a trusted owner-controlled environment (for example, a short-lived local script run by the project owner) with the project's Supabase URL and secret/service-role key supplied through environment variables. Never put the key in this repository, the test document, browser code, or tester's machine.
 
-**Provisioning limitation:** The available Supabase connection for this run exposes project/database operations but not the Supabase Auth Admin create-user/invite-user operation. Therefore these two Auth identities have **not** been created by this task. The steps above are required before execution; no credentials have been invented or represented as active.
+Create each user with the Auth Admin API's `createUser` operation and `email_confirm: true`. This explicitly confirms only these disposable identities, so they can sign in with their assigned passwords without receiving or clicking a verification email. It does **not** disable email confirmation for normal signups.
 
-### Cleanup
+Example (owner/coordinator only; do not give this script or its secrets to the tester):
 
-After sign-off, disable/delete only the two identified disposable Auth users using Supabase Dashboard → Authentication → Users. First remove their test-created application records through supported admin/UI workflows where available. Verify no test records remain. Never delete by broad email/domain matching, and never delete any pre-existing inquiry/message or unrelated row. If audit retention requires preserving test records, mark them as test data and document that decision instead of deleting them.
+```ts
+import { createClient } from "@supabase/supabase-js"
+
+const supabase = createClient(
+  process.env.SUPABASE_URL!,
+  process.env.SUPABASE_SECRET_KEY!, // legacy projects may use service-role key
+  { auth: { autoRefreshToken: false, persistSession: false } }
+)
+
+const customer = await supabase.auth.admin.createUser({
+  email: process.env.QA_CUSTOMER_EMAIL!,
+  password: process.env.QA_CUSTOMER_PASSWORD!,
+  email_confirm: true,
+  user_metadata: { full_name: "HEMBOX QA Customer", test_account: true },
+})
+if (customer.error) throw customer.error
+
+const admin = await supabase.auth.admin.createUser({
+  email: process.env.QA_ADMIN_EMAIL!,
+  password: process.env.QA_ADMIN_PASSWORD!,
+  email_confirm: true,
+  user_metadata: { full_name: "HEMBOX QA Admin", test_account: true },
+})
+if (admin.error) throw admin.error
+
+console.log({
+  customerId: customer.data.user.id,
+  adminId: admin.data.user.id,
+})
+```
+
+After creation:
+1. Verify both Auth users are confirmed and can sign in.
+2. Verify the application's profile-creation trigger created matching `public.profiles` rows.
+3. Set/verify `public.profiles.role = 'user'` for the disposable customer and `role = 'admin'` for the disposable admin, using the project's established role-management path. Do not set admin privileges in user metadata; the application role resolver must remain authoritative.
+4. Verify `get_user_role` returns the expected role for each identity.
+5. Run a customer sign-in and an admin sign-in smoke check before handing over credentials.
+6. Deliver the two emails/passwords privately to the tester (password manager or expiring secure channel). Do not commit credentials or UUIDs to GitHub.
+
+**SQL clarification:** Do not directly insert rows into `auth.users` or attempt to generate password hashes in SQL. Supabase documents Auth Admin `createUser` as the supported server-side operation and explicitly supports `email_confirm: true`. The SQL Editor can inspect Auth data, but direct writes to Supabase-managed Auth tables are not the recommended user-provisioning interface.
+
+### Tester permissions and boundaries
+
+The tester needs only:
+- The production website URL.
+- The disposable customer login.
+- The disposable admin login.
+- This test plan and a place to submit evidence/defects.
+
+The tester must not be asked to open Supabase, GitHub, Vercel, SQL Editor, or any owner/developer environment. Do not ask them to create accounts, change roles, inspect database rows, read secrets, or perform cleanup.
+
+### Cleanup (owner/coordinator only)
+
+After sign-off, the owner/coordinator disables or deletes only the two identified disposable Auth users and removes run-labelled test records using supported application/admin workflows where possible. Verify the exact user UUIDs before deletion. Preserve audit records if required by policy. Do not ask the tester to perform cleanup and never delete by broad email-domain matching.
 
 ---
 
@@ -358,7 +406,7 @@ Copy this table into the private execution report and fill every row.
 The tester must report:
 - Production URL and exact deployment commit tested.
 - Test date/time and browser/device.
-- Customer and admin Auth user UUIDs (private report only).
+- The two supplied test-account labels (do not include passwords or tokens).
 - Pass/fail/blocked counts by severity.
 - Completed cross-role continuity rows.
 - All P0/P1 defects and supporting evidence.
