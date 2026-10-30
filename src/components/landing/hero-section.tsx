@@ -107,7 +107,7 @@ export function HeroSection() {
         {/* Right - Laptop */}
         <div className="relative lg:h-[560px] flex items-center justify-center">
           <div className="absolute z-30 -top-4 left-12 w-11 h-11 animate-float-1 hidden lg:block">
-            <svg viewBox="0 0 44 44" fill="none"><path d="M22 2c8 6 14 14 18 22-6 2-12 1-18-2-6-3-11-8-14 4-4 9-6 14-6z" fill="#2DD4BF" opacity="0.9"/><path d="M8 36c2-3 5-5 8-6" stroke="#0F172A" strokeWidth="2" strokeLinecap="round"/></svg>
+            <svg viewBox="0 0 44 44" fill="none"><path d="M22 2 C30 8 36 16 40 24 C34 26 28 25 22 22 C16 19 11 14 8 8 C12 4 17 2 22 2 Z" fill="#2DD4BF" opacity="0.9"/><path d="M8 36c2-3 5-5 8-6" stroke="#0F172A" strokeWidth="2" strokeLinecap="round"/></svg>
           </div>
           <div className="absolute z-30 top-20 -right-6 w-10 h-10 animate-float-2 hidden lg:block">
             <svg viewBox="0 0 40 40" fill="none"><path d="M20 3c6 5 11 11 14 18-5 1-10 0-14-2-5-3-9-7-11-12 3-3 7-4 11-4z" fill="#FF5A5F" opacity="0.9"/></svg>
@@ -198,7 +198,7 @@ export function HeroSection() {
                       <rect x="22" y="49" width="8" height="2" rx="1" fill="white" fillOpacity="0.2"/>
                       <g className="animate-flame">
                         <path d="M19 60c0 5 2.2 9 7 14 4.8-5 7-9 7-14 0-3-1.2-5-3-6-1 2-2.5 3-4 6 0-3-1.5-4-3-6-1.8 1-4 3-4 6z" fill="url(#flameGrad)"/>
-                        <path d="M22 62c0 2 1 4 4 7 3-3 4-5 4-7 0-1.5-.5-2.5-1.5-3.5-3-.5 1-1 1.5-1.5 3-.5-1.5-1-2-1.5-3-1 1-1.5 2-1.5 3z" fill="#FFB800"/>
+                        <path d="M22 62 C22 64 24 67 26 69 C28 67 30 64 30 62 C30 60 29 58 27 57 C26 59 25 60 24 62 C24 60 23 59 22 58 C21 59 20 60 20 62 Z" fill="#FFB800"/>
                       </g>
                     </svg>
                   </div>
