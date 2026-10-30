@@ -1,5 +1,3 @@
-import "server-only"
-
 import { resolveNameSiloApiConfig } from "./namesilo-config"
 
 const REQUEST_TIMEOUT_MS = 8_000
