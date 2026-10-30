@@ -2,30 +2,48 @@ import { createServiceClient } from "@/lib/supabase/service"
 import { Card, CardContent, CardHeader } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { Badge } from "@/components/ui/badge"
-import { Search, Plus, Mail, Phone, Globe, MoreHorizontal } from "lucide-react"
+import { Search, Plus, Mail } from "lucide-react"
 import Link from "next/link"
 
-async function getClients(search?: string) {
+type CustomerAccount = {
+  id: string
+  full_name: string | null
+  email: string | null
+  phone: string | null
+  created_at: string
+}
+
+async function getCustomerAccounts(search?: string) {
   const supabase = createServiceClient()
-
   let query = supabase
-    .from("clients")
-    .select("*, profiles(full_name, email, phone)")
+    .from("profiles")
+    .select("id, full_name, email, phone, created_at")
+    .eq("role", "user")
     .order("created_at", { ascending: false })
+    .limit(500)
 
-  if (search) {
-    query = query.or(`company_name.ilike.%${search}%,profiles.full_name.ilike.%${search}%`)
+  if (search?.trim()) {
+    const term = search.trim().replace(/[,%()]/g, " ")
+    query = query.or(`full_name.ilike.%${term}%,email.ilike.%${term}%`)
   }
 
-  const { data, error } = await query
+  const [{ data: accounts, error: accountError }, { data: workspaces, error: workspaceError }] = await Promise.all([
+    query,
+    supabase.from("clients").select("id, user_id, company_name, status"),
+  ])
 
-  if (error) {
-    console.error("Error fetching clients:", error)
-    return []
+  if (accountError) {
+    console.error("Error fetching customer accounts:", accountError)
+    return { accounts: [], workspaces: [] }
+  }
+  if (workspaceError) {
+    console.error("Error fetching client workspace records:", workspaceError)
   }
 
-  return data || []
+  return {
+    accounts: (accounts || []) as CustomerAccount[],
+    workspaces: workspaceError ? [] : workspaces || [],
+  }
 }
 
 export default async function ClientsPage({
@@ -33,104 +51,90 @@ export default async function ClientsPage({
 }: {
   searchParams: { search?: string }
 }) {
-  const clients = await getClients(searchParams.search)
+  const { accounts, workspaces } = await getCustomerAccounts(searchParams.search)
+  const workspaceByUser = new Map(workspaces.filter((item: any) => item.user_id).map((item: any) => [item.user_id, item]))
 
   return (
     <div className="space-y-8">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">Clients</h1>
-          <p className="text-gray-600 mt-1">Manage your client relationships</p>
+          <h1 className="text-3xl font-bold tracking-tight">Customer Accounts</h1>
+          <p className="mt-1 text-gray-600">Every base customer account is listed here, whether or not it has a company record or has purchased a service.</p>
         </div>
         <Link href="/admin/clients/new">
           <Button className="bg-navy hover:bg-navy/90">
-            <Plus className="w-4 h-4 mr-2" />
-            Add Client
+            <Plus className="mr-2 h-4 w-4" /> Create company record
           </Button>
         </Link>
       </div>
 
+      <div className="grid gap-4 sm:grid-cols-2">
+        <Card>
+          <CardContent className="p-5">
+            <p className="text-sm text-gray-500">Customer accounts</p>
+            <p className="mt-1 text-3xl font-bold text-navy">{accounts.length}</p>
+            <p className="mt-1 text-xs text-gray-500">Profiles with the base `user` role</p>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="p-5">
+            <p className="text-sm text-gray-500">Company / workspace records</p>
+            <p className="mt-1 text-3xl font-bold text-navy">{workspaces.length}</p>
+            <p className="mt-1 text-xs text-gray-500">Separate records linked to customer accounts</p>
+          </CardContent>
+        </Card>
+      </div>
+
       <Card>
         <CardHeader className="pb-4">
-          <div className="flex items-center gap-4">
-            <div className="relative flex-1 max-w-sm">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-              <form>
-                <Input
-                  name="search"
-                  placeholder="Search clients..."
-                  defaultValue={searchParams.search}
-                  className="pl-10"
-                />
-              </form>
+          <form className="flex w-full max-w-md items-center gap-3">
+            <div className="relative flex-1">
+              <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
+              <Input name="search" placeholder="Search name or email..." defaultValue={searchParams.search} className="pl-10" />
             </div>
-          </div>
+            <Button type="submit" variant="outline">Search</Button>
+          </form>
         </CardHeader>
         <CardContent>
-          <div className="overflow-x-auto">
-            <table className="w-full">
-              <thead>
-                <tr className="border-b border-gray-100">
-                  <th className="text-left py-3 px-4 text-sm font-medium text-gray-500">Client</th>
-                  <th className="text-left py-3 px-4 text-sm font-medium text-gray-500">Company</th>
-                  <th className="text-left py-3 px-4 text-sm font-medium text-gray-500">Contact</th>
-                  <th className="text-left py-3 px-4 text-sm font-medium text-gray-500">Status</th>
-                  <th className="text-left py-3 px-4 text-sm font-medium text-gray-500">Industry</th>
-                  <th className="text-right py-3 px-4 text-sm font-medium text-gray-500">Actions</th>
-                </tr>
-              </thead>
-              <tbody>
-                {clients.map((client: any) => (
-                  <tr key={client.id} className="border-b border-gray-50 hover:bg-gray-50/50 transition">
-                    <td className="py-4 px-4">
-                      <div className="flex items-center gap-3">
-                        <div className="w-9 h-9 rounded-full bg-navy/10 grid place-items-center text-xs font-bold text-navy">
-                          {client.profiles?.full_name?.charAt(0) || client.profiles?.email?.charAt(0) || "C"}
-                        </div>
-                        <div>
-                          <p className="text-sm font-medium">{client.profiles?.full_name || "Unknown"}</p>
-                          <p className="text-xs text-gray-500">{client.profiles?.email}</p>
-                        </div>
-                      </div>
-                    </td>
-                    <td className="py-4 px-4 text-sm">{client.company_name || "—"}</td>
-                    <td className="py-4 px-4">
-                      <div className="flex gap-2">
-                        {client.profiles?.email && (
-                          <a href={`mailto:${client.profiles.email}`} className="text-gray-400 hover:text-navy transition">
-                            <Mail className="w-4 h-4" />
-                          </a>
-                        )}
-                        {client.profiles?.phone && (
-                          <a href={`tel:${client.profiles.phone}`} className="text-gray-400 hover:text-navy transition">
-                            <Phone className="w-4 h-4" />
-                          </a>
-                        )}
-                        {client.website && (
-                          <a href={client.website} target="_blank" rel="noopener" className="text-gray-400 hover:text-navy transition">
-                            <Globe className="w-4 h-4" />
-                          </a>
-                        )}
-                      </div>
-                    </td>
-                    <td className="py-4 px-4">
-                      <Badge variant={client.status as any}>
-                        {client.status}
-                      </Badge>
-                    </td>
-                    <td className="py-4 px-4 text-sm text-gray-600">{client.industry || "—"}</td>
-                    <td className="py-4 px-4 text-right">
-                      <Link href={`/admin/clients/${client.id}`}>
-                        <Button variant="ghost" size="sm">
-                          <MoreHorizontal className="w-4 h-4" />
-                        </Button>
-                      </Link>
-                    </td>
+          {accounts.length === 0 ? (
+            <div className="rounded-xl border border-dashed p-10 text-center">
+              <p className="font-semibold text-gray-700">No customer accounts found</p>
+              <p className="mt-1 text-sm text-gray-500">Newly registered base-role accounts will appear here automatically.</p>
+            </div>
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="w-full min-w-[760px]">
+                <thead>
+                  <tr className="border-b border-gray-100">
+                    <th className="px-4 py-3 text-left text-sm font-medium text-gray-500">Customer account</th>
+                    <th className="px-4 py-3 text-left text-sm font-medium text-gray-500">Company / workspace</th>
+                    <th className="px-4 py-3 text-left text-sm font-medium text-gray-500">Contact</th>
+                    <th className="px-4 py-3 text-left text-sm font-medium text-gray-500">Account role</th>
+                    <th className="px-4 py-3 text-left text-sm font-medium text-gray-500">Registered</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+                </thead>
+                <tbody>
+                  {accounts.map((account) => {
+                    const workspace = workspaceByUser.get(account.id) as { company_name?: string | null } | undefined
+                    return (
+                      <tr key={account.id} className="border-b border-gray-50 hover:bg-gray-50/50">
+                        <td className="px-4 py-4">
+                          <p className="font-medium text-navy">{account.full_name || "Unnamed customer"}</p>
+                          <p className="text-xs text-gray-500">{account.email || "No email"}</p>
+                        </td>
+                        <td className="px-4 py-4 text-sm text-gray-700">{workspace?.company_name || <span className="text-gray-400">No company record</span>}</td>
+                        <td className="px-4 py-4 text-sm text-gray-600">
+                          {account.email ? <span className="inline-flex items-center gap-2"><Mail className="h-3.5 w-3.5" />{account.email}</span> : account.phone || "—"}
+                        </td>
+                        <td className="px-4 py-4"><span className="rounded-full bg-teal/10 px-2.5 py-1 text-xs font-semibold text-teal">Customer</span></td>
+                        <td className="px-4 py-4 text-sm text-gray-500">{new Intl.DateTimeFormat("en-ZM", { dateStyle: "medium" }).format(new Date(account.created_at))}</td>
+                      </tr>
+                    )
+                  })}
+                </tbody>
+              </table>
+            </div>
+          )}
         </CardContent>
       </Card>
     </div>
