@@ -24,7 +24,7 @@ function parseUsdMinor(value: unknown, field: string): number {
   if (!/^\d+(?:\.\d{1,2})?$/.test(text)) throw new Error(`NameSilo returned an invalid ${field} price.`)
   const [whole, fraction = ""] = text.split(".")
   const minor = Number(whole) * 100 + Number(fraction.padEnd(2, "0"))
-  if (!Number.isSafeInteger(minor) || minor < 0) throw new Error(`NameSilo returned an unsafe ${field} price.`)
+  if (!Number.isSafeInteger(minor) || minor <= 0) throw new Error(`NameSilo returned an unsafe ${field} price.`)
   return minor
 }
 
