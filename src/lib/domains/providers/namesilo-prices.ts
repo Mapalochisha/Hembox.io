@@ -1,4 +1,4 @@
-import { resolveNameSiloApiConfig } from "./namesilo-config"
+import { resolveNameSiloApiConfig } from "./namesilo-config.ts"
 
 const REQUEST_TIMEOUT_MS = 8_000
 
