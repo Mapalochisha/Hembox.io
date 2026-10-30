@@ -1,7 +1,7 @@
 "use client"
 
 import { useMemo, useState } from "react"
-import { useRouter } from "next/navigation"
+import { useSearchParams } from "next/navigation"
 import { createClient, isSupabaseConfigured } from "@/lib/supabase/client"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -14,7 +14,7 @@ export function LoginForm() {
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
   const [isLoading, setIsLoading] = useState(false)
-  const router = useRouter()
+  const searchParams = useSearchParams()
   const supabase = useMemo(() => isSupabaseConfigured() ? createClient() : null, [])
   const { toast } = useToast()
 
@@ -47,10 +47,25 @@ export function LoginForm() {
         .eq("id", data.user.id)
         .single()
 
+      const requestedDestination = searchParams.get("next")
+      const safeDestination =
+        requestedDestination &&
+        requestedDestination.startsWith("/") &&
+        !requestedDestination.startsWith("//") &&
+        !requestedDestination.includes("\\") &&
+        !/[\r\n]/.test(requestedDestination)
+          ? requestedDestination
+          : null
+
       if (profile?.role === "admin") {
-        window.location.href = "/admin/dashboard"
+        window.location.assign(safeDestination || "/admin/dashboard")
       } else {
-        window.location.href = "/"
+        // Base customer accounts must never be redirected into the admin area.
+        window.location.assign(
+          safeDestination && !safeDestination.startsWith("/admin")
+            ? safeDestination
+            : "/portal",
+        )
       }
     } catch (error: any) {
       toast({
