@@ -717,3 +717,13 @@ When resuming this project:
 - No NameSilo live credential was used or exposed, no provider API was called, no customer price was published, no migration was applied, and no live registrar or payment action was performed.
 - **M3 remains in progress.** Remaining work: add a server-only, read-only `getPrices` adapter and admin retrieval path; validate its response parser with fixtures; record the provider quote timestamp/source; establish a defensible USD/ZMW FX source/update cadence and Hembox markup/rounding policy; then seed only TLDs with verified registration and renewal costs. Do not enable a TLD merely because a price can be fetched.
 - **Decision required before publishing prices:** confirm whether Hembox is willing and able to use the NameSilo Discount Program's USD 50 minimum top-up for discounted purchases, or whether to price from standard pay-as-you-go account rates. Until that is decided and a live account-specific price response is available, keep all TLDs disabled.
+
+
+### 2026-10-30 — Standard pay-as-you-go pricing selected
+
+- **Commercial decision:** use NameSilo's standard pay-as-you-go/public retail rates for the initial Hembox launch. Do not enroll in or model Discount Program prices and do not require the USD 50 minimum top-up.
+- Added `src/lib/domains/providers/namesilo-prices.ts`, a server-only, read-only NameSilo `getPrices` client. It explicitly sends `retail_prices=1` so the returned price list is the standard retail schedule rather than Discount Program account rates.
+- The parser normalizes registration and renewal values into integer USD cents, rejects malformed/incomplete/non-success responses, and never guesses missing prices. It does not log or expose the API-key URL.
+- Added fixture tests for successful parsing, error/incomplete responses, and the explicit standard-retail request contract.
+- **Safety:** the client is not yet wired to a public/customer route or a write operation. It only retrieves prices. No catalogue rows were changed, no ZMW conversion or markup assumptions were invented, no production database migration was applied, and no registration/payment operation was invoked.
+- **Next M3 work:** expose the read-only result to authorized admins, define and document an FX source/rate timestamp policy and Hembox margin/rounding policy, then create an explicit human-reviewed price-snapshot action. TLDs remain disabled until both registration and renewal prices, FX and margin are approved and recorded.
