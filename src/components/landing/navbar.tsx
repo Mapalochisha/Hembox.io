@@ -71,6 +71,12 @@ export function Navbar() {
                     <p className="truncate text-xs text-gray-500">{user.email}</p>
                   </div>
                   <DropdownMenuSeparator />
+                  <DropdownMenuItem asChild>
+                    <Link href="/portal" className="cursor-pointer">
+                      <LayoutDashboard className="mr-2 h-4 w-4 text-teal" />
+                      Client Portal
+                    </Link>
+                  </DropdownMenuItem>
                   {isAdmin && (
                     <DropdownMenuItem asChild>
                       <Link href="/admin/dashboard" className="cursor-pointer">
