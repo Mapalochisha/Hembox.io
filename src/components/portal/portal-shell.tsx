@@ -3,7 +3,7 @@
 import Link from "next/link"
 import { usePathname } from "next/navigation"
 import { BRAND_NAME } from "@/lib/brand"
-import { useEffect, useState } from "react"
+import { useEffect, useRef, useState } from "react"
 import { useAuth } from "@/components/providers/auth-provider"
 import { cn } from "@/lib/utils"
 import {
@@ -34,7 +34,28 @@ export function PortalShell({ children, title, eyebrow = "CLIENT WORKSPACE" }: {
   const pathname = usePathname()
   const { user, isLoading, signOut } = useAuth()
   const [mobileOpen, setMobileOpen] = useState(false)
+  const mobileMenuTriggerRef = useRef<HTMLButtonElement>(null)
+  const wasMobileOpen = useRef(false)
   const [unreadNotifications, setUnreadNotifications] = useState(0)
+
+  useEffect(() => {
+    if (mobileOpen) {
+      wasMobileOpen.current = true
+      const handleKeyDown = (event: KeyboardEvent) => {
+        if (event.key === "Escape") {
+          event.preventDefault()
+          setMobileOpen(false)
+          mobileMenuTriggerRef.current?.focus()
+        }
+      }
+      window.addEventListener("keydown", handleKeyDown)
+      return () => window.removeEventListener("keydown", handleKeyDown)
+    }
+    if (wasMobileOpen.current) {
+      mobileMenuTriggerRef.current?.focus()
+      wasMobileOpen.current = false
+    }
+  }, [mobileOpen])
 
   useEffect(() => {
     if (!user) { setUnreadNotifications(0); return }
@@ -139,7 +160,7 @@ export function PortalShell({ children, title, eyebrow = "CLIENT WORKSPACE" }: {
       <div className="min-h-screen lg:pl-[258px]">
         <header className="sticky top-0 z-30 flex h-[68px] items-center justify-between border-b border-slate-200/80 bg-white/90 px-4 backdrop-blur-xl sm:px-6 lg:px-9">
           <div className="flex min-w-0 items-center gap-3">
-            <button aria-label="Open workspace navigation" aria-expanded={mobileOpen} onClick={() => setMobileOpen(true)} className="grid h-9 w-9 shrink-0 place-items-center rounded-xl border border-slate-200 text-slate-700 hover:bg-slate-50 lg:hidden"><Menu className="h-4 w-4"/></button>
+            <button ref={mobileMenuTriggerRef} aria-label="Open workspace navigation" aria-expanded={mobileOpen} onClick={() => setMobileOpen(true)} className="grid h-9 w-9 shrink-0 place-items-center rounded-xl border border-slate-200 text-slate-700 hover:bg-slate-50 lg:hidden"><Menu className="h-4 w-4"/></button>
             <div className="min-w-0">
               <p className="hidden text-[9px] font-bold tracking-[0.17em] text-slate-400 sm:block">{eyebrow}</p>
               <h1 className="truncate text-[15px] font-bold tracking-tight text-[#172338] sm:mt-0.5 sm:text-base">{title}</h1>
