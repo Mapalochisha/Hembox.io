@@ -54,10 +54,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           isAdmin: role === 'admin',
         })
 
-        document.cookie = `user_role=${role}; path=/; max-age=${60 * 60 * 24 * 7}; SameSite=Lax`
       } else {
         setState({ user: null, isLoading: false, isAdmin: false })
-        document.cookie = 'user_role=; path=/; max-age=0; SameSite=Lax'
       }
     } catch (error) {
       console.error("[Auth] Error refreshing user:", error)
@@ -71,7 +69,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const signOut = async () => {
     if (!supabase) return
     await supabase.auth.signOut()
-    document.cookie = 'user_role=; path=/; max-age=0'
     setState({ user: null, isLoading: false, isAdmin: false })
     window.location.href = '/'
   }
@@ -90,7 +87,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           refreshUser()
         } else {
           setState({ user: null, isLoading: false, isAdmin: false })
-          document.cookie = 'user_role=; path=/; max-age=0'
         }
       }
     )
