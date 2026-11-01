@@ -65,7 +65,10 @@ export async function refreshBozFxAndReprice() {
       marginBasisPoints: 1000,
       minimumMarginZmwMinor: DEFAULT_MINIMUM_MARGIN_ZMW_MINOR,
     })
-    const costSource = (row.pricing_source || "cost-source-unverified").slice(0, 60)
+    const costSource = (row.pricing_source || "cost-source-unverified")
+      .split(";BOZ:")[0]
+      .replace(/^cost=/, "")
+      .slice(0, 60)
     const pricingSource = `cost=${costSource};BOZ:${rate.rateDate}:${rate.midRate.toFixed(4)};buf=1;mk=1000;floor=2500`
     const snapshot = {
       tld: row.tld,
