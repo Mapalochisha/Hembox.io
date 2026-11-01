@@ -109,11 +109,14 @@ jobs:
           );
           create table auth.users (
             id uuid primary key default gen_random_uuid(),
-            email text
+            email text,
+            raw_user_meta_data jsonb not null default '{}'::jsonb
           );
           create table public.profiles (
             id uuid primary key references auth.users(id) on delete cascade,
             email text not null default 'test@example.test',
+            full_name text,
+            avatar_url text,
             role text not null default 'user'
           );
           create function auth.uid() returns uuid
