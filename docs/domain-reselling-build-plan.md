@@ -2,7 +2,7 @@
 
 > **Purpose:** This is the canonical handoff document for the domain-reselling project. Read it before continuing implementation after a context switch. Update this file as milestones are completed, decisions change, or verification results become available.
 >
-> **Last updated:** 2026-11-01 (assessment, M6 + M4 merged to `main`, production migration reconciliation, sandbox pricing path, deployment policy restored)
+> **Last updated:** 2026-11-01 (assessment, M6 + M4 merged to `main`, production migration reconciliation, sandbox pricing path, deployment policy restored). Full session handover: [`arena-ai-handover.md`](./arena-ai-handover.md). Production configuration procedure: [`vercel-reconfiguration.md`](./vercel-reconfiguration.md).
 > **Repository:** `Mapalochisha/Hembox.io`  
 > **Historical implementation branch:** `feature/domain-reselling-platform`  
 > **Pull request:** https://github.com/Mapalochisha/Hembox.io/pull/2  
