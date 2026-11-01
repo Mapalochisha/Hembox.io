@@ -37,6 +37,8 @@ export function parseBozFxPayload(payload: unknown, retrievedAt = new Date().toI
     String(candidate.quote ?? candidate.target ?? "").toUpperCase() === "ZMW" &&
     ["middle", "mid", "mid-rate", "mid_rate"].includes(String(candidate.type ?? candidate.rate_type ?? "").toLowerCase()),
   )
+  const rateType = String(row?.type ?? row?.rate_type ?? data.rate_type ?? data.type ?? "").toLowerCase()
+  if (!["middle", "mid", "mid-rate", "mid_rate"].includes(rateType)) throw new Error("BoZ FX feed did not identify a middle rate.")
   const direct = row?.value ?? data.rate ?? data.mid_rate ?? data.midRate
   if (row?.derived === true || data.derived === true) throw new Error("Derived FX rates are not accepted; a directly published BoZ rate is required.")
   const midRate = numberValue(direct)
