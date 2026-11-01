@@ -260,6 +260,7 @@ test("live quote preparation validates fresh costs and persists a traceable one-
     renewalWholesaleMinor: 1200,
     fxRateMicros: 25000000,
     marginBasisPoints: 2000,
+    minimumMarginZmwMinor: 2500,
   })
 })
 
