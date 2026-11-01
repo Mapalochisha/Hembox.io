@@ -52,7 +52,8 @@ Rules:
 - Vercel Cron refreshes daily at 16:00 CAT and stores the actual BoZ publication date plus retrieval timestamp.
 - Encode the rate as `wholesale_fx_rate_micros = round(ZMW per USD × 1_000_000)`.
 - Do **not** hand-edit retail prices; the server recalculates them from cost × FX × markup.
-- FX-derived retail prices older than 24 hours are suppressed automatically (`price_stale`).\n- Wholesale registration and renewal costs have a separate 30-day verification window. Daily FX refresh never renews the wholesale-cost verification timestamp; stale costs must be retrieved and reviewed again before a quote can be issued.
+- FX-derived retail prices older than 24 hours are suppressed automatically (`price_stale`).
+- Wholesale registration and renewal costs have a separate 30-day verification window. Daily FX refresh never renews the wholesale-cost verification timestamp; stale costs must be retrieved and reviewed again before a quote can be issued.
 
 ## 4. Markup policy (approved launch policy)
 
