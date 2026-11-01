@@ -11,11 +11,13 @@
 export const FX_RATE_SCALE = BigInt(1_000_000)
 export const BASIS_POINTS = BigInt(10_000)
 export const DEFAULT_PRICE_ROUNDING_MINOR = 100
+export const DEFAULT_MINIMUM_MARGIN_ZMW_MINOR = 2500
 
 export type DomainPricingInput = {
   wholesaleMinor: number
   fxRateMicros: number
   marginBasisPoints: number
+  minimumMarginZmwMinor?: number
   roundingIncrementMinor?: number
 }
 
@@ -37,6 +39,8 @@ export function calculateRetailPrice(input: DomainPricingInput): {
   requireSafeInteger("fxRateMicros", input.fxRateMicros, 1)
   requireSafeInteger("marginBasisPoints", input.marginBasisPoints, 0)
 
+  const minimumMargin = input.minimumMarginZmwMinor ?? 0
+  requireSafeInteger("minimumMarginZmwMinor", minimumMargin, 0)
   const rounding = input.roundingIncrementMinor ?? DEFAULT_PRICE_ROUNDING_MINOR
   requireSafeInteger("roundingIncrementMinor", rounding, 1)
 
@@ -44,10 +48,12 @@ export function calculateRetailPrice(input: DomainPricingInput): {
     BigInt(input.wholesaleMinor) * BigInt(input.fxRateMicros),
     FX_RATE_SCALE,
   )
-  const withMargin = ceilDivide(
+  const percentageRetail = ceilDivide(
     cost * (BASIS_POINTS + BigInt(input.marginBasisPoints)),
     BASIS_POINTS,
   )
+  const floorRetail = cost + BigInt(minimumMargin)
+  const withMargin = percentageRetail > floorRetail ? percentageRetail : floorRetail
   const roundedRetail = ceilDivide(withMargin, BigInt(rounding)) * BigInt(rounding)
 
   if (cost > BigInt(Number.MAX_SAFE_INTEGER) || roundedRetail > BigInt(Number.MAX_SAFE_INTEGER)) {
