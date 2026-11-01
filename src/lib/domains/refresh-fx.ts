@@ -9,6 +9,7 @@ type CatalogEntry = {
   wholesale_currency: string
   registration_wholesale_minor: number | null
   renewal_wholesale_minor: number | null
+  pricing_source: string | null
 }
 
 export async function refreshBozFxAndReprice() {
@@ -38,7 +39,7 @@ export async function refreshBozFxAndReprice() {
 
   const { data, error } = await supabase
     .from("domain_tld_catalog")
-    .select("tld,provider_id,wholesale_currency,registration_wholesale_minor,renewal_wholesale_minor")
+    .select("tld,provider_id,wholesale_currency,registration_wholesale_minor,renewal_wholesale_minor,pricing_source")
   if (error) throw new Error("Could not load the TLD catalogue for repricing.")
 
   const rows = (data ?? []) as CatalogEntry[]
@@ -47,7 +48,7 @@ export async function refreshBozFxAndReprice() {
   const now = new Date().toISOString()
 
   for (const row of rows) {
-    if (row.wholesale_currency !== "USD" || row.registration_wholesale_minor === null || row.renewal_wholesale_minor === null) {
+    if (row.wholesale_currency !== "USD" || row.registration_wholesale_minor === null || row.renewal_wholesale_minor === null || /sandbox|ote|test/i.test(row.pricing_source ?? "")) {
       skipped.push(row.tld)
       continue
     }
@@ -64,7 +65,8 @@ export async function refreshBozFxAndReprice() {
       marginBasisPoints: 1000,
       minimumMarginZmwMinor: DEFAULT_MINIMUM_MARGIN_ZMW_MINOR,
     })
-    const pricingSource = `BOZ-mid:${rate.rateDate}:${rate.midRate.toFixed(4)};buf=1;mk=1000bp;floor=2500`
+    const costSource = (row.pricing_source || "cost-source-unverified").slice(0, 60)
+    const pricingSource = `cost=${costSource};BOZ:${rate.rateDate}:${rate.midRate.toFixed(4)};buf=1;mk=1000;floor=2500`
     const snapshot = {
       tld: row.tld,
       provider_id: row.provider_id,
