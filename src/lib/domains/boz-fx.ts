@@ -26,7 +26,7 @@ export function parseBozFxPayload(payload: unknown, retrievedAt = new Date().toI
   if (!payload || typeof payload !== "object") throw new Error("BoZ FX response was not an object.")
   const root = payload as Record<string, unknown>
   const data = root.data && typeof root.data === "object" ? root.data as Record<string, unknown> : root
-  const bank = String(data.bank ?? data.code ?? "boz").toLowerCase()
+  const bank = String(data.bank ?? root.bank ?? data.code ?? root.code ?? data.name ?? root.name ?? "").toLowerCase()
   if (!bank.includes("boz") && !bank.includes("bank of zambia")) throw new Error("FX feed did not identify Bank of Zambia.")
   const rateDate = data.rate_date ?? data.rateDate ?? data.date
   if (!validDate(rateDate)) throw new Error("BoZ FX feed did not include a valid publication date.")
