@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useState } from "react"
 import { Loader2, RefreshCw, Save } from "lucide-react"
 import { buildCataloguePrefill, type CataloguePrefillResult } from "@/lib/domains/admin-catalogue-prefill"
+import DomainFxPanel from "./fx-panel"
 
 type CatalogRow = {
   tld: string
@@ -12,6 +13,7 @@ type CatalogRow = {
   renewal_wholesale_minor: number | null
   wholesale_fx_rate_micros: number | null
   margin_basis_points: number | null
+  minimum_margin_zmw_minor: number
   pricing_source: string | null
   retail_currency: string
   registration_retail_minor: number | null
@@ -27,7 +29,8 @@ const emptyForm = {
   registrationWholesaleMinor: "",
   renewalWholesaleMinor: "",
   fxRateMicros: "",
-  marginBasisPoints: "2000",
+  marginBasisPoints: "1000",
+  minimumMarginZmwMinor: "2500",
   pricingSource: "",
   enabled: false,
 }
@@ -65,6 +68,10 @@ export default function AdminDomainsPage() {
     }
   }, [])
 
+  const applyFxRate = useCallback((value: number) => {
+    setForm((current) => ({ ...current, fxRateMicros: current.fxRateMicros || String(value) }))
+  }, [])
+
   useEffect(() => { void loadCatalog() }, [loadCatalog])
 
   // Accepts the handoff from the wholesale price reference. Values are re-validated
@@ -79,7 +86,8 @@ export default function AdminDomainsPage() {
       ...emptyForm,
       ...result.prefill,
       fxRateMicros: "",
-      marginBasisPoints: "",
+      marginBasisPoints: "1000",
+      minimumMarginZmwMinor: "2500",
       enabled: false,
     })
   }, [])
@@ -99,6 +107,7 @@ export default function AdminDomainsPage() {
           renewalWholesaleMinor: Number(form.renewalWholesaleMinor),
           fxRateMicros: Number(form.fxRateMicros),
           marginBasisPoints: Number(form.marginBasisPoints),
+          minimumMarginZmwMinor: Number(form.minimumMarginZmwMinor),
         }),
       })
       const result = await response.json()
@@ -131,6 +140,8 @@ export default function AdminDomainsPage() {
         </div>
       </div>
 
+      <DomainFxPanel onRateMicros={applyFxRate} />
+
       {prefill ? (
         <div className="rounded-2xl border border-sky-200 bg-sky-50 p-4 text-sm leading-6 text-sky-950">
           <p className="font-bold">
@@ -155,8 +166,9 @@ export default function AdminDomainsPage() {
           <Field label="Wholesale currency" value={form.wholesaleCurrency} onChange={(wholesaleCurrency) => setForm({ ...form, wholesaleCurrency: wholesaleCurrency.toUpperCase() })} placeholder="USD" />
           <Field label="Registration cost (minor units)" type="number" value={form.registrationWholesaleMinor} onChange={(registrationWholesaleMinor) => setForm({ ...form, registrationWholesaleMinor })} placeholder="Verified cost in minor units" />
           <Field label="Renewal cost (minor units)" type="number" value={form.renewalWholesaleMinor} onChange={(renewalWholesaleMinor) => setForm({ ...form, renewalWholesaleMinor })} placeholder="Verified cost in minor units" />
-          <Field label="FX rate × 1,000,000" type="number" value={form.fxRateMicros} onChange={(fxRateMicros) => setForm({ ...form, fxRateMicros })} placeholder="e.g. 25000000 means 25.0" />
-          <Field label="Markup (basis points)" type="number" value={form.marginBasisPoints} onChange={(marginBasisPoints) => setForm({ ...form, marginBasisPoints })} placeholder="2000 means 20%" />
+          <Field label="Effective FX × 1,000,000" type="number" value={form.fxRateMicros} onChange={(fxRateMicros) => setForm({ ...form, fxRateMicros })} placeholder="e.g. 25000000 means 25.0" />
+          <Field label="Markup (basis points)" type="number" value={form.marginBasisPoints} onChange={(marginBasisPoints) => setForm({ ...form, marginBasisPoints })} placeholder="1000 means 10%" />
+          <Field label="Minimum margin (ZMW minor units)" type="number" value={form.minimumMarginZmwMinor} onChange={(minimumMarginZmwMinor) => setForm({ ...form, minimumMarginZmwMinor })} placeholder="2500 means K25" />
           <Field label="Pricing source / verification note" value={form.pricingSource} onChange={(pricingSource) => setForm({ ...form, pricingSource })} placeholder="Source and verification date" />
           <label className="flex items-center gap-3 rounded-xl border border-slate-200 p-3 text-sm font-semibold text-slate-700 sm:col-span-2">
             <input type="checkbox" checked={form.enabled} onChange={(event) => setForm({ ...form, enabled: event.target.checked })} className="h-4 w-4 accent-teal" />
