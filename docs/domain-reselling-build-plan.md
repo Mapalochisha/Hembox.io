@@ -1034,3 +1034,11 @@ When resuming this project:
 - Complete authenticated customer/admin E2E with isolated test identities and clearly tagged test data. The current quote API intentionally rejects sandbox mode for live quotes, and no TLD is enabled; do not bypass those commercial safeguards with invented prices.
 - Review the Supabase security-advisor finding for `public.handle_new_user()` before closing M10. The advisor also flags authenticated SECURITY DEFINER RPCs; inspect each function's identity/ownership checks rather than revoking intended customer/admin workflows blindly.
 - Do not apply or replay production migrations, create simulated paid invoices, enable TLDs, accept real payments, or perform live registrar mutations without the required explicit authorization.
+
+### M10 — Supabase advisor follow-up (2026-11-01)
+
+- Production advisor confirmed `public.handle_new_user()` was SECURITY DEFINER and directly executable by both `anon` and `authenticated`, despite being intended only as the `auth.users` insert trigger. The trigger is attached as `on_auth_user_created`.
+- Added pending migration `20261101170000_revoke_public_auth_signup_trigger_execute.sql` to pin an empty `search_path` and revoke direct execution from `PUBLIC`, `anon` and `authenticated`. Added a disposable-Postgres regression test proving the trigger still creates profiles while direct RPC execution is denied. **This migration has not been applied to production.**
+- The advisor's eight authenticated SECURITY DEFINER warnings are not blanket permission to revoke those RPCs. `get_user_role(uuid)` was inspected: it derives caller identity from `auth.uid()`, permits self-role lookup, and permits cross-user lookup only for admins. The remaining RPCs still require individual body/ownership review.
+- The advisor's INFO findings for `domain_tld_catalog` and `domain_price_snapshots` were checked: neither `anon` nor `authenticated` has SELECT; only `service_role` does. Their RLS-enabled/no-policy posture is intentional server-only access.
+- Leaked-password protection is currently disabled in Supabase Auth; review/enable separately after considering its effect on account sign-in and password reset.
