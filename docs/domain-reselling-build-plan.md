@@ -2,7 +2,7 @@
 
 > **Purpose:** This is the canonical handoff document for the domain-reselling project. Read it before continuing implementation after a context switch. Update this file as milestones are completed, decisions change, or verification results become available.
 >
-> **Last updated:** 2026-11-01
+> **Last updated:** 2026-11-01 (fresh technical assessment, M6 payment-evidence reconciliation, M4 registrant capture)
 > **Repository:** `Mapalochisha/Hembox.io`  
 > **Historical implementation branch:** `feature/domain-reselling-platform`  
 > **Pull request:** https://github.com/Mapalochisha/Hembox.io/pull/2  
@@ -51,6 +51,76 @@ The first market is Zambia, with **ZMW as the primary customer-facing currency**
 - No payment gateway has been implemented.
 - No production Supabase migration has been applied.
 - The storefront is an enquiry flow, not a live domain checker or checkout.
+
+## 3.1 Fresh technical assessment — 2026-11-01 (current `main`)
+
+This section supersedes the older "recorded baseline" above where they disagree. It was produced by reading the current tree, migrations, CI configuration and GitHub state, not by trusting earlier progress entries.
+
+### Verified repository and CI state
+
+| Item | Verified state |
+|---|---|
+| Branch head reviewed | `main` @ `663fd27edb112391f10503a20d7a9e520e845e7c` |
+| Push CI on that head | **Green** — [run 41300880941](https://github.com/Mapalochisha/Hembox.io/actions/runs/41300880941) (Lint & Type Check, Domain schema integration tests, Production Build) |
+| Pull-request CI on the cleanup branch | Green — run 41287246324 |
+| Vercel Git deployments | **Disabled by configuration**: `vercel.json` sets `git.deploymentEnabled: false`, so pushes do not create deployments. Deployments are manual. The newest deployment records are manual CLI deployments; a deployment matching the current `main` head was **not** verified in this session. |
+| Open pull requests | None open (PRs #1–#14 all merged or closed) |
+| Historical feature branches | Still exist remotely but are stale copies of already-merged work. See "reusable work" below. |
+| Production Supabase migrations | **Not applied** (no authorization exists for this). |
+
+### What is genuinely complete
+
+- **Provider abstraction and fail-closed selection** — `src/lib/domains/provider.ts`, `providers/mock.ts`, `providers/namesilo.ts`, explicit `namesilo-sandbox` vs `namesilo` modes, server-only credentials (`NAMESILO_API_KEY`, `NAMESILO_SANDBOX_API_KEY`), no `NEXT_PUBLIC_` registrar keys.
+- **NameSilo read-only adapter** — availability parsing (nested/array/XML-to-JSON fixtures), `getAccountBalance`, `listDomains`, `getPrices` reader normalising to integer USD minor units, refusal of malformed responses, OTE operations client confined to a local CLI and a protected diagnostic route.
+- **Pricing policy** — integer minor-unit math, explicit FX scaling (`micros`), basis-point markup, upward ZMW rounding, 24-hour freshness gate, price-history table, retail-vs-wholesale separation, public retail-only catalogue endpoint, admin catalogue with server-side recomputation.
+- **Quote creation** — authenticated `POST /api/domains/quotes`: catalog validation, recomputation of retail from stored wholesale/FX/markup, 60-second availability-evidence freshness, 15-minute quote validity, user-scoped idempotency key, atomic `create_domain_quote_order` RPC, billing-invoice bridge, replay recovery.
+- **Order lifecycle integrity** — order-state helper plus database transition guards, transactional audit events, payment-attempt invariant guards, webhook replay ledger with signature-verification guards (all schema-level; no gateway is enabled).
+- **Customer dashboard** — `/portal/domains` (order list, quote request, payment status, claim status) with owner-scoped reads through RLS; `/profile/domains` redirects there.
+- **Admin surfaces** — `/admin/domains` (catalogue/pricing), `/admin/domains/orders` (queue + audit), `/admin/domains/manual-payments`, `/admin/domains/recovery`, `/admin/domains/margins`, `/admin/domains/provider-prices`, plus `/admin/billing/*` for the unified ledger.
+- **Unified billing ledger** — invoices, items, immutable events, payment claims with private receipt storage, allocations, arrangements, invoice void, and the domain↔billing bridge (`create_domain_billing_invoice`, paid-invoice→order advance).
+- **CI** — lint, `tsc`, domain unit tests, disposable PostgreSQL migration + access-control assertions, production build.
+
+### What is partially implemented
+
+| Area | Current reality | Remaining work |
+|---|---|---|
+| M1 commercial verification | NameSilo selected; OTE connection verified | Production API key, Zambia funding route, live `getPrices`, real TLD economics — **blocked on business/credentials** |
+| M3 catalogue | Working machinery, safe by default | No TLD is enabled. Needs approved FX source + markup + verified registration/renewal costs |
+| M4 checkout | Quote + durable order + billing invoice exist, and registrant details/consent are now captured and enforced before payment and before registration (see the 2026-11-01 M4 entry) | A dedicated review/confirmation screen, multi-year terms, and a final pre-purchase recheck UI |
+| M5 manual payments | Bills claim → admin verify → allocation → invoice paid → order `payment_confirmed` works and is tested; mobile-money methods active, bank transfer intentionally inactive | Operational E2E with real accounts (requires owner authorization), reconciliation cadence |
+| M6 manual fulfilment | Guarded, audited RPC; admin route | Was unreachable (see defects). Registrar-console procedure/runbook still needs documenting |
+| M7 dashboard | Orders, prices, claim status visible | Renewal reminders, notifications, support paths |
+| M8 ops console | Queue, audit, claims, recovery, margins | Payment/provider reconciliation views, refunds, failed-order handling |
+| M10 security/QA | RLS + guards reviewed in migrations | No rate limiting anywhere, no authenticated E2E, no alerting/runbooks |
+
+### What is missing
+
+- A dedicated checkout review screen (the current flow collects registrant details and consent, and the billing claim endpoint refuses payment until they exist, but there is no single confirm-everything review page).
+- Renewals, reminders, DNS/nameserver management, transfer/lock/privacy (M9) — nothing customer-facing exists, correctly.
+- Rate limiting/abuse controls, operational alerts, backup/rollback runbooks, authenticated customer/admin end-to-end tests.
+- Verified production provider economics (external dependency).
+
+### Defects found during this assessment (both fixed in this session)
+
+1. **Manual fulfilment was unreachable for every real paid order.** Every live quote creates a unified billing invoice, and the `manual-payment` API deliberately redirects those orders to Bills, so no legacy `domain_manual_payment_claims` row is ever created for the real flow. `record_domain_manual_registration()` nevertheless required a verified legacy claim, so an order paid through Bills reached `payment_confirmed` and could never be recorded as registered. Fixed by reconciling the payment-evidence rule with the ledger.
+2. **The admin fulfilment form could not be opened.** `/admin/domains/orders` rendered an "Action" column with no control that set the fulfilment order, so the form was dead code; the page also rendered a literal `\n` and described itself as read-only. Fixed with a payment-signal-aware action column and corrected copy.
+
+### Reusable work from historical branches
+
+- `feat/domain-pricing-policy`: **already fully merged** — `git diff origin/feat/domain-pricing-policy origin/main -- src/lib/domains src/app/api/admin/domains src/app/admin/domains src/app/api/domains supabase/migrations` is empty for the domain paths. Nothing further to port.
+- `feature/domain-reselling-platform`, `feature/unified-billing-platform`, `feature/client-portal-workspace`, `rebrand/hembox-tech`: content already on `main` via PRs #2, #7, #10, #11. Their remaining "ahead" commits are pre-squash history; **do not merge them wholesale**.
+- `docs/client-portal-blueprint`, `preview/performance-optimization`, `arena/ceace407-hembox-io`: no domain implementation to reuse.
+
+### Safest next milestone
+
+Order of work that needs no external credentials:
+
+1. **M6 payment-evidence reconciliation** (done in this session) — makes the existing paid→fulfil path actually usable and tested.
+2. **M4 registrant/checkout review** — prerequisite for a real registration to be completable at all.
+3. **M7/M8 operational completeness** (renewal dates visible to admins, reconciliation view, refunds policy).
+4. **M10 hardening** — rate limiting, authenticated E2E, runbooks.
+5. **M1/M3 commercial verification** — requires the owner's production credentials and pricing decisions.
+
 
 ## 4. Milestone plan
 
@@ -121,6 +191,8 @@ Use `[x]` only after the milestone's acceptance criteria have been met and verif
 
 ### [ ] M4 — Cart, checkout and durable orders
 
+**Implementation progress (2026-11-01):** Quote creation, durable orders, atomic idempotent persistence, price/availability evidence freshness and the billing-invoice bridge are implemented and tested. Registrant data capture is now implemented: `domain_order_registrant_details` (owner-scoped RLS, server-side-only writes through `save_domain_order_registrant_details`, consent version recorded, personal data deliberately excluded from audit events), `POST/GET /api/domains/orders/registrant`, the customer panel in `/portal/domains`, an admin-only reader for the registrar console work, and two enforcement points — the unified billing claim endpoint refuses a domain payment claim until details exist, and `record_domain_manual_registration()` refuses to record a registration without them. Still missing: a single combined review/confirmation page, multi-year terms and a final pre-purchase recheck UI.
+
 **Scope**
 - Build domain selection, customer/registrant data collection and checkout review.
 - Recheck availability and final price before order confirmation.
@@ -165,6 +237,8 @@ Use `[x]` only after the milestone's acceptance criteria have been met and verif
 - Automated registrar registration, durable provisioning jobs, provider mutation idempotency, and ambiguous API-timeout recovery remain deferred until state-changing provider operations are verified in a safe environment.
 - Persist real provider references and registration/expiry information; keep failed or ambiguous outcomes in manual review rather than blindly retrying.
 
+**Implementation progress (2026-11-01):** `record_domain_manual_registration()` previously required a verified legacy `domain_manual_payment_claims` row. Because every live quote is billed through the unified ledger and legacy claims are redirected to Bills, no paid order could ever satisfy that guard, making manual fulfilment unreachable. Migration `20261101090000_domain_fulfilment_payment_evidence.sql` now accepts either a verified legacy claim **or** the order's fully settled, correctly linked unified billing invoice, records the evidence source in the audit event, and keeps every other guard (admin-only, `payment_confirmed`, provider/domain match, availability + price recheck, idempotent replay). The admin queue now exposes the fulfilment action and shows invoice settlement state.
+
 **Acceptance criteria**
 - Manual payment-to-manual-fulfillment workflow passes authorization, state, amount, quote-validity, and audit tests.
 - The manual fulfillment record is idempotent and cannot create duplicate registration records.
@@ -185,6 +259,8 @@ Use `[x]` only after the milestone's acceptance criteria have been met and verif
 - Status shown to customers is based on verified backend state.
 
 ### [ ] M8 — Admin and operations console
+
+**Implementation progress (2026-11-01):** The order queue now shows read-only billing settlement state per order and offers the guarded manual-fulfilment action only for `payment_confirmed` orders. The earlier claim that the queue was "read-only with no actions" is obsolete.
 
 **Implementation progress (2026-10-18):** Added an admin-only domain catalogue screen and server-side catalogue API with role verification, server-calculated ZMW retail prices, and price-history recording. Added a read-only admin order queue with status filtering and recent audit-event visibility. Full order/payment/provider reconciliation, manual review actions, refunds, and operational audit workflows remain unimplemented.
 
@@ -266,6 +342,56 @@ A green build proves only the checks that ran. It does not independently prove r
 > **Brand note (2026-10-29):** Current company name is Hembox Tech. Historical progress entries retain the brand name, repository paths, and URLs that were accurate when recorded. Cloudinary asset folders, domain-provider configuration, and existing technical identifiers are not renamed as part of the brand-copy phase.
 
 ## 6. Progress log
+
+### 2026-11-01 — Registrant payment gate corrected to fail closed
+
+- **Milestone:** M4/M5 (pre-payment registrant enforcement).
+- **Defect:** the first version of the domain registrant gate returned `unavailable` when the registrant migration or table was missing, and the payment-claim endpoints only rejected the `missing` result. A domain payment claim could therefore be submitted while registrant verification was impossible — a fail-open path in exactly the check that protects a legal registrant requirement.
+- **Fix:** the allow rule now lives in one pure function, `decideDomainRegistrantGate()` in `src/lib/domains/registrant-gate.ts`, and **only an explicit `ok` allows a claim**. `missing` denies with `409 registrant_details_required`; `unavailable` (missing migration/table, lookup error, unexpected value) denies with `503 registrant_details_unavailable`. The gate helper no longer throws on an unexpected database error — it logs a sanitised code and returns `unavailable`, so both claim submission and claim resubmission are blocked consistently.
+- **Regression coverage:** `tests/domain-registrant-gate.test.mjs` asserts that `unavailable` and unexpected values (including `null`, `undefined`, `"OK"`, objects) deny, wired into `npm run test:domains`. A negative control (temporarily restoring the fail-open branch) fails two assertions, confirming the test catches the original bug.
+- **Customer/admin surfaces:** when the gate cannot be evaluated, `/portal/domains` now explains that the domain cannot accept a payment claim instead of silently hiding the registrant panel, and the admin fulfilment panel states the order is blocked.
+- **Tests:** `tsc --noEmit` clean; `npm run lint` no errors; `npm run test:domains` 68 unit assertions + 24 sandbox-operation assertions, all passing.
+- **Safety:** still no registrar call, gateway, production migration, live registration or real payment.
+- **Next action:** M8 reconciliation completeness, then M10 hardening; commercial verification still requires the owner's production credentials and pricing decisions.
+
+
+### 2026-11-01 — M4 registrant capture, consent and checkout enforcement
+
+- **Milestone:** M4 (registrant data / checkout prerequisites), feeding M5 and M6.
+- **Why:** a registrar registration legally requires registrant contact details, and the platform captured none, so an administrator could not complete a real registration at all and no consent to share personal data with the registrar was recorded.
+- **Changes:**
+  - `supabase/migrations/20261101110000_domain_registrant_details.sql` — new `domain_order_registrant_details` table (one row per order, owner-scoped RLS read, admin read, writes only through `save_domain_order_registrant_details()`), validation constraints, consent version/acceptance timestamps, personal-data-minimised audit events (`domain_order.registrant_details_added` / `_updated`), and a redefinition of `record_domain_manual_registration()` that refuses to record a registration without registrant details. Editing is blocked once registration has started so the recorded registrant remains the legal record.
+  - `src/app/api/domains/orders/registrant/route.ts` — authenticated owner-scoped save/read with strict validation, international phone normalisation, a server-pinned consent version, and safe degradation when the migration is absent.
+  - `src/app/api/domains/orders/route.ts` — the dashboard payload now includes the customer's registrant details.
+  - `src/app/portal/domains/page.tsx` — registrant panel per order: saved summary, add/update form, explicit consent checkbox, locked state after registration starts.
+  - `src/app/api/billing/claims/route.ts` — a domain invoice payment claim is refused with `registrant_details_required` until registrant details exist (resubmission path included). Environments without the migration fall back to a logged warning; the fulfilment guard remains authoritative.
+  - `src/app/api/admin/domains/orders/registrant/route.ts` + `src/app/admin/domains/orders/page.tsx` — admin-only single-order registrant reader surfaced inside the manual-fulfilment panel, with an explicit warning that fulfilment will be refused when details are missing.
+  - `supabase/tests/domain_registrant_details.test.sql` (new), `supabase/tests/domain_manual_registration.test.sql` and `supabase/tests/domain_fulfilment_payment_evidence.test.sql` updated; `.github/workflows/ci.yml` applies and asserts the new migration.
+- **Tests performed:** `tsc --noEmit` clean; `npm run lint` no errors; `npm run test:domains` 24/24. The complete CI chain (23 migrations + 15 PostgreSQL suites, 38 steps) was applied to a fresh local PostgreSQL 16 database: all pass.
+- **CI:** [run 41303848513](https://github.com/Mapalochisha/Hembox.io/actions/runs/41303848513) — all three jobs green on `91e1bc06246f`; the new *Apply domain registrant details migration* and *Assert domain registrant details, consent and fulfilment guard* steps succeeded.
+- **Safety:** no registrar call, no gateway, no production migration, no live registration, no real payment. Personal data stays server-side; audit events exclude address and contact values.
+- **Next action:** M8 reconciliation completeness, then M10 hardening (rate limiting, authenticated E2E, runbooks); M1/M3 commercial verification still requires the owner's production credentials and pricing decisions.
+
+
+### 2026-11-01 — Technical reassessment and M6 payment-evidence reconciliation
+
+- **Milestone:** M6 (fulfilment), with assessment input to M4/M5/M8.
+- **Assessment:** See section 3.1. `main` @ `663fd27` was green in CI (run 41300880941). Vercel Git deployments are disabled by config, so no deployment for that head was verified. The historical pricing branch has nothing left to port.
+- **Defect fixed (critical):** `record_domain_manual_registration()` required a verified legacy domain payment claim, but the real payment path is the unified billing ledger (the legacy claim API redirects paid orders to Bills and never creates such a row). Every genuinely paid order therefore reached `payment_confirmed` and could never be recorded as registered.
+- **Changes:**
+  - `supabase/migrations/20261101090000_domain_fulfilment_payment_evidence.sql` — redefines the fulfilment RPC to accept settled payment evidence from either a verified legacy claim or the order's linked, fully allocated, paid unified billing invoice. It verifies invoice ownership/customer/currency/source linkage, requires `status = 'paid'` with `paid_at` and allocations covering the total, returns `payment_evidence`, and records the evidence and invoice detail in the immutable audit event. All previous guards are retained, including the availability/price rechecks that can only be asserted by an administrator.
+  - `supabase/tests/domain_fulfilment_payment_evidence.test.sql` — new disposable-PostgreSQL assertions covering: quoted/unpaid order rejected; unified-billing-paid order accepted with `unified_billing_invoice` evidence (via the real claim→verify→paid→`payment_confirmed` chain); non-admin rejected; idempotent replay without duplicate audit or registration records; partially paid invoice rejected even when the order was moved to `payment_confirmed`; fulfilment without any payment evidence rejected; legacy verified-claim path still accepted with `domain_manual_claim` evidence.
+  - `.github/workflows/ci.yml` — applies the new migration and runs the new assertions.
+  - `src/app/api/admin/domains/orders/route.ts` — read-only settlement visibility (billing invoice status/total/paid-at) for the queue, with a safe fallback when the billing bridge columns are absent.
+  - `src/app/admin/domains/orders/page.tsx` — the fulfilment form was unreachable because no control ever selected an order; added a per-row "Record registration" action for `payment_confirmed` orders, a payment-status column, corrected copy, and removed a literal `\n` render artefact.
+- **Defect reproduced before the fix:** against the pre-fix schema, a domain order paid through the real unified-billing chain reached `payment_confirmed` with zero legacy claims, and `record_domain_manual_registration()` failed with `A verified manual payment claim is required for this release workflow` (SQLSTATE 23514).
+- **Tests performed:** `tsc --noEmit` clean; `npm run lint` no errors; `npm run test:domains` 24/24 pass. The complete CI migration chain plus all 15 disposable-PostgreSQL suites (including the new one) were applied to a local PostgreSQL 16 instance: all pass, and a deliberately failing control run confirmed the suite fails loudly. The local production build cannot fetch Google Fonts in this sandbox network, so the build is verified in CI.
+- **CI:** [run 41303119901](https://github.com/Mapalochisha/Hembox.io/actions/runs/41303119901) — Lint & Type Check, Domain schema integration tests and Production Build all green on implementation commit `2b4684e62441`; the new *Apply domain fulfilment payment evidence migration* and *Assert fulfilment payment evidence reconciliation* steps both succeeded. [PR #15](https://github.com/Mapalochisha/Hembox.io/pull/15) is open against `main` and has not been merged.
+- **Vercel:** not applicable — `vercel.json` disables Git deployments; no manual deployment of this branch was requested, so no deployment for this commit exists. Do not treat any older deployment as evidence for this commit.
+- **Database/production impact:** none. Migration is added to the branch only; it has not been applied to any Supabase project.
+- **Blockers/risks:** registrant/contact data is still not captured anywhere, so an administrator cannot complete a real registration; pricing inputs and production registrar credentials remain unverified; no rate limiting exists on any domain route.
+- **Next action:** M4 checkout review with registrant data capture and an explicit confirmation step, keeping live registration and real payment acceptance disabled.
+
 
 ### 2026-10-20 — Registrar decision changed from Domain Name API to NameSilo
 

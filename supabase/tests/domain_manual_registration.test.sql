@@ -61,6 +61,23 @@ begin
   end;
   if not v_rejected then raise exception 'Registration must be blocked if availability was not rechecked'; end if;
 
+  -- Registrant details are required before any registration can be recorded.
+  v_rejected := false;
+  begin
+    perform * from public.record_domain_manual_registration(
+      v_order, v_admin, 'namesilo', 'REG-ORDER-001', 'manual-registration-check.com',
+      v_registered_at, v_expires_at, true, true, 'registrant details missing'
+    );
+  exception when check_violation then v_rejected := true;
+  end;
+  if not v_rejected then raise exception 'Registration must be blocked without registrant details'; end if;
+
+  perform * from public.save_domain_order_registrant_details(
+    v_order, v_customer, 'individual', 'Manual', 'Registrant', null,
+    'manual-registration@example.test', '+260970000000', '10 Great East Road', null,
+    'Lusaka', 'Lusaka', '10101', 'ZM', 'domain-registrant-v1'
+  );
+
   select * into v_result
   from public.record_domain_manual_registration(
     v_order, v_admin, 'namesilo', 'REG-ORDER-001', 'manual-registration-check.com',

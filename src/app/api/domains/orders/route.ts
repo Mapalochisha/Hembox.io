@@ -34,8 +34,28 @@ export async function GET() {
       paymentClaims = claims ?? []
     }
 
+    // Registrant details are read through the same owner-scoped client; a
+    // missing migration degrades to "not captured yet" instead of failing.
+    const registrantDetails: unknown[] = []
+    let registrantDetailsAvailable = true
+    if (orderIds.length) {
+      const { data: details, error: detailsError } = await db
+        .from("domain_order_registrant_details")
+        .select("order_id,registrant_type,first_name,last_name,organisation_name,email,phone,address_line1,address_line2,city,region,postal_code,country_code,consent_version,consent_accepted_at,updated_at")
+        .in("order_id", orderIds)
+      if (detailsError) {
+        if (detailsError.code === "42P01" || detailsError.code === "PGRST205") {
+          registrantDetailsAvailable = false
+        } else {
+          throw detailsError
+        }
+      } else {
+        registrantDetails.push(...(details ?? []))
+      }
+    }
+
     return NextResponse.json(
-      { orders: data ?? [], paymentClaims },
+      { orders: data ?? [], paymentClaims, registrantDetails, registrantDetailsAvailable },
       { headers: { "Cache-Control": "no-store" } },
     )
   } catch (error) {
