@@ -59,7 +59,7 @@ export default function DomainFxPanel({ onRateMicros }: Props) {
       <div>
         <p className="text-xs font-bold uppercase tracking-[0.16em] text-teal">Official FX reference</p>
         <h2 className="mt-1 text-lg font-bold text-navy">Bank of Zambia · USD/ZMW</h2>
-        <p className="mt-1 text-sm text-slate-600">Daily published middle rate plus the HEMBOX K1.00/USD buffer. USD domain catalogue entries are repriced automatically; TLD enablement is never changed.</p>
+        <p className="mt-1 text-sm text-slate-600">The Bank of Zambia published middle rate is delivered through AllRatesToday’s open data feed (not a BoZ-operated API), plus the HEMBOX K1.00/USD buffer. USD prices are repriced automatically; TLD enablement is never changed.</p>
       </div>
       <button onClick={() => void refresh()} disabled={refreshing || loading} className="inline-flex h-10 items-center justify-center gap-2 rounded-xl bg-navy px-4 text-sm font-bold text-white disabled:opacity-50">
         {refreshing ? <Loader2 className="h-4 w-4 animate-spin" /> : <RefreshCw className="h-4 w-4" />}
