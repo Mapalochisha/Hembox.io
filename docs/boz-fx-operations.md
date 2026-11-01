@@ -34,7 +34,7 @@ Optional server-only `BOZ_FX_API_URL` overrides the default feed endpoint. Never
 - HTTP/feed errors, malformed data, missing middle rates, derived rates, future dates and rates older than five calendar days fail closed.
 - No fallback market rate is invented.
 - Existing saved FX and prices are left untouched if feed validation fails.
-- TLDs with missing wholesale costs or non-USD currency are skipped.
+- TLDs with missing wholesale costs, non-USD currency, sandbox/test provenance or wholesale costs older than 30 days are skipped.\n- Wholesale costs must be re-verified at least every 30 days. FX refresh updates the FX price timestamp but never resets the separate wholesale-cost verification timestamp. Quotes fail closed when the wholesale-cost verification is stale.
 - FX refresh never enables a TLD and does not bypass the live-provider quote gate.
 
 ## Schema
