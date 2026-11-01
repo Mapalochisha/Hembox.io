@@ -31,15 +31,28 @@ export function parseBozFxPayload(payload: unknown, retrievedAt = new Date().toI
   const rateDate = data.rate_date ?? data.rateDate ?? data.date
   if (!validDate(rateDate)) throw new Error("BoZ FX feed did not include a valid publication date.")
 
-  const rates = Array.isArray(data.rates) ? data.rates as Array<Record<string, unknown>> : []
-  const row = rates.find((candidate) =>
+  const rateRows = Array.isArray(data.rates) ? data.rates as Array<Record<string, unknown>> : []
+  let row = rateRows.find((candidate) =>
     String(candidate.base ?? candidate.source ?? "").toUpperCase() === "USD" &&
     String(candidate.quote ?? candidate.target ?? "").toUpperCase() === "ZMW" &&
     ["middle", "mid", "mid-rate", "mid_rate"].includes(String(candidate.type ?? candidate.rate_type ?? "").toLowerCase()),
   )
+
+  // Accommodate the documented table's common object-shaped representation as
+  // well as row arrays, while still requiring an explicit middle/mid field.
+  if (!row && data.rates && typeof data.rates === "object" && !Array.isArray(data.rates)) {
+    const rateMap = data.rates as Record<string, unknown>
+    const usdZmw = rateMap["USD/ZMW"] ?? rateMap.USD_ZMW ?? rateMap.USD ?? rateMap.usd
+    if (usdZmw && typeof usdZmw === "object") {
+      const values = usdZmw as Record<string, unknown>
+      const middle = values.middle ?? values.mid ?? values.mid_rate ?? values.midRate
+      if (middle !== undefined) row = { type: "middle", value: middle, derived: values.derived }
+    }
+  }
+
   const rateType = String(row?.type ?? row?.rate_type ?? data.rate_type ?? data.type ?? "").toLowerCase()
   if (!["middle", "mid", "mid-rate", "mid_rate"].includes(rateType)) throw new Error("BoZ FX feed did not identify a middle rate.")
-  const direct = row?.value ?? data.rate ?? data.mid_rate ?? data.midRate
+  const direct = row?.value ?? data.usd_zmw_mid ?? data.rate ?? data.mid_rate ?? data.midRate
   if (row?.derived === true || data.derived === true) throw new Error("Derived FX rates are not accepted; a directly published BoZ rate is required.")
   const midRate = numberValue(direct)
   if (midRate === null) throw new Error("BoZ FX feed did not contain a published USD/ZMW middle rate.")
