@@ -27,6 +27,13 @@ begin
   ) then
     raise exception 'TLD catalogue wholesale cost verification timestamp is missing';
   end if;
+  if not exists (
+    select 1 from information_schema.columns
+    where table_schema='public' and table_name='domain_price_snapshots'
+      and column_name='wholesale_cost_verified_at'
+  ) then
+    raise exception 'Price history wholesale cost verification timestamp is missing';
+  end if;
 
   if not exists (
     select 1 from pg_class c join pg_namespace n on n.oid=c.relnamespace
