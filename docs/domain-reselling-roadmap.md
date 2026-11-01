@@ -228,3 +228,10 @@ Batch response parsing accepts NameSilo's nested, array and XML-to-JSON availabi
 - Vercel Firewall now has an active 20-per-60-second per-IP rule for POST requests to domain search, domain quotes, public inquiries and uploads. The process-local inquiry limiter was removed.
 - Production and Preview both have the NameSilo OTE sandbox mode/key configured. A new Production deployment is required before the production deployment can use the changed environment variables. The live registrar key remains absent.
 - Next: verify exact-head CI/Preview, test the WAF safely, finish authenticated customer/admin E2E using disposable test records, and review the remaining Supabase advisor findings. Do not fabricate live prices or mark production invoices paid to force an E2E pass.
+
+## 2026-11-01 — M10 security-advisor findings
+
+- Confirmed the production auth signup trigger function was directly executable by anon/authenticated users. A migration and regression test to restrict it while preserving trigger operation are included in the current feature branch; production has not been changed.
+- The domain TLD catalogue and price snapshots have no anon/authenticated SELECT grants; they remain server-only under service_role. The advisor's RLS/no-policy INFO findings are therefore intentional.
+- `get_user_role(uuid)` was reviewed and checks `auth.uid()`, restricting non-admin callers to their own role. The other authenticated SECURITY DEFINER RPCs still need individual ownership/authorization review before M10 can be closed.
+- Supabase leaked-password protection is disabled and remains a separate authentication-hardening decision.
