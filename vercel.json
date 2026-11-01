@@ -5,4 +5,7 @@
       "main": true
     }
   }
+  ,"crons": [
+    { "path": "/api/cron/domain-fx-refresh", "schedule": "0 14 * * *" }
+  ]
 }
