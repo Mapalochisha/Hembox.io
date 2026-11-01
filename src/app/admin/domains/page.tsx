@@ -14,6 +14,7 @@ type CatalogRow = {
   wholesale_fx_rate_micros: number | null
   margin_basis_points: number | null
   minimum_margin_zmw_minor: number
+  wholesale_cost_verified_at: string | null
   pricing_source: string | null
   retail_currency: string
   registration_retail_minor: number | null
@@ -212,7 +213,7 @@ export default function AdminDomainsPage() {
                     <td className="px-3 py-4">{money(row.registration_retail_minor)}</td>
                     <td className="px-3 py-4">{money(row.renewal_retail_minor)}</td>
                     <td className="px-3 py-4"><span className={row.enabled ? "rounded-full bg-teal/10 px-2.5 py-1 text-xs font-bold text-teal-800" : "rounded-full bg-slate-100 px-2.5 py-1 text-xs font-bold text-slate-600"}>{row.enabled ? "Enabled" : "Disabled"}</span></td>
-                    <td className="px-3 py-4 text-xs text-slate-500">{row.price_updated_at ? new Date(row.price_updated_at).toLocaleString() : "Not set"}</td>
+                    <td className="px-3 py-4 text-xs text-slate-500">{row.wholesale_cost_verified_at ? new Date(row.wholesale_cost_verified_at).toLocaleDateString() : "Not verified"}</td>
                   </tr>
                 ))}
               </tbody>
