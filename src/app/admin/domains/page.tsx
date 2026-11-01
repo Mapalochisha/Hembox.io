@@ -69,7 +69,7 @@ export default function AdminDomainsPage() {
   }, [])
 
   const applyFxRate = useCallback((value: number) => {
-    setForm((current) => ({ ...current, fxRateMicros: current.fxRateMicros || String(value) }))
+    setForm((current) => ({ ...current, fxRateMicros: String(value) }))
   }, [])
 
   useEffect(() => { void loadCatalog() }, [loadCatalog])
@@ -90,6 +90,12 @@ export default function AdminDomainsPage() {
       minimumMarginZmwMinor: "2500",
       enabled: false,
     })
+    void fetch("/api/admin/domains/fx", { cache: "no-store" })
+      .then((response) => response.json())
+      .then((body) => {
+        if (body.snapshot?.effective_rate) setForm((current) => ({ ...current, fxRateMicros: String(Math.round(body.snapshot.effective_rate * 1_000_000)) }))
+      })
+      .catch(() => undefined)
   }, [])
 
   async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
