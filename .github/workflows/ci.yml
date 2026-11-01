@@ -121,12 +121,19 @@ jobs:
           );
           create function auth.uid() returns uuid
           language sql stable
-          as $ select nullif(current_setting('request.jwt.claim.sub', true), '')::uuid $;
+          as $auth$ select nullif(current_setting('request.jwt.claim.sub', true), '')::uuid $auth$;
           -- Fixture for the existing Supabase auth signup trigger. The migration
           -- under test revokes direct RPC execution but must leave trigger use intact.
           create function public.handle_new_user() returns trigger
-          language plpgsql security definer set search_path = public
-          as $ begin return new; end $;
+          language plpgsql security definer set search_path = ''
+          as $signup$
+          begin
+            insert into public.profiles (id, email, full_name, avatar_url, role)
+            values (new.id, new.email, new.raw_user_meta_data->>'full_name',
+              new.raw_user_meta_data->>'avatar_url', 'user');
+            return new;
+          end;
+          $signup$;
           create trigger on_auth_user_created after insert on auth.users
           for each row execute function public.handle_new_user();
           SQL
