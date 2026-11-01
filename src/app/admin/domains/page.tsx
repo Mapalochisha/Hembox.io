@@ -203,7 +203,7 @@ export default function AdminDomainsPage() {
           <div className="mt-4 overflow-x-auto">
             <table className="w-full min-w-[760px] text-left text-sm">
               <thead className="border-b border-slate-200 text-xs uppercase tracking-wide text-slate-500">
-                <tr><th className="px-3 py-3">TLD</th><th className="px-3 py-3">Provider</th><th className="px-3 py-3">Registration</th><th className="px-3 py-3">Renewal</th><th className="px-3 py-3">Status</th><th className="px-3 py-3">Price snapshot</th></tr>
+                <tr><th className="px-3 py-3">TLD</th><th className="px-3 py-3">Provider</th><th className="px-3 py-3">Registration</th><th className="px-3 py-3">Renewal</th><th className="px-3 py-3">Status</th><th className="px-3 py-3">Wholesale costs verified</th></tr>
               </thead>
               <tbody>
                 {catalog.map((row) => (
