@@ -5,7 +5,7 @@ import { useState } from "react"
 import { ArrowLeft, Loader2, RefreshCw } from "lucide-react"
 
 type Price = { tld: string; registrationUsdMinor: number; renewalUsdMinor: number }
-type Result = { fetchedAt: string; source: string; prices: Price[]; message: string }
+type Result = { fetchedAt: string; source: string; environment?: "test" | "live"; prices: Price[]; message: string }
 
 function usd(minor: number) {
   return new Intl.NumberFormat("en-US", { style: "currency", currency: "USD" }).format(minor / 100)
@@ -38,7 +38,7 @@ export default function DomainProviderPricesPage() {
         <div>
           <p className="text-xs font-bold uppercase tracking-[0.16em] text-teal">Domain reselling · NameSilo</p>
           <h1 className="mt-2 text-3xl font-black tracking-tight text-navy">Wholesale price reference</h1>
-          <p className="mt-2 max-w-3xl text-sm leading-6 text-slate-600">Retrieve the standard pay-as-you-go registration and renewal schedule directly from NameSilo. This is a read-only reference, not an automatic catalogue update.</p>
+          <p className="mt-2 max-w-3xl text-sm leading-6 text-slate-600">Retrieve the standard pay-as-you-go registration and renewal schedule from the NameSilo environment selected by <code className="rounded bg-slate-100 px-1">DOMAIN_PROVIDER_MODE</code> (sandbox or production). This is a read-only reference, not an automatic catalogue update.</p>
         </div>
         <button onClick={() => void refresh()} disabled={loading} className="inline-flex h-10 items-center justify-center gap-2 rounded-xl bg-navy px-4 text-sm font-bold text-white disabled:opacity-50">
           {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <RefreshCw className="h-4 w-4" />} {result ? "Refresh rates" : "Retrieve rates"}
@@ -51,8 +51,14 @@ export default function DomainProviderPricesPage() {
     </div>
     {error ? <p role="alert" className="rounded-xl border border-rose-200 bg-rose-50 p-4 text-sm text-rose-800">{error}</p> : null}
     {result ? <>
+      {result.environment === "test" ? (
+        <div className="rounded-2xl border border-sky-200 bg-sky-50 p-4 text-sm leading-6 text-sky-950">
+          <strong>Sandbox (OTE) rates.</strong> These come from NameSilo&apos;s sandbox account and are not production prices. Use them to rehearse the FX and markup flow; repeat this retrieval against the production account before approving any customer price. No TLD is enabled by this retrieval.
+        </div>
+      ) : null}
       <div className="flex flex-wrap gap-x-6 gap-y-2 rounded-xl border border-slate-200 bg-white p-4 text-sm text-slate-600">
         <span><strong className="text-navy">Source:</strong> NameSilo standard retail schedule</span>
+        <span><strong className="text-navy">Environment:</strong> {result.environment === "test" ? "OTE sandbox" : result.environment === "live" ? "Production" : "Unknown"}</span>
         <span><strong className="text-navy">Fetched:</strong> {new Date(result.fetchedAt).toLocaleString()}</span>
         <span><strong className="text-navy">TLDs:</strong> {result.prices.length}</span>
       </div>

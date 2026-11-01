@@ -2,7 +2,7 @@
 
 > **Purpose:** This is the canonical handoff document for the domain-reselling project. Read it before continuing implementation after a context switch. Update this file as milestones are completed, decisions change, or verification results become available.
 >
-> **Last updated:** 2026-11-01 (fresh technical assessment, M6 payment-evidence reconciliation, M4 registrant capture)
+> **Last updated:** 2026-11-01 (assessment, M6 + M4 merged to `main`, production migration reconciliation, sandbox pricing path, deployment policy restored)
 > **Repository:** `Mapalochisha/Hembox.io`  
 > **Historical implementation branch:** `feature/domain-reselling-platform`  
 > **Pull request:** https://github.com/Mapalochisha/Hembox.io/pull/2  
@@ -63,10 +63,10 @@ This section supersedes the older "recorded baseline" above where they disagree.
 | Branch head reviewed | `main` @ `663fd27edb112391f10503a20d7a9e520e845e7c` |
 | Push CI on that head | **Green** — [run 41300880941](https://github.com/Mapalochisha/Hembox.io/actions/runs/41300880941) (Lint & Type Check, Domain schema integration tests, Production Build) |
 | Pull-request CI on the cleanup branch | Green — run 41287246324 |
-| Vercel Git deployments | **Disabled by configuration**: `vercel.json` sets `git.deploymentEnabled: false`, so pushes do not create deployments. Deployments are manual. The newest deployment records are manual CLI deployments; a deployment matching the current `main` head was **not** verified in this session. |
+| Vercel Git deployments | The owner lifted the abuse block on 2026-11-01. `vercel.json` now enables Git deployments for `main` only (previews stay off), so merges to `main` deploy automatically; other branches still build in CI only. |
 | Open pull requests | None open (PRs #1–#14 all merged or closed) |
 | Historical feature branches | Still exist remotely but are stale copies of already-merged work. See "reusable work" below. |
-| Production Supabase migrations | **Not applied** (no authorization exists for this). |
+| Production Supabase migrations | **Correction to earlier entries: the 20 pre-existing domain/billing migrations were already applied to production** (versions dated 2026-10-24 → 2026-10-26). The two migrations introduced on 2026-11-01 were applied on 2026-11-01 with the owner's authorization: `domain_fulfilment_payment_evidence` succeeded. `domain_registrant_details` could not be applied in the same session because the Supabase Management API returned HTTP 502 on every call; it must be applied before domain payment claims are exercised on production, because the registrant gate is fail-closed. |
 
 ### What is genuinely complete
 
@@ -342,6 +342,18 @@ A green build proves only the checks that ran. It does not independently prove r
 > **Brand note (2026-10-29):** Current company name is Hembox Tech. Historical progress entries retain the brand name, repository paths, and URLs that were accurate when recorded. Cloudinary asset folders, domain-provider configuration, and existing technical identifiers are not renamed as part of the brand-copy phase.
 
 ## 6. Progress log
+
+### 2026-11-01 — Merged to main, production migrations reconciled, sandbox pricing path enabled
+
+- **Merged:** PR #15 (fulfilment payment evidence, registrant capture, fail-closed registrant gate) merged to `main` at `27ae938` with the owner's authorization.
+- **Production Supabase — important correction:** production already had all 20 earlier domain/billing migrations applied (2026-10-24 → 2026-10-26); earlier entries claiming "no production migration applied" were wrong. With the owner's authorization the new `domain_fulfilment_payment_evidence` migration was applied successfully. The `domain_registrant_details` migration could **not** be applied: the Supabase Management API returned HTTP 502 for every request in this session (including read-only calls). Retry it before exercising domain payments on production.
+- **Sandbox-first pricing:** `getNameSiloStandardPrices()` previously forced the production endpoint and `NAMESILO_API_KEY`, so the commercial flow could not be rehearsed without a production key. It now follows `DOMAIN_PROVIDER_MODE` (`namesilo-sandbox` → OTE host + `NAMESILO_SANDBOX_API_KEY`, `namesilo` → production host + `NAMESILO_API_KEY`) and fails closed when NameSilo is not the configured provider. The admin price reader reports the environment and shows a sandbox warning; no TLD is enabled and nothing is persisted by the retrieval.
+- **Deployment policy:** `vercel.json` now enables Git deployments for `main` only, matching the owner's decision to re-enable deployments without exposing every branch to automatic builds.
+- **New operational documentation:** [`domain-pricing-inputs.md`](./domain-pricing-inputs.md) is the step-by-step procedure for obtaining verified registration/renewal costs, an approved FX source and rate, and an approved markup, then entering and enabling TLDs — including the `.zm` provider reality check and the sandbox caveat.
+- **Tests:** `tsc --noEmit` clean; `npm run lint` no errors; NameSilo price-reader tests extended to 7 assertions covering sandbox/live host and credential separation, disabled-provider refusal and mode resolution.
+- **Safety:** no production NameSilo key was used, no registrar mutation, no real payment, no TLD enabled, and no customer-facing price published.
+- **Next action:** apply the pending `domain_registrant_details` migration, then retrieve and record verified prices per the playbook.
+
 
 ### 2026-11-01 — Registrant payment gate corrected to fail closed
 
