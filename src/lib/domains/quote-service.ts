@@ -21,6 +21,7 @@ export type DomainQuoteCatalogRecord = {
   wholesale_fx_rate_micros: number | null
   margin_basis_points: number | null
   minimum_margin_zmw_minor?: number | null
+  wholesale_cost_verified_at?: string | null
   pricing_source: string | null
   price_updated_at: string | null
 }
@@ -126,6 +127,9 @@ export function validateDomainQuotePricing(input: {
   }
   if (!isPricingSnapshotFresh(catalog.price_updated_at, now, MAX_PRICING_AGE_MS)) {
     fail("price_stale", "The saved price has expired and must be verified again before a quote can be issued.", 409)
+  }
+  if (!isPricingSnapshotFresh(catalog.wholesale_cost_verified_at ?? catalog.price_updated_at, now, 30 * 24 * 60 * 60 * 1000)) {
+    fail("wholesale_cost_stale", "Provider registration and renewal costs must be re-verified before a quote can be issued.", 409)
   }
 
   let registrationCalculation: ReturnType<typeof calculateRetailPrice>
