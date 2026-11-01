@@ -96,7 +96,7 @@ export function deriveDomainLedgerReconciliation(input: {
 
   let allocatedMinor = 0
   if (invoice) {
-    if (!input.invoiceLinkMatches) issues.push("invoice_source_mismatch")
+    if (order.billingInvoiceId && !input.invoiceLinkMatches) issues.push("invoice_source_mismatch")
     if (!order.customerId || invoice.customerId !== order.customerId) issues.push("invoice_customer_mismatch")
     if (invoice.sourceType !== "domain_registration" || invoice.sourceId !== order.id) issues.push("invoice_source_mismatch")
     if (invoice.currency !== order.currency) issues.push("invoice_currency_mismatch")
