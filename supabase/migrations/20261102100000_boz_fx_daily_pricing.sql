@@ -3,11 +3,13 @@
 
 alter table public.domain_tld_catalog
   add column if not exists minimum_margin_zmw_minor bigint not null default 2500
-    check (minimum_margin_zmw_minor >= 0);
+    check (minimum_margin_zmw_minor >= 0),
+  add column if not exists wholesale_cost_verified_at timestamptz;
 
 alter table public.domain_price_snapshots
   add column if not exists minimum_margin_zmw_minor bigint not null default 2500
-    check (minimum_margin_zmw_minor >= 0);
+    check (minimum_margin_zmw_minor >= 0),
+  add column if not exists wholesale_cost_verified_at timestamptz;
 
 create table if not exists public.domain_fx_rate_snapshots (
   id uuid primary key default gen_random_uuid(),
@@ -35,5 +37,7 @@ grant select, insert, update on public.domain_fx_rate_snapshots to service_role;
 
 comment on table public.domain_fx_rate_snapshots is
   'Auditable daily Bank of Zambia USD/ZMW middle-rate snapshots plus the HEMBOX pricing buffer.';
+comment on column public.domain_tld_catalog.wholesale_cost_verified_at is
+  'Timestamp when the provider registration and renewal wholesale costs were last manually verified.';
 comment on column public.domain_tld_catalog.minimum_margin_zmw_minor is
   'Minimum gross margin in ZMW minor units, applied after FX conversion and percentage markup.';
