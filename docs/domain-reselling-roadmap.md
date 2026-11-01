@@ -39,6 +39,7 @@ The pricing layer now uses integer minor-unit arithmetic, an explicit FX scaling
 - `vercel.json` re-enables Git deployments for `main` only.
 - New procedure: [domain-pricing-inputs.md](./domain-pricing-inputs.md).
 - The registrant-details migration is now applied to production (in three steps after the Management API recovered) and verified there, including a fixed privilege leak: the save function had been left executable by `PUBLIC`. A SQL test now locks that down.
+- Handover for the next session: [arena-ai-handover.md](./arena-ai-handover.md). Production configuration procedure: [vercel-reconfiguration.md](./vercel-reconfiguration.md). Note the finding that the domain provider variables exist only for a Preview branch — production has none.
 - Automatic deployments are live again: preview `25b8a85`, production `21a2e70`. `/api/domains/catalog` on `hembox.tech` returns an empty catalogue, which is correct while no TLD is enabled.
 
 ## Current blockers and reliability notes

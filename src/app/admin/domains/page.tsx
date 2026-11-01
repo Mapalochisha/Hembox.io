@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useState } from "react"
 import { Loader2, RefreshCw, Save } from "lucide-react"
+import { buildCataloguePrefill, type CataloguePrefillResult } from "@/lib/domains/admin-catalogue-prefill"
 
 type CatalogRow = {
   tld: string
@@ -47,6 +48,7 @@ export default function AdminDomainsPage() {
   const [saving, setSaving] = useState(false)
   const [notice, setNotice] = useState("")
   const [error, setError] = useState("")
+  const [prefill, setPrefill] = useState<CataloguePrefillResult | null>(null)
 
   const loadCatalog = useCallback(async () => {
     setLoading(true)
@@ -64,6 +66,23 @@ export default function AdminDomainsPage() {
   }, [])
 
   useEffect(() => { void loadCatalog() }, [loadCatalog])
+
+  // Accepts the handoff from the wholesale price reference. Values are re-validated
+  // because a link is user-editable; on any doubt the form stays empty.
+  useEffect(() => {
+    if (typeof window === "undefined") return
+    const result = buildCataloguePrefill(new URLSearchParams(window.location.search))
+    if (!result) return
+    setPrefill(result)
+    setNotice("Provider costs copied into the form below. Review them, enter the approved FX rate and markup, then save.")
+    setForm({
+      ...emptyForm,
+      ...result.prefill,
+      fxRateMicros: "",
+      marginBasisPoints: "",
+      enabled: false,
+    })
+  }, [])
 
   async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault()
@@ -111,6 +130,18 @@ export default function AdminDomainsPage() {
           </button>
         </div>
       </div>
+
+      {prefill ? (
+        <div className="rounded-2xl border border-sky-200 bg-sky-50 p-4 text-sm leading-6 text-sky-950">
+          <p className="font-bold">
+            Prefilled from the NameSilo wholesale reference ({prefill.environment === "test" ? "OTE sandbox" : "production"}), retrieved {new Date(prefill.fetchedAt).toLocaleString()}.
+          </p>
+          <ul className="mt-2 list-disc space-y-1 pl-5">
+            {prefill.warnings.map((warning) => <li key={warning}>{warning}</li>)}
+          </ul>
+          <p className="mt-2 text-xs text-sky-900">Recorded provenance: <code className="rounded bg-white/70 px-1">{prefill.prefill.pricingSource}</code></p>
+        </div>
+      ) : null}
 
       <div className="rounded-2xl border border-amber-200 bg-amber-50 p-4 text-sm leading-6 text-amber-950">
         <strong>Sales safety:</strong> Do not enable a TLD until its wholesale registration and renewal costs, FX rate, and source note are verified. A current price is not proof of domain availability. The provider connection, checkout, payment, and registration are still disabled.

@@ -2,7 +2,7 @@
 
 > **Purpose:** This is the canonical handoff document for the domain-reselling project. Read it before continuing implementation after a context switch. Update this file as milestones are completed, decisions change, or verification results become available.
 >
-> **Last updated:** 2026-11-01 (assessment, M6 + M4 merged to `main`, production migration reconciliation, sandbox pricing path, deployment policy restored)
+> **Last updated:** 2026-11-01 (assessment, M6 + M4 merged to `main`, production migration reconciliation, sandbox pricing path, deployment policy restored). Full session handover: [`arena-ai-handover.md`](./arena-ai-handover.md). Production configuration procedure: [`vercel-reconfiguration.md`](./vercel-reconfiguration.md).
 > **Repository:** `Mapalochisha/Hembox.io`  
 > **Historical implementation branch:** `feature/domain-reselling-platform`  
 > **Pull request:** https://github.com/Mapalochisha/Hembox.io/pull/2  
@@ -342,6 +342,12 @@ A green build proves only the checks that ran. It does not independently prove r
 > **Brand note (2026-10-29):** Current company name is Hembox Tech. Historical progress entries retain the brand name, repository paths, and URLs that were accurate when recorded. Cloudinary asset folders, domain-provider configuration, and existing technical identifiers are not renamed as part of the brand-copy phase.
 
 ## 6. Progress log
+
+### 2026-11-01 (later still) — Handover docs and price-reference → catalogue handoff
+
+- Added [`arena-ai-handover.md`](./arena-ai-handover.md) and [`vercel-reconfiguration.md`](./vercel-reconfiguration.md).
+- Implemented the handoff that closes the gap between "verified cost exists" and "cost entered correctly": the wholesale price reference now offers **Use in catalogue** per TLD, and the catalogue form validates and prefills the cost plus its provenance. It cannot enable a TLD and deliberately supplies no FX rate and no markup, because those are owner decisions. The requirement-2 values are therefore carried with the environment and retrieval timestamp attached to the price row, and the provenance is recorded in `pricing_source` as `namesilo-standard:<environment>:<retrievedAt>`.
+- `src/lib/domains/admin-catalogue-prefill.ts` holds the validation as a pure function (rejects unknown environment/provider/currency, non-integer, zero, negative or absurd costs, unsafe TLDs and unusable timestamps; accepts second-level ccTLDs). Covered by `tests/admin-catalogue-prefill.test.mjs`, 6 assertions, wired into `npm run test:domains` (78 total).
 
 ### 2026-11-01 (later) — Registrant migration applied to production; live deployment verified
 
