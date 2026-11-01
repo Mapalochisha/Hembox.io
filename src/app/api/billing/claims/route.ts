@@ -18,6 +18,28 @@ const schema = z.object({
   receiptSizeBytes: z.number().int().positive().max(10485760).optional(),
 }).strict()
 
+/**
+ * A domain registration legally needs registrant details, so a domain invoice
+ * cannot be paid before they exist. Older environments without the registrant
+ * migration fall back to a logged warning; the fulfilment function still refuses
+ * to record a registration without them.
+ */
+async function domainRegistrantGate(db: SupabaseClient, orderId: string): Promise<"ok" | "missing" | "unavailable"> {
+  const { data, error } = await db
+    .from("domain_order_registrant_details")
+    .select("order_id")
+    .eq("order_id", orderId)
+    .maybeSingle()
+  if (error) {
+    if (error.code === "42P01" || error.code === "PGRST205") {
+      console.warn("[Billing] Registrant details table is not deployed; skipping the pre-payment registrant gate.")
+      return "unavailable"
+    }
+    throw error
+  }
+  return data ? "ok" : "missing"
+}
+
 function json(body: unknown, status = 200) {
   return NextResponse.json(body, { status, headers: { "Cache-Control": "no-store" } })
 }
@@ -67,6 +89,14 @@ export async function POST(request: Request) {
       if (quoteError) throw quoteError
       if (!quote || new Date(quote.expires_at).getTime() <= Date.now()) {
         return json({ error: "This domain quote has expired. Request a fresh quote before submitting payment.", code: "quote_expired" }, 409)
+      }
+      const registrant = await domainRegistrantGate(db, invoice.source_id)
+      if (registrant === "missing") {
+        return json({
+          error: "Add the domain registrant details in Portal \u2192 Domains before paying for this domain.",
+          code: "registrant_details_required",
+          domainOrderId: invoice.source_id,
+        }, 409)
       }
     }
 
@@ -186,6 +216,8 @@ export async function PATCH(request: Request) {
       const { data: quote, error } = await db.from("domain_order_quotes").select("expires_at").eq("order_id",invoice.source_id).order("sequence",{ascending:false}).limit(1).maybeSingle()
       if (error) throw error
       if (!quote || new Date(quote.expires_at).getTime() <= Date.now()) return json({ error: "This domain quote has expired. Request a fresh quote before resubmitting payment.",code:"quote_expired" },409)
+      const registrant = await domainRegistrantGate(db, invoice.source_id)
+      if (registrant === "missing") return json({ error: "Add the domain registrant details in Portal \u2192 Domains before resubmitting payment.", code: "registrant_details_required", domainOrderId: invoice.source_id }, 409)
     }
     const { data: method, error: methodError } = await db.from("billing_payment_methods")
       .select("id,method_key,display_name,instructions,version,supported_currencies").eq("id",parsed.data.paymentMethodId).eq("active",true).maybeSingle()

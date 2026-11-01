@@ -14,6 +14,12 @@ type DomainOrder = {
   billing_invoice_id?: string | null
 }
 type PaymentInvoice = { id: string; invoice_number: string; status: string; currency: string; total_minor: number; paid_at: string | null }
+type RegistrantDetails = {
+  registrant_type: string; first_name: string; last_name: string; organisation_name: string | null
+  email: string; phone: string; address_line1: string; address_line2: string | null
+  city: string; region: string; postal_code: string | null; country_code: string
+  consent_version: string; consent_accepted_at: string
+}
 type AuditEvent = { id: string; order_id: string | null; event_type: string; created_at: string; actor_user_id: string | null }
 
 const FULFILLABLE_STATUSES = ["payment_confirmed"]
@@ -41,6 +47,9 @@ export default function AdminDomainOrdersPage() {
   const [fulfillOrderId, setFulfillOrderId] = useState("")
   const [fulfillBusy, setFulfillBusy] = useState(false)
   const [fulfillError, setFulfillError] = useState("")
+  const [registrant, setRegistrant] = useState<RegistrantDetails | null>(null)
+  const [registrantLoading, setRegistrantLoading] = useState(false)
+  const [registrantState, setRegistrantState] = useState<"idle" | "missing" | "unavailable" | "loaded">("idle")
 
   const loadOrders = useCallback(async () => {
     setLoading(true); setError("")
@@ -56,6 +65,24 @@ export default function AdminDomainOrdersPage() {
   }, [status])
 
   useEffect(() => { void loadOrders() }, [loadOrders])
+
+  useEffect(() => {
+    if (!fulfillOrderId) { setRegistrant(null); setRegistrantState("idle"); return }
+    let cancelled = false
+    setRegistrantLoading(true); setRegistrantState("idle")
+    fetch(`/api/admin/domains/orders/registrant?orderId=${encodeURIComponent(fulfillOrderId)}`, { cache: "no-store" })
+      .then(async (response) => {
+        const result = await response.json().catch(() => ({}))
+        if (cancelled) return
+        if (!response.ok) { setRegistrant(null); setRegistrantState("unavailable"); return }
+        if (result.unavailable) { setRegistrant(null); setRegistrantState("unavailable"); return }
+        setRegistrant(result.details ?? null)
+        setRegistrantState(result.details ? "loaded" : "missing")
+      })
+      .catch(() => { if (!cancelled) { setRegistrant(null); setRegistrantState("unavailable") } })
+      .finally(() => { if (!cancelled) setRegistrantLoading(false) })
+    return () => { cancelled = true }
+  }, [fulfillOrderId])
   const selectedFulfillmentOrder = orders.find((order) => order.id === fulfillOrderId) ?? null
   const invoicesById = new Map(paymentInvoices.map((invoice) => [invoice.id, invoice]))
   function settlementFor(order: DomainOrder) {
@@ -165,6 +192,20 @@ export default function AdminDomainOrdersPage() {
             <button type="button" onClick={() => setFulfillOrderId("")} className="h-9 rounded-lg border border-slate-200 px-3 text-sm font-bold">Cancel</button>
           </div>
           {fulfillError ? <p role="alert" className="mt-3 rounded-xl border border-amber-200 bg-amber-50 p-3 text-sm text-amber-900">{fulfillError}</p> : null}
+          <div className="mt-4 rounded-xl border border-slate-200 bg-slate-50 p-4 text-sm">
+            <p className="text-xs font-bold uppercase tracking-wide text-slate-500">Registrant details (from the customer)</p>
+            {registrantLoading ? <p className="mt-2 text-slate-500">Loading…</p> : null}
+            {!registrantLoading && registrantState === "missing" ? <p className="mt-2 rounded-lg border border-amber-200 bg-amber-50 p-3 text-xs leading-5 text-amber-950">This customer has not supplied registrant details. Registration recording will be refused until they do — do not register this domain in the registrar console yet.</p> : null}
+            {!registrantLoading && registrantState === "unavailable" ? <p className="mt-2 text-xs text-slate-500">Registrant details could not be read. Treat this order as not ready for registration and check the deployment.</p> : null}
+            {registrant ? (
+              <dl className="mt-3 grid gap-2 text-xs text-slate-700 sm:grid-cols-2">
+                <div><dt className="font-semibold text-slate-500">Legal registrant</dt><dd>{registrant.first_name} {registrant.last_name}{registrant.organisation_name ? ` · ${registrant.organisation_name}` : ""} ({registrant.registrant_type})</dd></div>
+                <div><dt className="font-semibold text-slate-500">Contact</dt><dd>{registrant.email} · {registrant.phone}</dd></div>
+                <div className="sm:col-span-2"><dt className="font-semibold text-slate-500">Postal address</dt><dd>{[registrant.address_line1, registrant.address_line2, registrant.city, registrant.region, registrant.postal_code, registrant.country_code].filter(Boolean).join(", ")}</dd></div>
+                <div className="sm:col-span-2"><dt className="font-semibold text-slate-500">Consent</dt><dd>{registrant.consent_version} accepted {new Date(registrant.consent_accepted_at).toLocaleString()}</dd></div>
+              </dl>
+            ) : null}
+          </div>
           <form onSubmit={(event) => void recordManualRegistration(event)} className="mt-5 grid gap-4 sm:grid-cols-2">
             <div><label htmlFor="provider-domain-reference" className="block text-xs font-bold text-slate-700">Registered domain reference</label><input id="provider-domain-reference" name="providerDomainReference" defaultValue={selectedFulfillmentOrder.domain_name} required minLength={3} maxLength={253} className="mt-1 h-11 w-full rounded-xl border border-slate-200 px-3 text-sm" /></div>
             <div><label htmlFor="provider-order-reference" className="block text-xs font-bold text-slate-700">Registrar order/reference (optional)</label><input id="provider-order-reference" name="providerOrderReference" maxLength={200} className="mt-1 h-11 w-full rounded-xl border border-slate-200 px-3 text-sm" placeholder="Reference from registrar console" /></div>

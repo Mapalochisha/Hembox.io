@@ -92,6 +92,13 @@ begin
     raise exception 'Unified billing flow must not fabricate a legacy domain payment claim';
   end if;
 
+  -- Registrant details are a prerequisite for any registration record.
+  perform * from public.save_domain_order_registrant_details(
+    v_order_a, v_customer, 'individual', 'Evidence', 'Registrant', null,
+    'fulfilment-evidence@example.test', '+260970000000', '10 Great East Road', null,
+    'Lusaka', 'Lusaka', '10101', 'ZM', 'domain-registrant-v1'
+  );
+
   -- Only administrators may record a registration, even with settled payment.
   v_rejected := false;
   begin
@@ -239,6 +246,11 @@ begin
   select status into v_status from public.domain_orders where id = v_order_c;
   if v_status <> 'payment_confirmed' then raise exception 'Verified legacy claim should confirm payment, got %', v_status; end if;
 
+  perform * from public.save_domain_order_registrant_details(
+    v_order_c, v_customer, 'individual', 'Legacy', 'Registrant', null,
+    'fulfilment-evidence@example.test', '+260970000000', '11 Great East Road', null,
+    'Lusaka', 'Lusaka', '10101', 'ZM', 'domain-registrant-v1'
+  );
   select * into v_result from public.record_domain_manual_registration(
     v_order_c, v_admin, 'namesilo', 'EVIDENCE-ORDER-C', 'fulfilment-evidence-c.com',
     v_registered_at, v_expires_at, true, true, 'Registered in registrar console'

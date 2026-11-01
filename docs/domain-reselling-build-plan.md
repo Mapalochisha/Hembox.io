@@ -2,7 +2,7 @@
 
 > **Purpose:** This is the canonical handoff document for the domain-reselling project. Read it before continuing implementation after a context switch. Update this file as milestones are completed, decisions change, or verification results become available.
 >
-> **Last updated:** 2026-11-01 (fresh technical assessment + M6 payment-evidence reconciliation)
+> **Last updated:** 2026-11-01 (fresh technical assessment, M6 payment-evidence reconciliation, M4 registrant capture)
 > **Repository:** `Mapalochisha/Hembox.io`  
 > **Historical implementation branch:** `feature/domain-reselling-platform`  
 > **Pull request:** https://github.com/Mapalochisha/Hembox.io/pull/2  
@@ -86,7 +86,7 @@ This section supersedes the older "recorded baseline" above where they disagree.
 |---|---|---|
 | M1 commercial verification | NameSilo selected; OTE connection verified | Production API key, Zambia funding route, live `getPrices`, real TLD economics — **blocked on business/credentials** |
 | M3 catalogue | Working machinery, safe by default | No TLD is enabled. Needs approved FX source + markup + verified registration/renewal costs |
-| M4 checkout | Quote + durable order + billing invoice exist. There is no review/confirmation step and **no registrant/contact data capture** | Registrant details, terms/renewal disclosure, explicit confirmation before payment, final pre-purchase recheck |
+| M4 checkout | Quote + durable order + billing invoice exist, and registrant details/consent are now captured and enforced before payment and before registration (see the 2026-11-01 M4 entry) | A dedicated review/confirmation screen, multi-year terms, and a final pre-purchase recheck UI |
 | M5 manual payments | Bills claim → admin verify → allocation → invoice paid → order `payment_confirmed` works and is tested; mobile-money methods active, bank transfer intentionally inactive | Operational E2E with real accounts (requires owner authorization), reconciliation cadence |
 | M6 manual fulfilment | Guarded, audited RPC; admin route | Was unreachable (see defects). Registrar-console procedure/runbook still needs documenting |
 | M7 dashboard | Orders, prices, claim status visible | Renewal reminders, notifications, support paths |
@@ -95,7 +95,7 @@ This section supersedes the older "recorded baseline" above where they disagree.
 
 ### What is missing
 
-- Customer checkout review and **registrant data** capture (NameSilo needs registrant name/organisation/address/phone/country — without this an administrator cannot legally complete a manual registration).
+- A dedicated checkout review screen (the current flow collects registrant details and consent, and the billing claim endpoint refuses payment until they exist, but there is no single confirm-everything review page).
 - Renewals, reminders, DNS/nameserver management, transfer/lock/privacy (M9) — nothing customer-facing exists, correctly.
 - Rate limiting/abuse controls, operational alerts, backup/rollback runbooks, authenticated customer/admin end-to-end tests.
 - Verified production provider economics (external dependency).
@@ -191,7 +191,7 @@ Use `[x]` only after the milestone's acceptance criteria have been met and verif
 
 ### [ ] M4 — Cart, checkout and durable orders
 
-**Implementation progress (2026-11-01):** Quote creation, durable orders, atomic idempotent persistence, price/availability evidence freshness and the billing-invoice bridge are implemented and tested. What is still missing is the customer-facing review/confirmation step and registrant/contact data capture, which is a hard prerequisite for any real registration (the registrar requires registrant details, and an administrator cannot complete a manual registration without them).
+**Implementation progress (2026-11-01):** Quote creation, durable orders, atomic idempotent persistence, price/availability evidence freshness and the billing-invoice bridge are implemented and tested. Registrant data capture is now implemented: `domain_order_registrant_details` (owner-scoped RLS, server-side-only writes through `save_domain_order_registrant_details`, consent version recorded, personal data deliberately excluded from audit events), `POST/GET /api/domains/orders/registrant`, the customer panel in `/portal/domains`, an admin-only reader for the registrar console work, and two enforcement points — the unified billing claim endpoint refuses a domain payment claim until details exist, and `record_domain_manual_registration()` refuses to record a registration without them. Still missing: a single combined review/confirmation page, multi-year terms and a final pre-purchase recheck UI.
 
 **Scope**
 - Build domain selection, customer/registrant data collection and checkout review.
@@ -342,6 +342,23 @@ A green build proves only the checks that ran. It does not independently prove r
 > **Brand note (2026-10-29):** Current company name is Hembox Tech. Historical progress entries retain the brand name, repository paths, and URLs that were accurate when recorded. Cloudinary asset folders, domain-provider configuration, and existing technical identifiers are not renamed as part of the brand-copy phase.
 
 ## 6. Progress log
+
+### 2026-11-01 — M4 registrant capture, consent and checkout enforcement
+
+- **Milestone:** M4 (registrant data / checkout prerequisites), feeding M5 and M6.
+- **Why:** a registrar registration legally requires registrant contact details, and the platform captured none, so an administrator could not complete a real registration at all and no consent to share personal data with the registrar was recorded.
+- **Changes:**
+  - `supabase/migrations/20261101110000_domain_registrant_details.sql` — new `domain_order_registrant_details` table (one row per order, owner-scoped RLS read, admin read, writes only through `save_domain_order_registrant_details()`), validation constraints, consent version/acceptance timestamps, personal-data-minimised audit events (`domain_order.registrant_details_added` / `_updated`), and a redefinition of `record_domain_manual_registration()` that refuses to record a registration without registrant details. Editing is blocked once registration has started so the recorded registrant remains the legal record.
+  - `src/app/api/domains/orders/registrant/route.ts` — authenticated owner-scoped save/read with strict validation, international phone normalisation, a server-pinned consent version, and safe degradation when the migration is absent.
+  - `src/app/api/domains/orders/route.ts` — the dashboard payload now includes the customer's registrant details.
+  - `src/app/portal/domains/page.tsx` — registrant panel per order: saved summary, add/update form, explicit consent checkbox, locked state after registration starts.
+  - `src/app/api/billing/claims/route.ts` — a domain invoice payment claim is refused with `registrant_details_required` until registrant details exist (resubmission path included). Environments without the migration fall back to a logged warning; the fulfilment guard remains authoritative.
+  - `src/app/api/admin/domains/orders/registrant/route.ts` + `src/app/admin/domains/orders/page.tsx` — admin-only single-order registrant reader surfaced inside the manual-fulfilment panel, with an explicit warning that fulfilment will be refused when details are missing.
+  - `supabase/tests/domain_registrant_details.test.sql` (new), `supabase/tests/domain_manual_registration.test.sql` and `supabase/tests/domain_fulfilment_payment_evidence.test.sql` updated; `.github/workflows/ci.yml` applies and asserts the new migration.
+- **Tests performed:** `tsc --noEmit` clean; `npm run lint` no errors; `npm run test:domains` 24/24. The complete CI chain (23 migrations + 15 PostgreSQL suites) was applied to a fresh local PostgreSQL 16 database: all pass.
+- **Safety:** no registrar call, no gateway, no production migration, no live registration, no real payment. Personal data stays server-side; audit events exclude address and contact values.
+- **Next action:** M8 reconciliation completeness, then M10 hardening (rate limiting, authenticated E2E, runbooks); M1/M3 commercial verification still requires the owner's production credentials and pricing decisions.
+
 
 ### 2026-11-01 — Technical reassessment and M6 payment-evidence reconciliation
 

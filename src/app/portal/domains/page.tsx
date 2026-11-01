@@ -33,6 +33,24 @@ type ManualPaymentClaim = {
   updated_at: string
 }
 type PaymentSession = { paymentReference: string; amountMinor: number; currency: string; instructions: string }
+type RegistrantDetails = {
+  order_id: string
+  registrant_type: "individual" | "organisation"
+  first_name: string
+  last_name: string
+  organisation_name: string | null
+  email: string
+  phone: string
+  address_line1: string
+  address_line2: string | null
+  city: string
+  region: string
+  postal_code: string | null
+  country_code: string
+  consent_version: string
+  consent_accepted_at: string
+  updated_at: string
+}
 type DomainQuoteResponse = {
   order: { id: string; status: string }
   quote: {
@@ -76,6 +94,12 @@ export default function CustomerDomainsPage() {
   const { user, isLoading: authLoading } = useAuth()
   const [orders, setOrders] = useState<DomainOrder[]>([])
   const [paymentClaims, setPaymentClaims] = useState<ManualPaymentClaim[]>([])
+  const [registrantDetails, setRegistrantDetails] = useState<RegistrantDetails[]>([])
+  const [registrantAvailable, setRegistrantAvailable] = useState(true)
+  const [registrantEditing, setRegistrantEditing] = useState<Record<string, boolean>>({})
+  const [registrantBusyOrder, setRegistrantBusyOrder] = useState("")
+  const [registrantError, setRegistrantError] = useState("")
+  const [registrantNotice, setRegistrantNotice] = useState("")
   const [paymentSessions, setPaymentSessions] = useState<Record<string, PaymentSession>>({})
   const [paymentBusyOrder, setPaymentBusyOrder] = useState("")
   const [paymentError, setPaymentError] = useState("")
@@ -98,6 +122,8 @@ export default function CustomerDomainsPage() {
       if (!response.ok) throw new Error(result.error || "Unable to load your domain orders.")
       setOrders(result.orders ?? [])
       setPaymentClaims(result.paymentClaims ?? [])
+      setRegistrantDetails(result.registrantDetails ?? [])
+      setRegistrantAvailable(result.registrantDetailsAvailable !== false)
     } catch (loadError) {
       setError(loadError instanceof Error ? loadError.message : "Unable to load your domain orders.")
     } finally {
@@ -165,6 +191,45 @@ export default function CustomerDomainsPage() {
     } catch (e) {
       setPaymentError(e instanceof Error ? e.message : "Unable to submit the payment claim.")
     } finally { setPaymentBusyOrder("") }
+  }
+
+  async function submitRegistrantDetails(event: FormEvent<HTMLFormElement>, orderId: string) {
+    event.preventDefault()
+    const form = event.currentTarget
+    const data = new FormData(form)
+    setRegistrantBusyOrder(orderId); setRegistrantError(""); setRegistrantNotice("")
+    try {
+      const response = await fetch("/api/domains/orders/registrant", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        cache: "no-store",
+        body: JSON.stringify({
+          orderId,
+          registrantType: String(data.get("registrantType") || "individual"),
+          firstName: String(data.get("firstName") || ""),
+          lastName: String(data.get("lastName") || ""),
+          organisationName: String(data.get("organisationName") || "").trim() || undefined,
+          email: String(data.get("email") || ""),
+          phone: String(data.get("phone") || ""),
+          addressLine1: String(data.get("addressLine1") || ""),
+          addressLine2: String(data.get("addressLine2") || "").trim() || undefined,
+          city: String(data.get("city") || ""),
+          region: String(data.get("region") || ""),
+          postalCode: String(data.get("postalCode") || "").trim() || undefined,
+          countryCode: String(data.get("countryCode") || ""),
+          consentAccepted: data.get("consentAccepted") === "on",
+        }),
+      })
+      const result = await response.json().catch(() => ({}))
+      if (!response.ok) throw new Error(typeof result.error === "string" ? result.error : "Registrant details could not be saved.")
+      setRegistrantNotice("Registrant details saved. They are only shared with the registrar when we register the domain.")
+      setRegistrantEditing((previous) => ({ ...previous, [orderId]: false }))
+      await loadOrders()
+    } catch (e) {
+      setRegistrantError(e instanceof Error ? e.message : "Registrant details could not be saved.")
+    } finally {
+      setRegistrantBusyOrder("")
+    }
   }
 
   async function requestQuote(event: FormEvent<HTMLFormElement>) {
@@ -348,6 +413,8 @@ export default function CustomerDomainsPage() {
         {error ? <p role="alert" className="mt-8 rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900">{error}</p> : null}
         {paymentError ? <p role="alert" className="mt-4 rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900">{paymentError}</p> : null}
         {paymentNotice ? <p role="status" className="mt-4 rounded-xl border border-teal/30 bg-teal/5 p-4 text-sm text-navy">{paymentNotice}</p> : null}
+        {registrantError ? <p role="alert" className="mt-4 rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900">{registrantError}</p> : null}
+        {registrantNotice ? <p role="status" className="mt-4 rounded-xl border border-teal/30 bg-teal/5 p-4 text-sm text-navy">{registrantNotice}</p> : null}
 
         {!loading && !error && user && orders.length === 0 ? (
           <div className="mt-8 rounded-2xl border border-slate-200 bg-white p-8 text-center">
@@ -372,6 +439,17 @@ export default function CustomerDomainsPage() {
                 <Metric label="Expiry" value={order.expires_at ? new Date(order.expires_at).toLocaleDateString() : "Not confirmed"} />
               </div>
               {order.quote_expires_at ? <p className="mt-4 text-xs text-slate-500">Quote expires: {new Date(order.quote_expires_at).toLocaleString()}</p> : null}
+              {registrantAvailable ? (
+                <RegistrantPanel
+                  order={order}
+                  details={registrantDetails.find((details) => details.order_id === order.id) ?? null}
+                  locked={["registration_pending", "registered"].includes(order.status)}
+                  editing={registrantEditing[order.id] === true}
+                  busy={registrantBusyOrder === order.id}
+                  onToggle={() => setRegistrantEditing((previous) => ({ ...previous, [order.id]: !previous[order.id] }))}
+                  onSubmit={(event) => void submitRegistrantDetails(event, order.id)}
+                />
+              ) : null}
               {(order.status === "quoted" || order.status === "awaiting_payment") ? (
                 <div className="mt-5 border-t border-slate-100 pt-4">
                   <div className="flex flex-wrap items-center justify-between gap-3">
@@ -410,6 +488,76 @@ export default function CustomerDomainsPage() {
         </div>
       </main>
     </PortalShell>
+  )
+}
+
+
+type RegistrantPanelProps = {
+  order: DomainOrder
+  details: RegistrantDetails | null
+  locked: boolean
+  editing: boolean
+  busy: boolean
+  onToggle: () => void
+  onSubmit: (event: FormEvent<HTMLFormElement>) => void
+}
+
+function fieldClass() {
+  return "mt-1 h-11 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm"
+}
+
+function RegistrantPanel({ order, details, locked, editing, busy, onToggle, onSubmit }: RegistrantPanelProps) {
+  const showForm = !details || editing
+  return (
+    <section className="mt-5 rounded-xl border border-slate-200 bg-slate-50 p-4">
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        <div>
+          <h3 className="text-sm font-bold text-navy">Registrant details</h3>
+          <p className="mt-1 text-xs leading-5 text-slate-600">
+            {details
+              ? `Saved for ${details.first_name} ${details.last_name}${details.organisation_name ? ` · ${details.organisation_name}` : ""} · consent ${details.consent_version} accepted ${new Date(details.consent_accepted_at).toLocaleDateString()}`
+              : "The registrar needs the legal owner's contact details. These are required before payment and before the domain can be registered."}
+          </p>
+        </div>
+        {!locked ? (
+          <button type="button" onClick={onToggle} className="h-9 rounded-lg border border-slate-200 bg-white px-3 text-xs font-bold">
+            {editing ? "Cancel" : details ? "Update details" : "Add details"}
+          </button>
+        ) : null}
+      </div>
+
+      {!showForm ? (
+        <dl className="mt-3 grid gap-2 text-xs text-slate-600 sm:grid-cols-2">
+          <div><dt className="font-semibold text-slate-500">Contact</dt><dd>{details?.email} · {details?.phone}</dd></div>
+          <div><dt className="font-semibold text-slate-500">Country</dt><dd>{details?.country_code}</dd></div>
+          <div className="sm:col-span-2"><dt className="font-semibold text-slate-500">Postal address</dt><dd>{[details?.address_line1, details?.address_line2, details?.city, details?.region, details?.postal_code].filter(Boolean).join(", ")}</dd></div>
+        </dl>
+      ) : (
+        <form onSubmit={onSubmit} className="mt-4 grid gap-3 sm:grid-cols-2">
+          <input type="hidden" name="registrantType" value={details?.registrant_type ?? "individual"} />
+          <div><label htmlFor={`first-name-${order.id}`} className="block text-xs font-bold text-slate-700">First name</label><input id={`first-name-${order.id}`} name="firstName" required maxLength={60} defaultValue={details?.first_name ?? ""} className={fieldClass()} /></div>
+          <div><label htmlFor={`last-name-${order.id}`} className="block text-xs font-bold text-slate-700">Last name</label><input id={`last-name-${order.id}`} name="lastName" required maxLength={60} defaultValue={details?.last_name ?? ""} className={fieldClass()} /></div>
+          <div className="sm:col-span-2"><label htmlFor={`organisation-${order.id}`} className="block text-xs font-bold text-slate-700">Organisation (optional)</label><input id={`organisation-${order.id}`} name="organisationName" maxLength={120} defaultValue={details?.organisation_name ?? ""} className={fieldClass()} placeholder="Leave blank to register as an individual" /></div>
+          <div><label htmlFor={`email-${order.id}`} className="block text-xs font-bold text-slate-700">Email</label><input id={`email-${order.id}`} name="email" type="email" required maxLength={254} defaultValue={details?.email ?? ""} className={fieldClass()} /></div>
+          <div><label htmlFor={`phone-${order.id}`} className="block text-xs font-bold text-slate-700">Phone (international)</label><input id={`phone-${order.id}`} name="phone" required maxLength={20} defaultValue={details?.phone ?? ""} className={fieldClass()} placeholder="+260970000000" /></div>
+          <div className="sm:col-span-2"><label htmlFor={`address-${order.id}`} className="block text-xs font-bold text-slate-700">Address line 1</label><input id={`address-${order.id}`} name="addressLine1" required minLength={3} maxLength={120} defaultValue={details?.address_line1 ?? ""} className={fieldClass()} /></div>
+          <div className="sm:col-span-2"><label htmlFor={`address2-${order.id}`} className="block text-xs font-bold text-slate-700">Address line 2 (optional)</label><input id={`address2-${order.id}`} name="addressLine2" maxLength={120} defaultValue={details?.address_line2 ?? ""} className={fieldClass()} /></div>
+          <div><label htmlFor={`city-${order.id}`} className="block text-xs font-bold text-slate-700">City</label><input id={`city-${order.id}`} name="city" required minLength={2} maxLength={80} defaultValue={details?.city ?? ""} className={fieldClass()} /></div>
+          <div><label htmlFor={`region-${order.id}`} className="block text-xs font-bold text-slate-700">Province / region</label><input id={`region-${order.id}`} name="region" required minLength={2} maxLength={80} defaultValue={details?.region ?? "Lusaka"} className={fieldClass()} /></div>
+          <div><label htmlFor={`postal-${order.id}`} className="block text-xs font-bold text-slate-700">Postal code (optional)</label><input id={`postal-${order.id}`} name="postalCode" maxLength={20} defaultValue={details?.postal_code ?? ""} className={fieldClass()} /></div>
+          <div><label htmlFor={`country-${order.id}`} className="block text-xs font-bold text-slate-700">Country code</label><input id={`country-${order.id}`} name="countryCode" required pattern="[A-Za-z]{2}" maxLength={2} defaultValue={details?.country_code ?? "ZM"} className={fieldClass()} placeholder="ZM" /></div>
+          <label className="flex items-start gap-2 rounded-xl bg-white p-3 text-xs leading-5 text-slate-600 sm:col-span-2">
+            <input name="consentAccepted" type="checkbox" required className="mt-0.5" defaultChecked={Boolean(details)} />
+            <span>I confirm these details belong to the legal registrant, and I consent to them being shared with the domain registrar (NameSilo) and published where registry or WHOIS policy requires it.</span>
+          </label>
+          <div className="sm:col-span-2">
+            <button type="submit" disabled={busy} className="inline-flex h-10 items-center justify-center rounded-xl bg-navy px-4 text-sm font-bold text-white disabled:opacity-50">
+              {busy ? "Saving\u2026" : "Save registrant details"}
+            </button>
+          </div>
+        </form>
+      )}
+    </section>
   )
 }
 
