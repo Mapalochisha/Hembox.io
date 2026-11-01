@@ -140,7 +140,7 @@ See [`vercel-reconfiguration.md`](./vercel-reconfiguration.md) for the exact fix
 | M0 Foundation | done | |
 | M1 Registrar selection and commercial verification | partial | NameSilo chosen; **production key and funding still outstanding** |
 | M2 NameSilo read-only adapter | partial | adapter and OTE path work; production key never used; OTE returns `114` for out-of-account names |
-| M3 Pricing policy and TLD catalogue | partial | schema, server recalculation and staleness rules exist; **no cost, FX or markup input approved; no TLD enabled** |
+| M3 Pricing policy and TLD catalogue | partial | schema, server recalculation, staleness rules and the price-reference → catalogue handoff exist; **no cost, FX or markup input approved; no TLD enabled** |
 | M4 Cart, checkout and durable orders | partial (merged) | registrant capture, consent and fail-closed gate done; full purchase path not rehearsed |
 | M5 Manual payment workflow | partial | claims, evidence reconciliation and admin verification exist |
 | M6 Registration and provisioning | partial (merged) | guarded manual fulfilment with settled-payment evidence |
@@ -160,8 +160,10 @@ See [`vercel-reconfiguration.md`](./vercel-reconfiguration.md) for the exact fix
    floor, launch TLD set (`.com` recommended), daily refresh owner.
 4. **Seed the catalogue disabled** — enter approved values, let the server recompute the ZMW
    retail price, review, then enable.
-5. **Price reference → catalogue handoff** — carry verified costs from the admin reader into a
-   pre-filled catalogue form so approval inputs cannot be mistyped or half-entered.
+5. ~~**Price reference → catalogue handoff**~~ — **done** in the same commit as this document:
+   `src/lib/domains/admin-catalogue-prefill.ts` plus **Use in catalogue** on the wholesale
+   reference. Verified costs arrive with their environment and retrieval timestamp, `enabled`
+   stays false, and FX/markup stay blank by design.
 6. **Authenticated E2E on `hembox.tech`** — price reader, registrant capture, manual claim,
    guarded fulfilment. Requires a signed-in session.
 7. **M10a rate limiting** — the next unstarted milestone.

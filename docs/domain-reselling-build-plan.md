@@ -343,6 +343,12 @@ A green build proves only the checks that ran. It does not independently prove r
 
 ## 6. Progress log
 
+### 2026-11-01 (later still) — Handover docs and price-reference → catalogue handoff
+
+- Added [`arena-ai-handover.md`](./arena-ai-handover.md) and [`vercel-reconfiguration.md`](./vercel-reconfiguration.md).
+- Implemented the handoff that closes the gap between "verified cost exists" and "cost entered correctly": the wholesale price reference now offers **Use in catalogue** per TLD, and the catalogue form validates and prefills the cost plus its provenance. It cannot enable a TLD and deliberately supplies no FX rate and no markup, because those are owner decisions. The requirement-2 values are therefore carried with the environment and retrieval timestamp attached to the price row, and the provenance is recorded in `pricing_source` as `namesilo-standard:<environment>:<retrievedAt>`.
+- `src/lib/domains/admin-catalogue-prefill.ts` holds the validation as a pure function (rejects unknown environment/provider/currency, non-integer, zero, negative or absurd costs, unsafe TLDs and unusable timestamps; accepts second-level ccTLDs). Covered by `tests/admin-catalogue-prefill.test.mjs`, 6 assertions, wired into `npm run test:domains` (78 total).
+
 ### 2026-11-01 (later) — Registrant migration applied to production; live deployment verified
 
 - **Production migration complete.** PR #16 merged to `main` at `21a2e70`. Once the Supabase Management API recovered, the pending registrant-details migration was confirmed absent and applied in three idempotent steps, then verified in production: table `domain_order_registrant_details` present with RLS enabled and two read policies (owner, admin), `save_domain_order_registrant_details()` present, and `record_domain_manual_registration()` is the version that requires registrant details before any registration can be recorded.

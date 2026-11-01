@@ -11,6 +11,24 @@ function usd(minor: number) {
   return new Intl.NumberFormat("en-US", { style: "currency", currency: "USD" }).format(minor / 100)
 }
 
+/**
+ * Hands a retrieved provider rate to the catalogue form. The link carries only
+ * the provider values plus provenance; it cannot enable a TLD or supply an FX
+ * rate or markup, and the catalogue page validates every field again.
+ */
+function catalogueHref(price: Price, environment: "test" | "live" | undefined, fetchedAt: string) {
+  const search = new URLSearchParams({
+    tld: `.${price.tld.replace(/^\.+/, "")}`,
+    provider: "namesilo",
+    currency: "USD",
+    environment: environment ?? "",
+    fetchedAt,
+    registrationWholesaleMinor: String(price.registrationUsdMinor),
+    renewalWholesaleMinor: String(price.renewalUsdMinor),
+  })
+  return `/admin/domains?${search.toString()}`
+}
+
 export default function DomainProviderPricesPage() {
   const [result, setResult] = useState<Result | null>(null)
   const [loading, setLoading] = useState(false)
@@ -65,12 +83,13 @@ export default function DomainProviderPricesPage() {
       <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
         <div className="overflow-x-auto">
           <table className="w-full min-w-[520px] text-left text-sm">
-            <thead className="border-b border-slate-200 bg-slate-50 text-xs uppercase tracking-wide text-slate-500"><tr><th className="px-5 py-3">TLD</th><th className="px-5 py-3">Registration</th><th className="px-5 py-3">Renewal</th><th className="px-5 py-3">Transfer</th></tr></thead>
-            <tbody>{result.prices.map((price) => <tr key={price.tld} className="border-b border-slate-100 last:border-0"><td className="px-5 py-4 font-bold text-navy">.{price.tld}</td><td className="px-5 py-4">{usd(price.registrationUsdMinor)}</td><td className="px-5 py-4">{usd(price.renewalUsdMinor)}</td><td className="px-5 py-4 text-slate-400">Not used for launch pricing</td></tr>)}</tbody>
+            <thead className="border-b border-slate-200 bg-slate-50 text-xs uppercase tracking-wide text-slate-500"><tr><th className="px-5 py-3">TLD</th><th className="px-5 py-3">Registration</th><th className="px-5 py-3">Renewal</th><th className="px-5 py-3">Catalogue</th></tr></thead>
+            <tbody>{result.prices.map((price) => <tr key={price.tld} className="border-b border-slate-100 last:border-0"><td className="px-5 py-4 font-bold text-navy">.{price.tld}</td><td className="px-5 py-4">{usd(price.registrationUsdMinor)}</td><td className="px-5 py-4">{usd(price.renewalUsdMinor)}</td><td className="px-5 py-4"><Link href={catalogueHref(price, result.environment, result.fetchedAt)} className="font-semibold text-teal underline decoration-teal/40 underline-offset-2 hover:text-teal-800">Use in catalogue</Link></td></tr>)}</tbody>
           </table>
         </div>
       </div>
       <p className="text-xs leading-5 text-slate-500">{result.message} Rates may change; retrieve them again before approving or issuing a customer quote.</p>
+      <p className="text-xs leading-5 text-slate-500"><strong className="text-navy">Use in catalogue</strong> copies the retrieved cost and its provenance into the catalogue form on this browser. It saves nothing, enables nothing, and deliberately leaves FX and markup for you to enter after approval.</p>
     </> : <div className="rounded-2xl border border-dashed border-slate-300 bg-white p-10 text-center text-sm text-slate-500">No provider price response loaded yet. Retrieve rates when the live NameSilo API key is configured.</div>}
   </div>
 }
