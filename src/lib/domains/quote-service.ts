@@ -50,6 +50,7 @@ export type ValidatedDomainQuotePricing = {
     renewalWholesaleMinor: number
     fxRateMicros: number
     marginBasisPoints: number
+    minimumMarginZmwMinor: number
   }
 }
 
@@ -116,6 +117,7 @@ export function validateDomainQuotePricing(input: {
     !safeInteger(catalog.wholesale_fx_rate_micros, 1) ||
     !safeInteger(catalog.margin_basis_points, 0) ||
     catalog.margin_basis_points > 100000 ||
+    !safeInteger(catalog.minimum_margin_zmw_minor ?? 2500, 0) ||
     typeof catalog.pricing_source !== "string" ||
     !catalog.pricing_source.trim() ||
     catalog.pricing_source.length > 160
@@ -166,6 +168,7 @@ export function validateDomainQuotePricing(input: {
       renewalWholesaleMinor: catalog.renewal_wholesale_minor,
       fxRateMicros: catalog.wholesale_fx_rate_micros,
       marginBasisPoints: catalog.margin_basis_points,
+      minimumMarginZmwMinor: catalog.minimum_margin_zmw_minor ?? 2500,
     },
   }
 }
