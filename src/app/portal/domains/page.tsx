@@ -449,7 +449,11 @@ export default function CustomerDomainsPage() {
                   onToggle={() => setRegistrantEditing((previous) => ({ ...previous, [order.id]: !previous[order.id] }))}
                   onSubmit={(event) => void submitRegistrantDetails(event, order.id)}
                 />
-              ) : null}
+              ) : (
+                <p role="alert" className="mt-5 rounded-xl border border-amber-200 bg-amber-50 p-4 text-xs leading-5 text-amber-950">
+                  Registrant details cannot be captured in this environment yet, so this domain cannot accept a payment claim. Payment and registration stay disabled until the registrant details feature is deployed — contact support if this is blocking you.
+                </p>
+              )}
               {(order.status === "quoted" || order.status === "awaiting_payment") ? (
                 <div className="mt-5 border-t border-slate-100 pt-4">
                   <div className="flex flex-wrap items-center justify-between gap-3">

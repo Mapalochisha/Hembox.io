@@ -343,6 +343,18 @@ A green build proves only the checks that ran. It does not independently prove r
 
 ## 6. Progress log
 
+### 2026-11-01 — Registrant payment gate corrected to fail closed
+
+- **Milestone:** M4/M5 (pre-payment registrant enforcement).
+- **Defect:** the first version of the domain registrant gate returned `unavailable` when the registrant migration or table was missing, and the payment-claim endpoints only rejected the `missing` result. A domain payment claim could therefore be submitted while registrant verification was impossible — a fail-open path in exactly the check that protects a legal registrant requirement.
+- **Fix:** the allow rule now lives in one pure function, `decideDomainRegistrantGate()` in `src/lib/domains/registrant-gate.ts`, and **only an explicit `ok` allows a claim**. `missing` denies with `409 registrant_details_required`; `unavailable` (missing migration/table, lookup error, unexpected value) denies with `503 registrant_details_unavailable`. The gate helper no longer throws on an unexpected database error — it logs a sanitised code and returns `unavailable`, so both claim submission and claim resubmission are blocked consistently.
+- **Regression coverage:** `tests/domain-registrant-gate.test.mjs` asserts that `unavailable` and unexpected values (including `null`, `undefined`, `"OK"`, objects) deny, wired into `npm run test:domains`. A negative control (temporarily restoring the fail-open branch) fails two assertions, confirming the test catches the original bug.
+- **Customer/admin surfaces:** when the gate cannot be evaluated, `/portal/domains` now explains that the domain cannot accept a payment claim instead of silently hiding the registrant panel, and the admin fulfilment panel states the order is blocked.
+- **Tests:** `tsc --noEmit` clean; `npm run lint` no errors; `npm run test:domains` 68 unit assertions + 24 sandbox-operation assertions, all passing.
+- **Safety:** still no registrar call, gateway, production migration, live registration or real payment.
+- **Next action:** M8 reconciliation completeness, then M10 hardening; commercial verification still requires the owner's production credentials and pricing decisions.
+
+
 ### 2026-11-01 — M4 registrant capture, consent and checkout enforcement
 
 - **Milestone:** M4 (registrant data / checkout prerequisites), feeding M5 and M6.

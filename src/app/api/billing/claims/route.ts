@@ -3,6 +3,7 @@ import { z } from "zod"
 import type { SupabaseClient } from "@supabase/supabase-js"
 import { createClient } from "@/lib/supabase/server"
 import { createServiceClient } from "@/lib/supabase/service"
+import { decideDomainRegistrantGate, type RegistrantGateCheck } from "@/lib/domains/registrant-gate"
 
 export const dynamic = "force-dynamic"
 
@@ -19,25 +20,27 @@ const schema = z.object({
 }).strict()
 
 /**
- * A domain registration legally needs registrant details, so a domain invoice
- * cannot be paid before they exist. Older environments without the registrant
- * migration fall back to a logged warning; the fulfilment function still refuses
- * to record a registration without them.
+ * Evaluate the registrant gate for a domain order. Only a positively read row
+ * returns "ok". A missing migration, a missing table or any lookup failure
+ * returns "unavailable" so the caller denies the payment claim (fail closed);
+ * the decision itself lives in decideDomainRegistrantGate().
  */
-async function domainRegistrantGate(db: SupabaseClient, orderId: string): Promise<"ok" | "missing" | "unavailable"> {
-  const { data, error } = await db
-    .from("domain_order_registrant_details")
-    .select("order_id")
-    .eq("order_id", orderId)
-    .maybeSingle()
-  if (error) {
-    if (error.code === "42P01" || error.code === "PGRST205") {
-      console.warn("[Billing] Registrant details table is not deployed; skipping the pre-payment registrant gate.")
+async function domainRegistrantGate(db: SupabaseClient, orderId: string): Promise<RegistrantGateCheck> {
+  try {
+    const { data, error } = await db
+      .from("domain_order_registrant_details")
+      .select("order_id")
+      .eq("order_id", orderId)
+      .maybeSingle()
+    if (error) {
+      console.warn("[Billing] Registrant gate could not be evaluated; denying the domain payment claim:", { code: error.code ?? "unknown" })
       return "unavailable"
     }
-    throw error
+    return data ? "ok" : "missing"
+  } catch (error) {
+    console.warn("[Billing] Registrant gate lookup failed; denying the domain payment claim:", error instanceof Error ? error.name : "unknown_error")
+    return "unavailable"
   }
-  return data ? "ok" : "missing"
 }
 
 function json(body: unknown, status = 200) {
@@ -90,13 +93,9 @@ export async function POST(request: Request) {
       if (!quote || new Date(quote.expires_at).getTime() <= Date.now()) {
         return json({ error: "This domain quote has expired. Request a fresh quote before submitting payment.", code: "quote_expired" }, 409)
       }
-      const registrant = await domainRegistrantGate(db, invoice.source_id)
-      if (registrant === "missing") {
-        return json({
-          error: "Add the domain registrant details in Portal \u2192 Domains before paying for this domain.",
-          code: "registrant_details_required",
-          domainOrderId: invoice.source_id,
-        }, 409)
+      const decision = decideDomainRegistrantGate(await domainRegistrantGate(db, invoice.source_id))
+      if (!decision.allow) {
+        return json({ error: decision.message, code: decision.code, domainOrderId: invoice.source_id }, decision.status)
       }
     }
 
@@ -216,8 +215,8 @@ export async function PATCH(request: Request) {
       const { data: quote, error } = await db.from("domain_order_quotes").select("expires_at").eq("order_id",invoice.source_id).order("sequence",{ascending:false}).limit(1).maybeSingle()
       if (error) throw error
       if (!quote || new Date(quote.expires_at).getTime() <= Date.now()) return json({ error: "This domain quote has expired. Request a fresh quote before resubmitting payment.",code:"quote_expired" },409)
-      const registrant = await domainRegistrantGate(db, invoice.source_id)
-      if (registrant === "missing") return json({ error: "Add the domain registrant details in Portal \u2192 Domains before resubmitting payment.", code: "registrant_details_required", domainOrderId: invoice.source_id }, 409)
+      const decision = decideDomainRegistrantGate(await domainRegistrantGate(db, invoice.source_id))
+      if (!decision.allow) return json({ error: decision.message, code: decision.code, domainOrderId: invoice.source_id }, decision.status)
     }
     const { data: method, error: methodError } = await db.from("billing_payment_methods")
       .select("id,method_key,display_name,instructions,version,supported_currencies").eq("id",parsed.data.paymentMethodId).eq("active",true).maybeSingle()

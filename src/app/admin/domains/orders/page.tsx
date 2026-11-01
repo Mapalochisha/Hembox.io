@@ -196,7 +196,7 @@ export default function AdminDomainOrdersPage() {
             <p className="text-xs font-bold uppercase tracking-wide text-slate-500">Registrant details (from the customer)</p>
             {registrantLoading ? <p className="mt-2 text-slate-500">Loading…</p> : null}
             {!registrantLoading && registrantState === "missing" ? <p className="mt-2 rounded-lg border border-amber-200 bg-amber-50 p-3 text-xs leading-5 text-amber-950">This customer has not supplied registrant details. Registration recording will be refused until they do — do not register this domain in the registrar console yet.</p> : null}
-            {!registrantLoading && registrantState === "unavailable" ? <p className="mt-2 text-xs text-slate-500">Registrant details could not be read. Treat this order as not ready for registration and check the deployment.</p> : null}
+            {!registrantLoading && registrantState === "unavailable" ? <p className="mt-2 rounded-lg border border-amber-200 bg-amber-50 p-3 text-xs leading-5 text-amber-950">Registrant details could not be read, so the customer cannot submit a payment claim for this domain and registration recording will be refused. Treat this order as blocked and check that the registrant migration is deployed.</p> : null}
             {registrant ? (
               <dl className="mt-3 grid gap-2 text-xs text-slate-700 sm:grid-cols-2">
                 <div><dt className="font-semibold text-slate-500">Legal registrant</dt><dd>{registrant.first_name} {registrant.last_name}{registrant.organisation_name ? ` · ${registrant.organisation_name}` : ""} ({registrant.registrant_type})</dd></div>
