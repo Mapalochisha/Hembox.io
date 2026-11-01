@@ -225,7 +225,7 @@ Batch response parsing accepts NameSilo's nested, array and XML-to-JSON availabi
 
 - M8 work now extends the admin domain recovery queue into a read-only reconciliation across domain orders, unified billing invoices, payment allocations, billing claims, registrant presence and registrar evidence.
 - Production migration versions were checked directly and source-controlled migration filenames are being aligned to the four production versions. No production migration was applied.
-- Vercel Firewall now has an active 20-per-60-second per-IP rule for POST requests to domain search, domain quotes, public inquiries and uploads. The process-local inquiry limiter was removed.
+- Vercel Firewall now has an active 20-per-60-second per-IP rule for domain search/quotes, public inquiries, uploads, billing claims and registrant submissions. The process-local inquiry limiter was removed.
 - Production and Preview both have the NameSilo OTE sandbox mode/key configured. A new Production deployment is required before the production deployment can use the changed environment variables. The live registrar key remains absent.
 - Next: verify exact-head CI/Preview, test the WAF safely, finish authenticated customer/admin E2E using disposable test records, and review the remaining Supabase advisor findings. Do not fabricate live prices or mark production invoices paid to force an E2E pass.
 
