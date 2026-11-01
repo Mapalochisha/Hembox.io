@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server"
 import { createClient } from "@/lib/supabase/server"
-import { getNameSiloStandardPrices } from "@/lib/domains/providers/namesilo-prices"
+import { getNameSiloStandardPrices, resolveNameSiloPriceEnvironment } from "@/lib/domains/providers/namesilo-prices"
 
 export const dynamic = "force-dynamic"
 export const runtime = "nodejs"
@@ -31,21 +31,27 @@ export async function GET() {
     if (status !== 200) {
       return json({ error: status === 401 ? "Authentication required." : status === 403 ? "Administrator access required." : "Unable to verify administrator access." }, status)
     }
-    const result = await getNameSiloStandardPrices()
+    const environment = resolveNameSiloPriceEnvironment()
+    const result = await getNameSiloStandardPrices({ environment })
     return json({
       provider: "namesilo",
+      environment: result.environment,
       pricingPlan: "standard-pay-as-you-go",
       currency: "USD",
       source: result.source,
       fetchedAt: result.fetchedAt,
       prices: result.prices,
       persisted: false,
-      message: "Read-only provider rates. Review each TLD, verify FX and markup, then enter approved values in the TLD catalogue. Nothing has been published.",
+      message: result.environment === "test"
+        ? "Sandbox (OTE) rates. NameSilo sandbox pricing is not production pricing — use it to rehearse the pricing and markup flow, then repeat the retrieval against the production account before approving any customer price. Nothing has been published."
+        : "Read-only provider rates. Review each TLD, verify FX and markup, then enter approved values in the TLD catalogue. Nothing has been published.",
     })
   } catch (error) {
     const message = error instanceof Error && /credentials are not configured/.test(error.message)
-      ? "Live NameSilo API credentials are not configured. Add NAMESILO_API_KEY to the server environment before retrieving live prices."
-      : "NameSilo standard prices could not be retrieved. No catalogue data was changed."
+      ? "NameSilo credentials are not configured for the current DOMAIN_PROVIDER_MODE. Set NAMESILO_SANDBOX_API_KEY for namesilo-sandbox, or NAMESILO_API_KEY for namesilo."
+      : error instanceof Error && /not the configured domain provider/.test(error.message)
+        ? "Price retrieval is disabled because NameSilo is not the configured domain provider. Set DOMAIN_PROVIDER_MODE=namesilo-sandbox for sandbox verification."
+        : "NameSilo standard prices could not be retrieved. No catalogue data was changed."
     return json({ error: message }, 503)
   }
 }

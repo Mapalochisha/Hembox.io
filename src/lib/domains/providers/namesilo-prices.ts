@@ -1,4 +1,4 @@
-import { resolveNameSiloApiConfig } from "./namesilo-config.ts"
+import { resolveNameSiloApiConfig, type NameSiloEnvironment } from "./namesilo-config.ts"
 
 const REQUEST_TIMEOUT_MS = 8_000
 
@@ -49,14 +49,37 @@ export function parseNameSiloStandardPrices(payload: unknown): NameSiloStandardT
   return prices.sort((a, b) => a.tld.localeCompare(b.tld))
 }
 
-/** Read-only live-account request for standard pay-as-you-go rates. */
+/**
+ * Resolve which NameSilo environment the price reader may use.
+ *
+ * The commercial work must be verifiable in NameSilo's OTE sandbox before a
+ * production key is introduced, so the reader follows DOMAIN_PROVIDER_MODE
+ * instead of always forcing live mode. Anything other than an explicit
+ * namesilo / namesilo-sandbox mode fails closed: the reader will not guess an
+ * endpoint or a credential.
+ */
+export function resolveNameSiloPriceEnvironment(env: Record<string, string | undefined> = process.env): NameSiloEnvironment {
+  const mode = env.DOMAIN_PROVIDER_MODE?.trim().toLowerCase()
+  if (mode === "namesilo-sandbox") return "test"
+  if (mode === "namesilo") return "live"
+  throw new Error("NameSilo is not the configured domain provider; price retrieval is disabled in this environment.")
+}
+
+/** Read-only request for standard pay-as-you-go rates in the configured environment. */
 export async function getNameSiloStandardPrices(dependencies: {
   env?: Record<string, string | undefined>
   fetchImpl?: typeof fetch
-} = {}): Promise<{ prices: NameSiloStandardTldPrice[]; fetchedAt: string; source: "namesilo-standard-retail" }> {
+  environment?: NameSiloEnvironment
+} = {}): Promise<{
+  prices: NameSiloStandardTldPrice[]
+  fetchedAt: string
+  source: "namesilo-standard-retail"
+  environment: NameSiloEnvironment
+}> {
   const env = dependencies.env ?? process.env
   const fetchImpl = dependencies.fetchImpl ?? fetch
-  const { apiBaseUrl, apiKey } = resolveNameSiloApiConfig("live", env)
+  const environment = dependencies.environment ?? resolveNameSiloPriceEnvironment(env)
+  const { apiBaseUrl, apiKey } = resolveNameSiloApiConfig(environment, env)
   const url = new URL(`${apiBaseUrl}/getPrices`)
   url.searchParams.set("version", "1")
   url.searchParams.set("type", "json")
@@ -72,5 +95,10 @@ export async function getNameSiloStandardPrices(dependencies: {
   if (!response.ok) throw new Error(`NameSilo standard price request failed (HTTP ${response.status}).`)
   let payload: unknown
   try { payload = await response.json() } catch { throw new Error("NameSilo returned invalid JSON for its standard price list.") }
-  return { prices: parseNameSiloStandardPrices(payload), fetchedAt: new Date().toISOString(), source: "namesilo-standard-retail" }
+  return {
+    prices: parseNameSiloStandardPrices(payload),
+    fetchedAt: new Date().toISOString(),
+    source: "namesilo-standard-retail",
+    environment,
+  }
 }

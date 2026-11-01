@@ -31,6 +31,14 @@ The pricing layer now uses integer minor-unit arithmetic, an explicit FX scaling
 - The allow rule lives in `src/lib/domains/registrant-gate.ts` with unit coverage, so a caller cannot treat "unavailable" as a pass.
 - Customer and admin surfaces now state that the order is blocked rather than silently hiding the registrant panel.
 
+
+## 2026-11-01 — Merged, sandbox-first pricing, deployments re-enabled
+
+- PR #15 merged to `main` (`27ae938`). Production Supabase already carried the 20 earlier domain/billing migrations; the fulfilment payment-evidence migration was applied with authorization, while the registrant-details migration is pending because the Supabase Management API returned HTTP 502 throughout this session.
+- The NameSilo price reader now follows `DOMAIN_PROVIDER_MODE` instead of forcing production, so verified pricing can be rehearsed in OTE with `NAMESILO_SANDBOX_API_KEY` before any production key exists. Retrieval remains read-only and enables no TLD.
+- `vercel.json` re-enables Git deployments for `main` only.
+- New procedure: [domain-pricing-inputs.md](./domain-pricing-inputs.md).
+
 ## Current blockers and reliability notes
 
 - **NameSilo read-only connection verified; transactional readiness remains gated.** The first authenticated Preview smoke test returned a valid OTE availability result for example.com (unavailable in the sandbox), with provider namesilo, environment test, and live=false. This is not real registry availability. A Node-only OTE operation client now defines get-domain-info, registration, renewal, transfer and nameserver calls, with a local CLI for safe read-only tests and deliberately guarded sandbox mutations. It requires DOMAIN_PROVIDER_MODE=namesilo-sandbox plus NAMESILO_SANDBOX_API_KEY, hard-pins the sandbox host, applies confirmation and preflight guards to mutations, and is not wired to a customer-facing route. No state-changing OTE call has been performed. Live registration remains disabled. Before production use, review API Manager IP restrictions and commercial terms. Before production use, review API Manager IP restrictions and account readiness. The NameSilo [reseller terms](https://www.namesilo.com/support/v2/articles/about/reseller-options) say there is no special reseller pricing; its Discount Program requires account funds and the account-funding page lists a $50 minimum, so confirm the funding economics before relying on discounts.
