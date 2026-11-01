@@ -2,7 +2,7 @@
 
 > **Purpose:** the operating procedure for obtaining the commercial inputs that gate M3/M11: verified registration and renewal costs, an approved USD/ZMW source and rate, and an approved per-TLD markup. No TLD may be enabled, and no customer price may be published, until every step below is complete and recorded.
 >
-> **Owner decisions required:** FX source, markup policy and the launch TLD set. Everything else can be executed by an administrator.
+> **Approved owner policy:** BoZ USD/ZMW middle rate + K1/USD buffer, 10% markup, K25 minimum gross margin. The launch TLD set and verified production wholesale costs remain operational release gates.
 >
 > **Related:** [domain-reselling-build-plan.md](./domain-reselling-build-plan.md) §3.1–§5, [namesilo-ote-investigation.md](./namesilo-ote-investigation.md).
 
@@ -47,11 +47,6 @@ The price reader now follows `DOMAIN_PROVIDER_MODE`; it no longer forces the pro
 
 HEMBOX uses the Bank of Zambia USD/ZMW middle rate, retrieved through a machine-readable republication at `https://allratestoday.com/api/open/central-bank/boz`. This is a third-party transport layer, not a BoZ-operated API. The authoritative publication remains `https://www.boz.zm/markets-securities/boz-exchange-rates`. The integration validates a direct published middle rate and stores both source URLs.
 
-Choose one source, write it down, and never mix sources inside a single snapshot:
-
-- **Official:** Bank of Zambia published daily ZMW/USD rate (best for an auditable, citable rate).
-- **Market API:** a commercial FX feed, if you prefer intraday accuracy and can store the response reference.
-
 Rules:
 
 - Vercel Cron refreshes daily at 16:00 CAT and stores the actual BoZ publication date plus retrieval timestamp.
@@ -71,7 +66,7 @@ Rules:
 Admin → Domains → TLD catalogue (`/admin/domains`):
 
 1. Enter the TLD, provider (`namesilo`), wholesale currency (`USD`), registration and renewal costs in **minor units** (cents), the FX micros, the markup basis points, and a `pricing_source` string that names the evidence:
-   `namesilo-standard:2026-11-02;fx=BOZ:2026-11-02:28.00;markup=2000bp;approved=MC`
+   `cost=namesilo-standard:live;BOZ:2026-11-02:20.1500;buf=1;mk=1000;floor=2500`
 2. Save. The server recalculates the ZMW retail price, rejects inconsistent snapshots, and writes a price-history record.
 3. Leave **enabled** off until every value has been reviewed. Enable only when both registration and renewal retail prices exist.
 4. Verify the public catalogue (`/domains`) shows the price with "availability is checked separately", and that the quote endpoint returns a quote for an available domain in that TLD.
