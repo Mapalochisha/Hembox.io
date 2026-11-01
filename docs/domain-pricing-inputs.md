@@ -2,7 +2,7 @@
 
 > **Purpose:** the operating procedure for obtaining the commercial inputs that gate M3/M11: verified registration and renewal costs, an approved USD/ZMW source and rate, and an approved per-TLD markup. No TLD may be enabled, and no customer price may be published, until every step below is complete and recorded.
 >
-> **Owner decisions required:** FX source, markup policy and the launch TLD set. Everything else can be executed by an administrator.
+> **Approved owner policy:** BoZ USD/ZMW middle rate + K1/USD buffer, 10% markup, K25 minimum gross margin. The launch TLD set and verified production wholesale costs remain operational release gates.
 >
 > **Related:** [domain-reselling-build-plan.md](./domain-reselling-build-plan.md) §3.1–§5, [namesilo-ote-investigation.md](./namesilo-ote-investigation.md).
 
@@ -43,33 +43,31 @@ The price reader now follows `DOMAIN_PROVIDER_MODE`; it no longer forces the pro
 - **`.zm` / `.co.zm` reality check:** NameSilo does not appear to sell Zambian ccTLDs; `.zm` registration runs through ZICTA-accredited registrars. Do not advertise `.co.zm` until a provider relationship and priced contract exist. If local domains are required for launch, that is a separate commercial task, not a catalogue entry.
 - Exclude any TLD whose renewal price you have not verified — renewal is a separate line item the customer sees.
 
-## 3. FX source and cadence (owner decision)
+## 3. FX source and cadence (approved policy)
 
-Choose one source, write it down, and never mix sources inside a single snapshot:
-
-- **Official:** Bank of Zambia published daily ZMW/USD rate (best for an auditable, citable rate).
-- **Market API:** a commercial FX feed, if you prefer intraday accuracy and can store the response reference.
+HEMBOX uses the Bank of Zambia USD/ZMW middle rate, retrieved through a machine-readable republication at `https://allratestoday.com/api/open/central-bank/boz`. This is a third-party transport layer, not a BoZ-operated API. The authoritative publication remains `https://www.boz.zm/markets-securities/boz-exchange-rates`. The integration validates a direct published middle rate and stores both source URLs.
 
 Rules:
 
-- Capture the rate at a **fixed daily time** and store it with its source and observation timestamp.
+- Vercel Cron refreshes daily at 16:00 CAT and stores the actual BoZ publication date plus retrieval timestamp.
 - Encode the rate as `wholesale_fx_rate_micros = round(ZMW per USD × 1_000_000)`.
 - Do **not** hand-edit retail prices; the server recalculates them from cost × FX × markup.
-- Prices older than 24 hours are suppressed automatically (`price_stale`), so someone must own the daily refresh. Suppression is the safe failure mode — it never shows a stale price.
+- FX-derived retail prices older than 24 hours are suppressed automatically (`price_stale`).
+- Wholesale registration and renewal costs have a separate 30-day verification window. Daily FX refresh never renews the wholesale-cost verification timestamp; stale costs must be retrieved and reviewed again before a quote can be issued.
 
-## 4. Markup policy (owner decision)
+## 4. Markup policy (approved launch policy)
 
-- Set the markup in **basis points** (2000 bp = 20%) per TLD or per TLD group.
-- Add a **minimum absolute margin floor** in ZMW so cheap TLDs are not sold at a loss after FX movement.
-- Decide whether the markup absorbs FX drift or whether the daily re-price is the mechanism. Recommended: re-price daily and keep a small buffer inside the markup.
-- Record the decision, e.g. an email or note: "Approved .com: 2000 bp, minimum ZMW 25 margin, FX from Bank of Zambia daily, effective 2026-11-02."
+- HEMBOX launch markup is **10% (1,000 basis points)**.
+- Apply a **K25 minimum gross margin** (2,500 ZMW minor units) after FX conversion.
+- Add a **K1.00 per USD** buffer to the BoZ middle rate, then re-price daily.
+- Record provenance for every price: BoZ middle rate date, K1 buffer, 1,000 bp markup and K25 minimum margin.
 
 ## 5. Enter and enable the catalogue
 
 Admin → Domains → TLD catalogue (`/admin/domains`):
 
 1. Enter the TLD, provider (`namesilo`), wholesale currency (`USD`), registration and renewal costs in **minor units** (cents), the FX micros, the markup basis points, and a `pricing_source` string that names the evidence:
-   `namesilo-standard:2026-11-02;fx=BOZ:2026-11-02:28.00;markup=2000bp;approved=MC`
+   `cost=namesilo-standard:live;BOZ:2026-11-02:20.1500;buf=1;mk=1000;floor=2500`
 2. Save. The server recalculates the ZMW retail price, rejects inconsistent snapshots, and writes a price-history record.
 3. Leave **enabled** off until every value has been reviewed. Enable only when both registration and renewal retail prices exist.
 4. Verify the public catalogue (`/domains`) shows the price with "availability is checked separately", and that the quote endpoint returns a quote for an available domain in that TLD.
@@ -85,17 +83,17 @@ With `DOMAIN_PROVIDER_MODE=namesilo-sandbox`:
 5. Register a disposable test domain in the NameSilo OTE account (sandbox funds), then record it through the guarded manual fulfilment action with the real sandbox order reference and expiry date.
 6. Confirm the audit trail shows the registrant capture, the payment evidence source and the registration record.
 
-## 7. Approval record to complete before launch
+## 7. Approval record
 
-| Input | Value | Source / evidence | Observed at | Approved by |
-|---|---|---|---|---|
-| FX source | | | | |
-| FX rate | | | | |
-| Launch TLDs | | | | |
-| Markup per TLD | | | | |
-| Minimum margin floor | | | | |
-| Daily refresh owner | | | | |
-| Production cost re-verification | | | | |
+| Input | Approved value | Source / evidence | Status |
+|---|---|---|---|
+| FX source | Bank of Zambia USD/ZMW middle rate | BoZ official publication, machine-readable republication | Approved |
+| FX buffer | K1.00 per USD | HEMBOX pricing policy | Approved |
+| Markup | 10% / 1,000 bp | HEMBOX pricing policy | Approved |
+| Minimum margin floor | K25 / 2,500 minor units | HEMBOX pricing policy | Approved |
+| Daily refresh | Vercel Cron, 16:00 CAT | Automated scheduled endpoint | Configured |
+| Launch TLDs | Pending production wholesale verification | NameSilo production account | Pending |
+| Production cost verification | Required before enabling any TLD | NameSilo production account | Pending |
 
 ## 8. Still blocked outside this procedure
 

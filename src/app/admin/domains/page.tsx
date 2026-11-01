@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useState } from "react"
 import { Loader2, RefreshCw, Save } from "lucide-react"
 import { buildCataloguePrefill, type CataloguePrefillResult } from "@/lib/domains/admin-catalogue-prefill"
+import DomainFxPanel from "./fx-panel"
 
 type CatalogRow = {
   tld: string
@@ -12,6 +13,8 @@ type CatalogRow = {
   renewal_wholesale_minor: number | null
   wholesale_fx_rate_micros: number | null
   margin_basis_points: number | null
+  minimum_margin_zmw_minor: number
+  wholesale_cost_verified_at: string | null
   pricing_source: string | null
   retail_currency: string
   registration_retail_minor: number | null
@@ -27,7 +30,8 @@ const emptyForm = {
   registrationWholesaleMinor: "",
   renewalWholesaleMinor: "",
   fxRateMicros: "",
-  marginBasisPoints: "2000",
+  marginBasisPoints: "1000",
+  minimumMarginZmwMinor: "2500",
   pricingSource: "",
   enabled: false,
 }
@@ -65,6 +69,10 @@ export default function AdminDomainsPage() {
     }
   }, [])
 
+  const applyFxRate = useCallback((value: number) => {
+    setForm((current) => ({ ...current, fxRateMicros: String(value) }))
+  }, [])
+
   useEffect(() => { void loadCatalog() }, [loadCatalog])
 
   // Accepts the handoff from the wholesale price reference. Values are re-validated
@@ -79,9 +87,16 @@ export default function AdminDomainsPage() {
       ...emptyForm,
       ...result.prefill,
       fxRateMicros: "",
-      marginBasisPoints: "",
+      marginBasisPoints: "1000",
+      minimumMarginZmwMinor: "2500",
       enabled: false,
     })
+    void fetch("/api/admin/domains/fx", { cache: "no-store" })
+      .then((response) => response.json())
+      .then((body) => {
+        if (body.snapshot?.effective_rate) setForm((current) => ({ ...current, fxRateMicros: String(Math.round(body.snapshot.effective_rate * 1_000_000)) }))
+      })
+      .catch(() => undefined)
   }, [])
 
   async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
@@ -99,6 +114,7 @@ export default function AdminDomainsPage() {
           renewalWholesaleMinor: Number(form.renewalWholesaleMinor),
           fxRateMicros: Number(form.fxRateMicros),
           marginBasisPoints: Number(form.marginBasisPoints),
+          minimumMarginZmwMinor: Number(form.minimumMarginZmwMinor),
         }),
       })
       const result = await response.json()
@@ -131,6 +147,8 @@ export default function AdminDomainsPage() {
         </div>
       </div>
 
+      <DomainFxPanel onRateMicros={applyFxRate} />
+
       {prefill ? (
         <div className="rounded-2xl border border-sky-200 bg-sky-50 p-4 text-sm leading-6 text-sky-950">
           <p className="font-bold">
@@ -155,8 +173,9 @@ export default function AdminDomainsPage() {
           <Field label="Wholesale currency" value={form.wholesaleCurrency} onChange={(wholesaleCurrency) => setForm({ ...form, wholesaleCurrency: wholesaleCurrency.toUpperCase() })} placeholder="USD" />
           <Field label="Registration cost (minor units)" type="number" value={form.registrationWholesaleMinor} onChange={(registrationWholesaleMinor) => setForm({ ...form, registrationWholesaleMinor })} placeholder="Verified cost in minor units" />
           <Field label="Renewal cost (minor units)" type="number" value={form.renewalWholesaleMinor} onChange={(renewalWholesaleMinor) => setForm({ ...form, renewalWholesaleMinor })} placeholder="Verified cost in minor units" />
-          <Field label="FX rate × 1,000,000" type="number" value={form.fxRateMicros} onChange={(fxRateMicros) => setForm({ ...form, fxRateMicros })} placeholder="e.g. 25000000 means 25.0" />
-          <Field label="Markup (basis points)" type="number" value={form.marginBasisPoints} onChange={(marginBasisPoints) => setForm({ ...form, marginBasisPoints })} placeholder="2000 means 20%" />
+          <Field label="Effective FX × 1,000,000" type="number" value={form.fxRateMicros} onChange={(fxRateMicros) => setForm({ ...form, fxRateMicros })} placeholder="e.g. 25000000 means 25.0" />
+          <Field label="Markup (basis points)" type="number" value={form.marginBasisPoints} onChange={(marginBasisPoints) => setForm({ ...form, marginBasisPoints })} placeholder="1000 means 10%" />
+          <Field label="Minimum margin (ZMW minor units)" type="number" value={form.minimumMarginZmwMinor} onChange={(minimumMarginZmwMinor) => setForm({ ...form, minimumMarginZmwMinor })} placeholder="2500 means K25" />
           <Field label="Pricing source / verification note" value={form.pricingSource} onChange={(pricingSource) => setForm({ ...form, pricingSource })} placeholder="Source and verification date" />
           <label className="flex items-center gap-3 rounded-xl border border-slate-200 p-3 text-sm font-semibold text-slate-700 sm:col-span-2">
             <input type="checkbox" checked={form.enabled} onChange={(event) => setForm({ ...form, enabled: event.target.checked })} className="h-4 w-4 accent-teal" />
@@ -184,7 +203,7 @@ export default function AdminDomainsPage() {
           <div className="mt-4 overflow-x-auto">
             <table className="w-full min-w-[760px] text-left text-sm">
               <thead className="border-b border-slate-200 text-xs uppercase tracking-wide text-slate-500">
-                <tr><th className="px-3 py-3">TLD</th><th className="px-3 py-3">Provider</th><th className="px-3 py-3">Registration</th><th className="px-3 py-3">Renewal</th><th className="px-3 py-3">Status</th><th className="px-3 py-3">Price snapshot</th></tr>
+                <tr><th className="px-3 py-3">TLD</th><th className="px-3 py-3">Provider</th><th className="px-3 py-3">Registration</th><th className="px-3 py-3">Renewal</th><th className="px-3 py-3">Status</th><th className="px-3 py-3">Wholesale costs verified</th></tr>
               </thead>
               <tbody>
                 {catalog.map((row) => (
@@ -194,7 +213,7 @@ export default function AdminDomainsPage() {
                     <td className="px-3 py-4">{money(row.registration_retail_minor)}</td>
                     <td className="px-3 py-4">{money(row.renewal_retail_minor)}</td>
                     <td className="px-3 py-4"><span className={row.enabled ? "rounded-full bg-teal/10 px-2.5 py-1 text-xs font-bold text-teal-800" : "rounded-full bg-slate-100 px-2.5 py-1 text-xs font-bold text-slate-600"}>{row.enabled ? "Enabled" : "Disabled"}</span></td>
-                    <td className="px-3 py-4 text-xs text-slate-500">{row.price_updated_at ? new Date(row.price_updated_at).toLocaleString() : "Not set"}</td>
+                    <td className="px-3 py-4 text-xs text-slate-500">{row.wholesale_cost_verified_at ? new Date(row.wholesale_cost_verified_at).toLocaleDateString() : "Not verified"}</td>
                   </tr>
                 ))}
               </tbody>

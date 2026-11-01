@@ -20,6 +20,8 @@ export type DomainQuoteCatalogRecord = {
   renewal_retail_minor: number | null
   wholesale_fx_rate_micros: number | null
   margin_basis_points: number | null
+  minimum_margin_zmw_minor?: number | null
+  wholesale_cost_verified_at?: string | null
   pricing_source: string | null
   price_updated_at: string | null
 }
@@ -49,6 +51,7 @@ export type ValidatedDomainQuotePricing = {
     renewalWholesaleMinor: number
     fxRateMicros: number
     marginBasisPoints: number
+    minimumMarginZmwMinor: number
   }
 }
 
@@ -115,6 +118,7 @@ export function validateDomainQuotePricing(input: {
     !safeInteger(catalog.wholesale_fx_rate_micros, 1) ||
     !safeInteger(catalog.margin_basis_points, 0) ||
     catalog.margin_basis_points > 100000 ||
+    !safeInteger(catalog.minimum_margin_zmw_minor ?? 2500, 0) ||
     typeof catalog.pricing_source !== "string" ||
     !catalog.pricing_source.trim() ||
     catalog.pricing_source.length > 160
@@ -124,19 +128,25 @@ export function validateDomainQuotePricing(input: {
   if (!isPricingSnapshotFresh(catalog.price_updated_at, now, MAX_PRICING_AGE_MS)) {
     fail("price_stale", "The saved price has expired and must be verified again before a quote can be issued.", 409)
   }
+  if (!isPricingSnapshotFresh(catalog.wholesale_cost_verified_at ?? catalog.price_updated_at, now, 30 * 24 * 60 * 60 * 1000)) {
+    fail("wholesale_cost_stale", "Provider registration and renewal costs must be re-verified before a quote can be issued.", 409)
+  }
 
   let registrationCalculation: ReturnType<typeof calculateRetailPrice>
   let renewalCalculation: ReturnType<typeof calculateRetailPrice>
   try {
-    registrationCalculation = calculateRetailPrice({
-      wholesaleMinor: catalog.registration_wholesale_minor,
+    const pricingBasis = {
       fxRateMicros: catalog.wholesale_fx_rate_micros,
       marginBasisPoints: catalog.margin_basis_points,
+      minimumMarginZmwMinor: catalog.minimum_margin_zmw_minor ?? 2500,
+    }
+    registrationCalculation = calculateRetailPrice({
+      wholesaleMinor: catalog.registration_wholesale_minor,
+      ...pricingBasis,
     })
     renewalCalculation = calculateRetailPrice({
       wholesaleMinor: catalog.renewal_wholesale_minor,
-      fxRateMicros: catalog.wholesale_fx_rate_micros,
-      marginBasisPoints: catalog.margin_basis_points,
+      ...pricingBasis,
     })
   } catch {
     fail("invalid_price_snapshot", "The saved pricing calculation is outside the supported range.", 503)
@@ -162,6 +172,7 @@ export function validateDomainQuotePricing(input: {
       renewalWholesaleMinor: catalog.renewal_wholesale_minor,
       fxRateMicros: catalog.wholesale_fx_rate_micros,
       marginBasisPoints: catalog.margin_basis_points,
+      minimumMarginZmwMinor: catalog.minimum_margin_zmw_minor ?? 2500,
     },
   }
 }

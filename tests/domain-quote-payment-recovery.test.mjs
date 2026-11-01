@@ -204,6 +204,8 @@ function quotePolicyCatalog(overrides = {}) {
     renewal_retail_minor: 36000,
     wholesale_fx_rate_micros: 25000000,
     margin_basis_points: 2000,
+    minimum_margin_zmw_minor: 2500,
+    wholesale_cost_verified_at: new Date(quotePolicyNow - 60 * 60 * 1000).toISOString(),
     pricing_source: "provider-price-sheet-and-fx-snapshot",
     price_updated_at: new Date(quotePolicyNow - 60 * 60 * 1000).toISOString(),
     ...overrides,
@@ -221,6 +223,15 @@ function quotePolicyAvailability(overrides = {}) {
     ...overrides,
   }
 }
+
+test("quote validation rejects provider wholesale costs older than 30 days even when FX was refreshed", () => {
+  assert.throws(() => validateDomainQuotePricing({
+    domainName: "example.com",
+    catalog: quotePolicyCatalog({ wholesale_cost_verified_at: new Date(quotePolicyNow - 31 * 24 * 60 * 60 * 1000).toISOString() }),
+    provider: quotePolicyProvider(),
+    now: quotePolicyNow,
+  }), (error) => error instanceof DomainQuotePreparationError && error.code === "wholesale_cost_stale")
+})
 
 test("live quote preparation validates fresh costs and persists a traceable one-year price", () => {
   const pricing = validateDomainQuotePricing({
@@ -249,6 +260,7 @@ test("live quote preparation validates fresh costs and persists a traceable one-
     renewalWholesaleMinor: 1200,
     fxRateMicros: 25000000,
     marginBasisPoints: 2000,
+    minimumMarginZmwMinor: 2500,
   })
 })
 
