@@ -38,6 +38,8 @@ The pricing layer now uses integer minor-unit arithmetic, an explicit FX scaling
 - The NameSilo price reader now follows `DOMAIN_PROVIDER_MODE` instead of forcing production, so verified pricing can be rehearsed in OTE with `NAMESILO_SANDBOX_API_KEY` before any production key exists. Retrieval remains read-only and enables no TLD.
 - `vercel.json` re-enables Git deployments for `main` only.
 - New procedure: [domain-pricing-inputs.md](./domain-pricing-inputs.md).
+- The registrant-details migration is now applied to production (in three steps after the Management API recovered) and verified there, including a fixed privilege leak: the save function had been left executable by `PUBLIC`. A SQL test now locks that down.
+- Automatic deployments are live again: preview `25b8a85`, production `21a2e70`. `/api/domains/catalog` on `hembox.tech` returns an empty catalogue, which is correct while no TLD is enabled.
 
 ## Current blockers and reliability notes
 

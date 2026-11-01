@@ -258,4 +258,33 @@ end
 $rls$;
 reset role;
 
+-- The write functions must never be callable by anon or authenticated: the
+-- service key is the only path, so a client cannot write registrant data or
+-- bypass the guards above.
+select set_config('search_path', 'public, pg_catalog', false);
+do $grants$
+declare
+  v_save oid := to_regprocedure(
+    'public.save_domain_order_registrant_details(uuid, uuid, text, text, text, text, text, text, text, text, text, text, text, text, text)');
+  v_record oid := to_regprocedure(
+    'public.record_domain_manual_registration(uuid, uuid, text, text, text, timestamptz, timestamptz, boolean, boolean, text)');
+begin
+  if v_save is null or v_record is null then
+    raise exception 'Registrant functions are missing';
+  end if;
+  if has_function_privilege('anon', v_save, 'EXECUTE')
+     or has_function_privilege('authenticated', v_save, 'EXECUTE') then
+    raise exception 'save_domain_order_registrant_details must not be executable by anon or authenticated';
+  end if;
+  if has_function_privilege('anon', v_record, 'EXECUTE')
+     or has_function_privilege('authenticated', v_record, 'EXECUTE') then
+    raise exception 'record_domain_manual_registration must not be executable by anon or authenticated';
+  end if;
+  if not has_function_privilege('service_role', v_save, 'EXECUTE')
+     or not has_function_privilege('service_role', v_record, 'EXECUTE') then
+    raise exception 'service_role must be able to execute the registrant functions';
+  end if;
+end
+$grants$;
+
 rollback;

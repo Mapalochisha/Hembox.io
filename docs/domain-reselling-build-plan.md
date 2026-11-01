@@ -66,7 +66,7 @@ This section supersedes the older "recorded baseline" above where they disagree.
 | Vercel Git deployments | The owner lifted the abuse block on 2026-11-01. `vercel.json` now enables Git deployments for `main` only (previews stay off), so merges to `main` deploy automatically; other branches still build in CI only. |
 | Open pull requests | None open (PRs #1–#14 all merged or closed) |
 | Historical feature branches | Still exist remotely but are stale copies of already-merged work. See "reusable work" below. |
-| Production Supabase migrations | **Correction to earlier entries: the 20 pre-existing domain/billing migrations were already applied to production** (versions dated 2026-10-24 → 2026-10-26). The two migrations introduced on 2026-11-01 were applied on 2026-11-01 with the owner's authorization: `domain_fulfilment_payment_evidence` succeeded. `domain_registrant_details` could not be applied in the same session because the Supabase Management API returned HTTP 502 on every call; it must be applied before domain payment claims are exercised on production, because the registrant gate is fail-closed. |
+| Production Supabase migrations | **Correction to earlier entries: the 20 pre-existing domain/billing migrations were already applied to production** (versions dated 2026-10-24 → 2026-10-26). Both migrations introduced on 2026-11-01 are applied to production with the owner's authorization. `domain_fulfilment_payment_evidence` applied in one step. `domain_registrant_details` first failed with HTTP 502 from the Supabase Management API; when the API recovered it was confirmed absent (no partial state) and applied as three smaller migrations — `domain_registrant_details_table`, `domain_registrant_details_save_function`, `domain_manual_registration_requires_registrant`. Verified in production afterwards: table present, RLS on, 2 policies, both functions present, `record_domain_manual_registration` reference the registrant table, `anon`/`authenticated` cannot execute either function and `service_role` can. |
 
 ### What is genuinely complete
 
@@ -342,6 +342,13 @@ A green build proves only the checks that ran. It does not independently prove r
 > **Brand note (2026-10-29):** Current company name is Hembox Tech. Historical progress entries retain the brand name, repository paths, and URLs that were accurate when recorded. Cloudinary asset folders, domain-provider configuration, and existing technical identifiers are not renamed as part of the brand-copy phase.
 
 ## 6. Progress log
+
+### 2026-11-01 (later) — Registrant migration applied to production; live deployment verified
+
+- **Production migration complete.** PR #16 merged to `main` at `21a2e70`. Once the Supabase Management API recovered, the pending registrant-details migration was confirmed absent and applied in three idempotent steps, then verified in production: table `domain_order_registrant_details` present with RLS enabled and two read policies (owner, admin), `save_domain_order_registrant_details()` present, and `record_domain_manual_registration()` is the version that requires registrant details before any registration can be recorded.
+- **Privilege defect found and fixed.** The first application revoked the save function from `anon` and `authenticated` but not from `PUBLIC`, so both roles could still execute it through the default grant. Production was corrected to revoke from `PUBLIC`, and `supabase/tests/domain_registrant_details.test.sql` now asserts that neither function is executable by `anon` or `authenticated` and that both are executable by `service_role`, so this cannot regress.
+- **Deployments confirmed live.** Automatic Git deployments are working again: a preview deployment for `25b8a85` and a production deployment for the merge commit `21a2e70` both succeeded. `https://hembox.tech/api/domains/catalog` responds with an empty catalogue (no TLD enabled — still by design) and `https://hembox.tech/domains` continues to state that no TLD prices are published yet.
+- **Still unverified on the live site:** the admin price reader and the customer registrant form need an authenticated session, so they have not been exercised against production. That verification requires signing in as the owner — the next step before recording any TLD.
 
 ### 2026-11-01 — Merged to main, production migrations reconciled, sandbox pricing path enabled
 
