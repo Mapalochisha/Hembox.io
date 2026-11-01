@@ -1016,7 +1016,7 @@ When resuming this project:
 ### M10 — Edge rate limiting
 
 - Enabled one Vercel Firewall fixed-window rule: 20 requests per 60 seconds per IP across POST/PATCH requests to `/api/domains/search`, `/api/domains/quotes`, `/api/inquiries`, `/api/upload`, `/api/billing/claims`, and `/api/domains/orders/registrant`.
-- Rule ID: `rule_hembox_public_api_rate_limit_2izcxf`; active firewall configuration version 1.
+- Rule ID: `rule_hembox_public_api_rate_limit_2izcxf`; active firewall configuration version 2.
 - Removed the inquiry route's process-local in-memory limiter. Vercel Firewall is now the consistent edge control rather than a per-instance counter.
 - Vercel's current documentation lists WAF rate limiting on Hobby; usage beyond included allowance may be billable. Monitor usage before increasing thresholds.
 
