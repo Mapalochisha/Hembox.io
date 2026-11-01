@@ -15,6 +15,15 @@ type InvoiceRow = {
 }
 type AllocationRow = { invoice_id: string; amount_minor: number; currency: string; allocation_type: string }
 type ClaimRow = { invoice_id: string; status: string; claimed_amount_minor: number; currency: string }
+type QuoteRow = {
+  id: string; order_id: string; sequence: number; expires_at: string
+  registration_price_minor: number; renewal_price_minor: number; currency: string; created_at: string
+}
+type PaymentRow = {
+  id: string; order_id: string; provider_id: string; provider_payment_id: string | null
+  amount_minor: number; currency: string; status: string
+  last_checked_at: string | null; confirmed_at: string | null; updated_at: string
+}
 
 async function requireAdmin() {
   const authClient = createClient()
@@ -152,10 +161,10 @@ export async function GET() {
       if (rows.length < 5) rows.push(event)
       webhookByOrder.set(orderId, rows)
     }
-    const latestQuotes = new Map<string, (typeof quoteResult.data)[number]>()
-    for (const quote of quoteResult.data ?? []) if (!latestQuotes.has(quote.order_id)) latestQuotes.set(quote.order_id, quote)
-    const latestPayments = new Map<string, (typeof paymentResult.data)[number]>()
-    for (const payment of paymentResult.data ?? []) if (!latestPayments.has(payment.order_id)) latestPayments.set(payment.order_id, payment)
+    const latestQuotes = new Map<string, QuoteRow>()
+    for (const quote of (quoteResult.data ?? []) as QuoteRow[]) if (!latestQuotes.has(quote.order_id)) latestQuotes.set(quote.order_id, quote)
+    const latestPayments = new Map<string, PaymentRow>()
+    for (const payment of (paymentResult.data ?? []) as PaymentRow[]) if (!latestPayments.has(payment.order_id)) latestPayments.set(payment.order_id, payment)
 
     const now = Date.now()
     const items = orderRows.map((order) => {
