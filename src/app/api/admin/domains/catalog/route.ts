@@ -89,6 +89,7 @@ export async function POST(request: Request) {
       wholesaleMinor: value.renewalWholesaleMinor,
       fxRateMicros: value.fxRateMicros,
       marginBasisPoints: value.marginBasisPoints,
+      minimumMarginZmwMinor: value.minimumMarginZmwMinor,
     })
   } catch {
     return NextResponse.json({ error: "Pricing inputs are outside the supported range." }, { status: 400 })
@@ -110,7 +111,6 @@ export async function POST(request: Request) {
         wholesale_fx_rate_micros: value.fxRateMicros,
         margin_basis_points: value.marginBasisPoints,
         minimum_margin_zmw_minor: value.minimumMarginZmwMinor,
-        minimum_margin_zmw_minor: value.minimumMarginZmwMinor,
         pricing_source: value.pricingSource,
         retail_currency: "ZMW",
         registration_retail_minor: registration.retailZmwMinor,
@@ -131,6 +131,7 @@ export async function POST(request: Request) {
         renewal_wholesale_minor: value.renewalWholesaleMinor,
         fx_rate_micros: value.fxRateMicros,
         margin_basis_points: value.marginBasisPoints,
+        minimum_margin_zmw_minor: value.minimumMarginZmwMinor,
         retail_currency: "ZMW",
         registration_retail_minor: registration.retailZmwMinor,
         renewal_retail_minor: renewal.retailZmwMinor,
