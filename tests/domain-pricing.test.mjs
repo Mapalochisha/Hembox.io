@@ -12,6 +12,11 @@ test("calculates ZMW cost, margin, and rounds retail upward to a whole kwacha", 
   assert.deepEqual(result, { costZmwMinor: 25_000, retailZmwMinor: 30_000 })
 })
 
+test("applies the K25 minimum margin when percentage markup is lower", () => {
+  const result = calculateRetailPrice({ wholesaleMinor: 100, fxRateMicros: 21_000_000, marginBasisPoints: 1000, minimumMarginZmwMinor: 2500 })
+  assert.deepEqual(result, { costZmwMinor: 2100, retailZmwMinor: 4600 })
+})
+
 test("rounds fractional conversion and margin upward rather than reducing margin", () => {
   const result = calculateRetailPrice({
     wholesaleMinor: 101,
