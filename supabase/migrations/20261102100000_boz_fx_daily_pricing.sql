@@ -1,5 +1,6 @@
 -- Bank of Zambia USD/ZMW reference history and automated domain repricing inputs.
--- This migration adds FX history, margin-floor metadata and a separate wholesale-cost freshness gate.\n-- It never enables a TLD.
+-- This migration adds FX history, margin-floor metadata and a separate wholesale-cost freshness gate.
+-- It never enables a TLD.
 
 alter table public.domain_tld_catalog
   add column if not exists minimum_margin_zmw_minor bigint not null default 2500
