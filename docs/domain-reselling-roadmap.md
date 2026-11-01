@@ -219,3 +219,19 @@ Batch response parsing accepts NameSilo's nested, array and XML-to-JSON availabi
 - The initial implementation stores a transaction reference and optional note only; it does not accept receipt-file uploads.
 - Added SQL integration tests and wired the migration/test into GitHub Actions. Code commit `55831e75a25368bffaed9d65b3f1e7506819e89c` passed [CI](https://github.com/Mapalochisha/Hembox.io/actions/runs/39985581157) and its [Vercel Preview is READY](https://vercel.com/mapalochishas-projects/hembox-io/8RgtThLn2QoJ6S1P7PqDrFh2FzoV); subsequent documentation commits still require their own final checks.
 - Gateway integration stays postponed until a custom domain and required onboarding can be funded. No production migration, live payment collection, live registration, or merge was performed.
+
+
+## 2026-11-01 — M8/M10 implementation handover
+
+- M8 work now extends the admin domain recovery queue into a read-only reconciliation across domain orders, unified billing invoices, payment allocations, billing claims, registrant presence and registrar evidence.
+- Production migration versions were checked directly and source-controlled migration filenames are being aligned to the four production versions. No production migration was applied.
+- Vercel Firewall now has an active 20-per-60-second per-IP rule for domain search/quotes, public inquiries, uploads, billing claims and registrant submissions. The process-local inquiry limiter was removed.
+- Production and Preview both have the NameSilo OTE sandbox mode/key configured. A new Production deployment is required before the production deployment can use the changed environment variables. The live registrar key remains absent.
+- Next: verify exact-head CI/Preview, test the WAF safely, finish authenticated customer/admin E2E using disposable test records, and review the remaining Supabase advisor findings. Do not fabricate live prices or mark production invoices paid to force an E2E pass.
+
+## 2026-11-01 — M10 security-advisor findings
+
+- Confirmed the production auth signup trigger function was directly executable by anon/authenticated users. A migration and regression test to restrict it while preserving trigger operation are included in the current feature branch; production has not been changed.
+- The domain TLD catalogue and price snapshots have no anon/authenticated SELECT grants; they remain server-only under service_role. The advisor's RLS/no-policy INFO findings are therefore intentional.
+- `get_user_role(uuid)` was reviewed and checks `auth.uid()`, restricting non-admin callers to their own role. The other authenticated SECURITY DEFINER RPCs still need individual ownership/authorization review before M10 can be closed.
+- Supabase leaked-password protection is disabled and remains a separate authentication-hardening decision.

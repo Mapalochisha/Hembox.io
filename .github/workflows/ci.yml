@@ -109,16 +109,33 @@ jobs:
           );
           create table auth.users (
             id uuid primary key default gen_random_uuid(),
-            email text
+            email text not null default ('test-' || gen_random_uuid()::text || '@example.test'),
+            raw_user_meta_data jsonb not null default '{}'::jsonb
           );
           create table public.profiles (
             id uuid primary key references auth.users(id) on delete cascade,
             email text not null default 'test@example.test',
+            full_name text,
+            avatar_url text,
             role text not null default 'user'
           );
           create function auth.uid() returns uuid
           language sql stable
-          as $$ select nullif(current_setting('request.jwt.claim.sub', true), '')::uuid $$;
+          as $auth$ select nullif(current_setting('request.jwt.claim.sub', true), '')::uuid $auth$;
+          -- Fixture for the existing Supabase auth signup trigger. The migration
+          -- under test revokes direct RPC execution but must leave trigger use intact.
+          create function public.handle_new_user() returns trigger
+          language plpgsql security definer set search_path = ''
+          as $signup$
+          begin
+            insert into public.profiles (id, email, full_name, avatar_url, role)
+            values (new.id, new.email, new.raw_user_meta_data->>'full_name',
+              new.raw_user_meta_data->>'avatar_url', 'user');
+            return new;
+          end;
+          $signup$;
+          create trigger on_auth_user_created after insert on auth.users
+          for each row execute function public.handle_new_user();
           SQL
 
       - name: Apply domain migration to disposable PostgreSQL
@@ -181,11 +198,20 @@ jobs:
       - name: Apply client portal workspace migration
         run: psql -v ON_ERROR_STOP=1 -f supabase/migrations/20261026103000_client_portal_workspace.sql
 
-      - name: Apply domain fulfilment payment evidence migration
-        run: psql -v ON_ERROR_STOP=1 -f supabase/migrations/20261101090000_domain_fulfilment_payment_evidence.sql
+      - name: Apply domain fulfilment payment evidence migration (production version)
+        run: psql -v ON_ERROR_STOP=1 -f supabase/migrations/20261101141742_domain_fulfilment_payment_evidence.sql
 
-      - name: Apply domain registrant details migration
-        run: psql -v ON_ERROR_STOP=1 -f supabase/migrations/20261101110000_domain_registrant_details.sql
+      - name: Apply registrant details table migration (production version)
+        run: psql -v ON_ERROR_STOP=1 -f supabase/migrations/20261101142511_domain_registrant_details_table.sql
+
+      - name: Apply registrant details save function migration (production version)
+        run: psql -v ON_ERROR_STOP=1 -f supabase/migrations/20261101142524_domain_registrant_details_save_function.sql
+
+      - name: Apply manual registration registrant guard migration (production version)
+        run: psql -v ON_ERROR_STOP=1 -f supabase/migrations/20261101142538_domain_manual_registration_requires_registrant.sql
+
+      - name: Revoke direct API execution of the auth signup trigger
+        run: psql -v ON_ERROR_STOP=1 -f supabase/migrations/20261101170000_harden_auth_signup_trigger.sql
 
       - name: Assert client portal schema and ownership policies
         run: psql -v ON_ERROR_STOP=1 -f supabase/tests/client_portal_workspace.test.sql
@@ -222,6 +248,9 @@ jobs:
 
       - name: Assert domain registrant details, consent and fulfilment guard
         run: psql -v ON_ERROR_STOP=1 -f supabase/tests/domain_registrant_details.test.sql
+
+      - name: Assert auth signup trigger cannot be called through PostgREST
+        run: psql -v ON_ERROR_STOP=1 -f supabase/tests/auth_signup_trigger_privileges.test.sql
 
       - name: Assert unified billing ledger invariants
         run: psql -v ON_ERROR_STOP=1 -f supabase/tests/unified_billing_foundation.test.sql

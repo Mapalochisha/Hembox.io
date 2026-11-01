@@ -994,3 +994,51 @@ When resuming this project:
 - Never report a phase complete without exact-commit evidence and the relevant acceptance tests.
 - Record provider environment (`test` vs `live`), operation type, timestamps and sanitized outcomes. Never paste API keys, raw sensitive provider payloads, payment secrets or personal data into docs/issues/chat.
 - The current repository cleanup is documentation-only. It does not change application code, Supabase schema/data, provider configuration, Vercel settings or live registrar/payment state.
+
+
+## 2026-11-01 — M8 reconciliation and M10 rate-limit baseline
+
+**Implementation in progress on `feature/domain-operations-reconciliation`; not merged.**
+
+### M8 — Unified billing reconciliation
+
+- Extended the admin Recovery & Reconciliation view to compare each domain order with its linked unified billing invoice, source/customer/currency ownership, net payment allocations (including reversals), outstanding balance, submitted billing claims, registrant-capture presence and registration evidence.
+- The diagnostic is read-only. It does not approve claims, alter allocations, mark invoices paid, refund funds, or change domain-order state.
+- Registrant contact/address values are deliberately excluded; the endpoint only reads the order/customer association, consent version and acceptance timestamp.
+- Added pure reconciliation rules and regression tests for missing/mismatched invoices, under/over-allocation, currency mismatch, pending claims, missing registrant records, incomplete registration evidence and legacy claim detection.
+
+### Production migration-history reconciliation
+
+- Read the production Supabase migration history. The four production versions are `20261101141742`, `20261101142511`, `20261101142524`, and `20261101142538`.
+- Source control previously represented those four production changes as two combined files with different timestamps. The feature branch now splits/renames them to the exact production version names so a future migration runner can compare history accurately.
+- This is a source-control alignment only. No production SQL was executed and no migration was applied during this work.
+
+### M10 — Edge rate limiting
+
+- Enabled one Vercel Firewall fixed-window rule: 20 requests per 60 seconds per IP across POST/PATCH requests to `/api/domains/search`, `/api/domains/quotes`, `/api/inquiries`, `/api/upload`, `/api/billing/claims`, and `/api/domains/orders/registrant`.
+- Rule ID: `rule_hembox_public_api_rate_limit_2izcxf`; active firewall configuration version 2.
+- Removed the inquiry route's process-local in-memory limiter. Vercel Firewall is now the consistent edge control rather than a per-instance counter.
+- Vercel's current documentation lists WAF rate limiting on Hobby; usage beyond included allowance may be billable. Monitor usage before increasing thresholds.
+
+### Vercel NameSilo sandbox configuration
+
+- `DOMAIN_PROVIDER_MODE=namesilo-sandbox` and the existing `NAMESILO_SANDBOX_API_KEY` are scoped to both Preview and Production. The existing sandbox secret value was retained without exposing it.
+- No live `NAMESILO_API_KEY` was added to Production. The live registrar remains disabled.
+- Vercel deployment policy was intentionally left unchanged.
+- Environment-variable changes take effect on a new deployment; a fresh Production deployment is still required to activate them there.
+
+### Remaining acceptance work
+
+- Run CI on the exact branch head and inspect the Vercel Preview deployment.
+- Verify the WAF rule with safe invalid requests (no provider calls or database writes).
+- Complete authenticated customer/admin E2E with isolated test identities and clearly tagged test data. The current quote API intentionally rejects sandbox mode for live quotes, and no TLD is enabled; do not bypass those commercial safeguards with invented prices.
+- Review the Supabase security-advisor finding for `public.handle_new_user()` before closing M10. The advisor also flags authenticated SECURITY DEFINER RPCs; inspect each function's identity/ownership checks rather than revoking intended customer/admin workflows blindly.
+- Do not apply or replay production migrations, create simulated paid invoices, enable TLDs, accept real payments, or perform live registrar mutations without the required explicit authorization.
+
+### M10 — Supabase advisor follow-up (2026-11-01)
+
+- Production advisor confirmed `public.handle_new_user()` was SECURITY DEFINER and directly executable by both `anon` and `authenticated`, despite being intended only as the `auth.users` insert trigger. The trigger is attached as `on_auth_user_created`.
+- Added pending migration `20261101170000_harden_auth_signup_trigger.sql` to pin an empty `search_path` and revoke direct execution from `PUBLIC`, `anon` and `authenticated`. Added a disposable-Postgres regression test proving the trigger still creates profiles while direct RPC execution is denied. **This migration has not been applied to production.**
+- The advisor's eight authenticated SECURITY DEFINER warnings are not blanket permission to revoke those RPCs. `get_user_role(uuid)` was inspected: it derives caller identity from `auth.uid()`, permits self-role lookup, and permits cross-user lookup only for admins. The remaining RPCs still require individual body/ownership review.
+- The advisor's INFO findings for `domain_tld_catalog` and `domain_price_snapshots` were checked: neither `anon` nor `authenticated` has SELECT; only `service_role` does. Their RLS-enabled/no-policy posture is intentional server-only access.
+- Leaked-password protection is currently disabled in Supabase Auth; review/enable separately after considering its effect on account sign-in and password reset.

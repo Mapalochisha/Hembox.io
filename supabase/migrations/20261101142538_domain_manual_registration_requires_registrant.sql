@@ -1,28 +1,9 @@
--- Reconcile guarded manual fulfilment with the unified billing ledger.
--- Feature branch only. Do not apply to production without explicit authorization.
---
--- Problem this migration fixes:
---   * Every live domain quote now creates a unified billing invoice and the
---     initial payment is verified through that ledger (Bills), not through the
---     legacy domain_manual_payment_claims table.
---   * A paid domain invoice advances the order to payment_confirmed, but the
---     previous record_domain_manual_registration() only accepted a verified
---     legacy domain claim as payment evidence. Fulfilment was therefore
---     impossible for every order paid through the real (unified) flow.
---
--- This migration accepts settled payment evidence from either source while
--- keeping every existing guard:
---   1. domain_manual_claim      - a legacy verified domain_manual_payment_claims row, or
---   2. unified_billing_invoice  - the order's linked billing invoice is paid,
---                                 belongs to this order and customer, matches the
---                                 order currency, and its allocations fully settle it.
---
--- It still never contacts a registrar, still requires an explicit
--- availability/price recheck, still requires payment_confirmed state, and still
--- records the actor, references, dates and evidence source in the audit trail.
+-- Production migration 20261101142538: require registrant details before manual registration.
+-- The corresponding migration is already present in the production history.
 
-drop function if exists public.record_domain_manual_registration(uuid, uuid, text, text, text, timestamptz, timestamptz, boolean, boolean, text);
-
+-- Registration cannot be recorded without the registrant details the registrar
+-- requires. This is the same function contract as the previous definition; only
+-- the guard and audit detail change.
 create or replace function public.record_domain_manual_registration(
   p_order_id uuid,
   p_admin_user_id uuid,
@@ -45,6 +26,7 @@ declare
   v_invoice public.billing_invoices%rowtype;
   v_allocated bigint;
   v_evidence text;
+  v_registrant_id uuid;
 begin
   if not exists (
     select 1 from public.profiles p
@@ -94,8 +76,14 @@ begin
     raise exception 'Provider domain reference must match the ordered domain' using errcode = '23514';
   end if;
 
-  -- Payment evidence is required in every case; the guard below is defence in
-  -- depth so a future refactor cannot fulfil an order on a payment claim alone.
+  select d.order_id into v_registrant_id
+  from public.domain_order_registrant_details d
+  where d.order_id = v_order.id
+    and d.customer_id is not distinct from v_order.customer_id;
+  if v_registrant_id is null then
+    raise exception 'Registrant details are required before a registration can be recorded' using errcode = '23514';
+  end if;
+
   select c.id into v_claim_id
   from public.domain_manual_payment_claims c
   where c.order_id = v_order.id and c.status = 'verified'
@@ -157,6 +145,7 @@ begin
       'price_rechecked', p_price_rechecked,
       'admin_note', nullif(trim(p_admin_note), ''),
       'payment_evidence', v_evidence,
+      'registrant_details_present', true,
       'payment_evidence_details', case
         when v_evidence = 'domain_manual_claim' then jsonb_build_object('claim_id', v_claim_id)
         else jsonb_build_object(
@@ -178,4 +167,4 @@ revoke all on function public.record_domain_manual_registration(uuid, uuid, text
 grant execute on function public.record_domain_manual_registration(uuid, uuid, text, text, text, timestamptz, timestamptz, boolean, boolean, text) to service_role;
 
 comment on function public.record_domain_manual_registration(uuid, uuid, text, text, text, timestamptz, timestamptz, boolean, boolean, text) is
-  'Audited human-in-the-loop fulfillment record. It never contacts a registrar; an admin must register externally, recheck availability/pricing, then record the real provider references and dates. Settled-payment evidence must be a verified legacy domain claim or the order''s fully paid unified billing invoice.';
+  'Audited human-in-the-loop fulfilment. Registration requires verified payment in the unified billing ledger and customer registrant details; no registrar API call is made by this function.';
