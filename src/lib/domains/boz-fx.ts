@@ -30,6 +30,7 @@ export function parseBozFxPayload(payload: unknown, retrievedAt = new Date().toI
   if (!bank.includes("boz") && !bank.includes("bank of zambia")) throw new Error("FX feed did not identify Bank of Zambia.")
   const rateDate = data.rate_date ?? data.rateDate ?? data.date
   if (!validDate(rateDate)) throw new Error("BoZ FX feed did not include a valid publication date.")
+  if (data.stale === true || String(data.stale).toLowerCase() === "true") throw new Error("BoZ FX feed marks this observation stale.")
 
   const rateRows = Array.isArray(data.rates) ? data.rates as Array<Record<string, unknown>> : []
   let row = rateRows.find((candidate) =>
