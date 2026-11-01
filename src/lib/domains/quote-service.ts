@@ -20,6 +20,7 @@ export type DomainQuoteCatalogRecord = {
   renewal_retail_minor: number | null
   wholesale_fx_rate_micros: number | null
   margin_basis_points: number | null
+  minimum_margin_zmw_minor?: number | null
   pricing_source: string | null
   price_updated_at: string | null
 }
@@ -128,15 +129,18 @@ export function validateDomainQuotePricing(input: {
   let registrationCalculation: ReturnType<typeof calculateRetailPrice>
   let renewalCalculation: ReturnType<typeof calculateRetailPrice>
   try {
-    registrationCalculation = calculateRetailPrice({
-      wholesaleMinor: catalog.registration_wholesale_minor,
+    const pricingBasis = {
       fxRateMicros: catalog.wholesale_fx_rate_micros,
       marginBasisPoints: catalog.margin_basis_points,
+      minimumMarginZmwMinor: catalog.minimum_margin_zmw_minor ?? 2500,
+    }
+    registrationCalculation = calculateRetailPrice({
+      wholesaleMinor: catalog.registration_wholesale_minor,
+      ...pricingBasis,
     })
     renewalCalculation = calculateRetailPrice({
       wholesaleMinor: catalog.renewal_wholesale_minor,
-      fxRateMicros: catalog.wholesale_fx_rate_micros,
-      marginBasisPoints: catalog.margin_basis_points,
+      ...pricingBasis,
     })
   } catch {
     fail("invalid_price_snapshot", "The saved pricing calculation is outside the supported range.", 503)
