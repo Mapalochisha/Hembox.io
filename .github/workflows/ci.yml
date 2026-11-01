@@ -181,11 +181,17 @@ jobs:
       - name: Apply client portal workspace migration
         run: psql -v ON_ERROR_STOP=1 -f supabase/migrations/20261026103000_client_portal_workspace.sql
 
-      - name: Apply domain fulfilment payment evidence migration
-        run: psql -v ON_ERROR_STOP=1 -f supabase/migrations/20261101090000_domain_fulfilment_payment_evidence.sql
+      - name: Apply domain fulfilment payment evidence migration (production version)
+        run: psql -v ON_ERROR_STOP=1 -f supabase/migrations/20261101141742_domain_fulfilment_payment_evidence.sql
 
-      - name: Apply domain registrant details migration
-        run: psql -v ON_ERROR_STOP=1 -f supabase/migrations/20261101110000_domain_registrant_details.sql
+      - name: Apply registrant details table migration (production version)
+        run: psql -v ON_ERROR_STOP=1 -f supabase/migrations/20261101142511_domain_registrant_details_table.sql
+
+      - name: Apply registrant details save function migration (production version)
+        run: psql -v ON_ERROR_STOP=1 -f supabase/migrations/20261101142524_domain_registrant_details_save_function.sql
+
+      - name: Apply manual registration registrant guard migration (production version)
+        run: psql -v ON_ERROR_STOP=1 -f supabase/migrations/20261101142538_domain_manual_registration_requires_registrant.sql
 
       - name: Assert client portal schema and ownership policies
         run: psql -v ON_ERROR_STOP=1 -f supabase/tests/client_portal_workspace.test.sql
