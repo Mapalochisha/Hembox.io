@@ -2,9 +2,9 @@
 
 > **Purpose:** This is the canonical handoff document for the domain-reselling project. Read it before continuing implementation after a context switch. Update this file as milestones are completed, decisions change, or verification results become available.
 >
-> **Last updated:** 2026-10-25
+> **Last updated:** 2026-11-01
 > **Repository:** `Mapalochisha/Hembox.io`  
-> **Working branch:** `feature/domain-reselling-platform`  
+> **Historical implementation branch:** `feature/domain-reselling-platform`  
 > **Pull request:** https://github.com/Mapalochisha/Hembox.io/pull/2  
 > **Related technical roadmap:** [domain-reselling-roadmap.md](./domain-reselling-roadmap.md)
 
@@ -739,3 +739,107 @@ When resuming this project:
 - **Approval boundary:** saving a pricing snapshot remains an explicit admin action. The current admin form disables the TLD while writing the catalogue row and immutable snapshot, then applies the requested enabled state only after the snapshot succeeds. The provider retrieval screen itself is strictly read-only.
 - **Outstanding external prerequisites:** configure `NAMESILO_API_KEY` in the server environment and confirm the live NameSilo account's operational funding route. Until then the new endpoint safely returns a configuration error. No live provider call, catalogue publication, production migration, registration, or payment was performed by this code change.
 - **Verification:** CI and the exact-head Vercel Preview must pass before this increment is complete. A successful build does not prove the production NameSilo credential is configured or that any TLD is commercially approved.
+
+
+---
+
+# Handover snapshot — 2026-11-01
+
+> This section supersedes older milestone summaries where they conflict. It is the operational starting point for the next engineer/AI. The dated log above is retained as historical evidence, not as a claim that every historical branch or deployment is current.
+
+## Current repository baseline and implementation reality
+
+- Repository: `Mapalochisha/Hembox.io`; production application project: Vercel `hembox-io`; production site: `https://hembox.tech`.
+- The current known `main` baseline before this documentation/housekeeping change was `c744d4f52068ba67e6209dbb03444d8e59dcd7c6`.
+- The older `feature/domain-reselling-platform` branch and the later `feat/domain-pricing-policy` branch diverged materially from `main`. Do not merge either wholesale. The pricing branch contained useful NameSilo standard-retail pricing work; integrate only by reviewing individual commits/files against current main.
+- This document is canonical. The companion roadmap is a condensed technical view; the two NameSilo documents are operational references.
+
+## Product and commercial decisions — treat as approved unless the business owner changes them
+
+1. Domain sales must be available standalone, as a website-plan add-on, or bundled with other HEMBOX services. HEMBOX is a broader digital-services business (branding, websites, applications and digital systems), not a website-only company.
+2. Initial market: Zambia. Customer-facing default currency: ZMW. USD may be used by customer request/manual administrative handling.
+3. Selected initial registrar: NameSilo. The old Domain Name API path is retired from provider selection.
+4. Use NameSilo standard pay-as-you-go/public retail schedule for launch. Do not enroll in the Discount Program or assume its USD 50 minimum top-up economics.
+5. Provider costs are USD; registration and renewal costs must remain distinct. Initial FX policy is a manually entered, manually verified USD/ZMW rate with source and observation date recorded for every saved price snapshot.
+6. Markup is configurable per TLD in basis points. The 20% form value is a convenience default, not an approved universal margin. Retail calculations use integer minor units and round upward to the next ZMW 1.00.
+7. Price freshness gate: 24 hours. No TLD may be enabled until both registration and renewal costs, FX, markup and source evidence are reviewed and saved.
+8. Payment gateway/hosted checkout/webhooks are deferred. Initial release uses manual payment claims and authorized human verification. A claim/reference is not proof of settlement.
+9. Initial registration is manual fulfilment in the registrar console after verified payment and a fresh live availability/final-price check. The administrator records the actual registrar result in HEMBOX. No automated live registrar mutation is authorized.
+10. Keep DNS abstraction/provider capability boundaries in place, but do not expose customer DNS controls until implemented, authorized and tested.
+11. Do not introduce loyalty discounts without real customer demand and unit-economics evidence.
+12. No live registration, renewal, transfer, DNS mutation, real payment collection, or new production database migration is authorized merely by this handover.
+
+## What has actually been built (code/schema foundations; not all are release-ready)
+
+### Provider and NameSilo
+- Provider abstraction/contracts, fail-closed provider selection, mock/disabled behavior and validated domain search.
+- Server-side NameSilo availability adapter. Unknown/malformed responses remain unknown; sandbox availability is not live registry truth.
+- Separate OTE configuration using `DOMAIN_PROVIDER_MODE=namesilo-sandbox` and `NAMESILO_SANDBOX_API_KEY`; live mode uses `NAMESILO_API_KEY`. Secrets must remain server-side.
+- Read-only OTE account probes (`getAccountBalance`, `listDomains`) and availability parsing were verified on protected Preview. The OTE account listed no domains; `getDomainInfo` for `github.com` returned the documented account-scope not-active/not-owned result. No test domain was registered and no sandbox funds were spent.
+- A separate OTE operations client/CLI has guarded read-only and sandbox mutation commands, explicit confirmation/preflight guards, and ambiguous-outcome reconciliation rules. It is not a customer-facing live registrar integration. No state-changing OTE operation has been performed.
+- A server-only NameSilo `getPrices` reader was added on the pricing workstream. It explicitly requests standard retail pricing, normalizes registration/renewal values to integer USD cents, and rejects malformed/incomplete responses.
+- Admin-only `GET /api/admin/domains/provider-prices` and `/admin/domains/provider-prices` were added as read-only review surfaces. They do not persist prices or enable TLDs. The production NameSilo credential/account funding route still needs verification.
+
+### Pricing and catalogue
+- Provider-independent integer pricing calculations, FX scaling, basis-point markup, upward ZMW rounding, 24-hour freshness gate, price history and admin-only catalogue management exist.
+- Public catalogue API is retail-only and must not imply availability.
+- Price-review retrieval exists, but the commercial inputs and approved catalogue are not complete. No TLD should be considered commercially enabled/launch-ready solely because the code can fetch a price.
+
+### Customer and admin domain workflows
+- Public `/domains` remains enquiry-led; it is not a complete live search/checkout.
+- Enquiry persistence and durable order creation foundations exist, with idempotency/audit behavior where the domain schema is present.
+- Authenticated customer order API and `/profile/domains` read-only dashboard exist with owner scoping/RLS.
+- Admin TLD catalogue and read-only order queue/audit visibility exist.
+- Quote/order foundations include immutable quote snapshots, expiry, idempotency and provider/payment evidence contracts. The later pricing branch adds durable quote/order and billing bridge work that must be checked carefully against current main before reuse.
+
+### Manual payments and fulfilment
+- Manual payment claim/review code and database foundations were developed: customer transaction-reference/optional-note submission, admin verify/reject/needs-information actions, amount/quote checks, audit/idempotency controls and customer claim status.
+- Unified HEMBOX billing integration was developed in the domain workstream, including invoice linkage and arrangement workflow foundations. Payment gateway remains disabled/deferred.
+- Manual fulfilment SQL/RPC foundation exists to record an actual registration performed outside HEMBOX; it must not call the registrar or invent a registration.
+- Treat these workflows as implemented foundations requiring current-main integration/release verification, not as permission to accept live customer funds or register domains.
+
+## Phase-by-phase status at handover
+
+| Phase | Status | What remains |
+|---|---|---|
+| M0 Foundation | Complete historically | Re-run current-main CI after any code integration; retain fail-closed behavior. |
+| M1 Registrar/commercial selection | Partially complete | NameSilo selected; confirm live account access, Zambia funding route, terms, supported TLDs and actual account-specific commercial costs. |
+| M2 NameSilo adapter/account verification | Substantially complete for read-only OTE | Production credential/account readiness and live read-only price/availability verification remain open. No live mutations. |
+| M3 Pricing policy/TLD catalogue | In progress | Verify production `getPrices` response; approve FX source/rate cadence, per-TLD markup and costs; save reviewed snapshots; seed/enable only fully priced TLDs. |
+| M4 Cart/checkout/durable orders | Incomplete | Finish/reconcile current-main quote-to-order flow, registrant data, checkout review, idempotency/concurrency, ownership and final live availability/price recheck. |
+| M5 Manual payments | Substantial implementation; release verification open | Integrate/reconcile with current billing, configure and verify receiving instructions, authenticated customer/admin E2E, audit/reconciliation and exact amount/expiry rules. Gateway intentionally deferred. |
+| M6 Registration/provisioning | Manual foundation exists; not launch-verified | Verify paid-order guard, manual registrar-console procedure, actual provider reference capture, expiry dates, idempotency and reconciliation. Automated registration remains deferred. |
+| M7 Customer domain dashboard | Partial | Complete order lifecycle/status/notifications and customer-visible registered-domain/renewal data; verify owner isolation end to end. |
+| M8 Admin operations console | Partial | Complete manual review/fulfilment operations, provider/payment reconciliation, failed/ambiguous order handling, refunds policy, margins and audit workflows. |
+| M9 DNS/renewals/extended management | Not implemented for customers | Provider capability adapter, nameserver/DNS controls, renewals, reminders, transfer/lock/privacy support and recovery. |
+| M10 Security/reliability/QA | Partial | Full current-main RLS/grants/secret/rate-limit/state-machine review, abuse/concurrency/retry tests, operational alerts, backups and recovery runbooks. |
+| M11 Staging/production launch | Not complete | Current-main integration, migrations/release review, exact-head CI + Vercel, authenticated E2E, commercial approvals and explicit owner authorization. |
+| M12 Post-launch operations | Not started | Monitoring, reconciliation cadence, support ownership, margin/conversion/renewal metrics and incident process. |
+
+## External prerequisites and explicit blockers
+
+- A production NameSilo API key/account with a verified funding method usable from Zambia; keep it separate from the OTE key.
+- A successful, read-only production `getPrices` response and verified live availability behavior before publishing any TLD.
+- Admin-approved USD/ZMW rate source and rate, per-TLD markup, registration/renewal price snapshots, and TLD enablement decisions.
+- Approved manual-payment receiving instructions in the correct server configuration. Do not expose or activate placeholder bank details.
+- Business owner approval before production schema changes, accepting real customer payments, live registrar mutations, or enabling customer-facing domain sales.
+- If gateway work is resumed later: confirm custom-domain/onboarding eligibility and merchant settlement terms first; then implement signed webhook verification, idempotent ledger processing and reconciliation.
+
+## Recommended next implementation sequence
+
+1. Start from current `main`, inspect the current tree and CI state, and do not merge old feature branches wholesale.
+2. Diff the pricing-policy branch against current main. Port the NameSilo `getPrices` adapter, admin-only read-only price review endpoint/screen and tests only where missing and compatible.
+3. Finish M3 commercial inputs and explicit admin price-snapshot/TLD enablement controls. Keep every TLD disabled until its registration and renewal costs are verified.
+4. Reconcile quote/order creation and the unified-billing bridge against the current schema; finish durable customer order creation and the final availability/price recheck.
+5. Complete and test manual payment claims/review against the current billing ledger; verify payment instructions and admin permissions without touching real customer balances.
+6. Complete the guarded manual fulfilment path and customer/admin operations surfaces. No automated live registrar calls.
+7. Run disposable-database/schema tests, unit tests, lint, TypeScript and production build; then authenticated Preview customer/admin E2E. Record exact commit, CI run and Vercel deployment.
+8. Only after the owner explicitly approves, prepare and review production migrations and launch controls. A green CI/build alone is not launch approval.
+
+## Verification and evidence discipline
+
+- Historical CI/Preview links in the dated progress log refer to the commits stated there; they are not evidence that the current `main` head is green.
+- The E2E remediation report dated 2026-10-30 recorded 33 PASS, one observation and one known gap across 35 checks. It covered general customer/admin/billing/portal controls, not a complete domain purchase, payment or registrar lifecycle. Do not misrepresent it as domain-reseller E2E.
+- Never report a phase complete without exact-commit evidence and the relevant acceptance tests.
+- Record provider environment (`test` vs `live`), operation type, timestamps and sanitized outcomes. Never paste API keys, raw sensitive provider payloads, payment secrets or personal data into docs/issues/chat.
+- The current repository cleanup is documentation-only. It does not change application code, Supabase schema/data, provider configuration, Vercel settings or live registrar/payment state.
