@@ -43,7 +43,9 @@ The price reader now follows `DOMAIN_PROVIDER_MODE`; it no longer forces the pro
 - **`.zm` / `.co.zm` reality check:** NameSilo does not appear to sell Zambian ccTLDs; `.zm` registration runs through ZICTA-accredited registrars. Do not advertise `.co.zm` until a provider relationship and priced contract exist. If local domains are required for launch, that is a separate commercial task, not a catalogue entry.
 - Exclude any TLD whose renewal price you have not verified — renewal is a separate line item the customer sees.
 
-## 3. FX source and cadence (owner decision)
+## 3. FX source and cadence (approved policy)
+
+HEMBOX uses the Bank of Zambia USD/ZMW middle rate, retrieved through a machine-readable republication at `https://allratestoday.com/api/open/central-bank/boz`. This is a third-party transport layer, not a BoZ-operated API. The authoritative publication remains `https://www.boz.zm/markets-securities/boz-exchange-rates`. The integration validates a direct published middle rate and stores both source URLs.
 
 Choose one source, write it down, and never mix sources inside a single snapshot:
 
@@ -52,17 +54,17 @@ Choose one source, write it down, and never mix sources inside a single snapshot
 
 Rules:
 
-- Capture the rate at a **fixed daily time** and store it with its source and observation timestamp.
+- Vercel Cron refreshes daily at 16:00 CAT and stores the actual BoZ publication date plus retrieval timestamp.
 - Encode the rate as `wholesale_fx_rate_micros = round(ZMW per USD × 1_000_000)`.
 - Do **not** hand-edit retail prices; the server recalculates them from cost × FX × markup.
 - Prices older than 24 hours are suppressed automatically (`price_stale`), so someone must own the daily refresh. Suppression is the safe failure mode — it never shows a stale price.
 
 ## 4. Markup policy (owner decision)
 
-- Set the markup in **basis points** (2000 bp = 20%) per TLD or per TLD group.
-- Add a **minimum absolute margin floor** in ZMW so cheap TLDs are not sold at a loss after FX movement.
-- Decide whether the markup absorbs FX drift or whether the daily re-price is the mechanism. Recommended: re-price daily and keep a small buffer inside the markup.
-- Record the decision, e.g. an email or note: "Approved .com: 2000 bp, minimum ZMW 25 margin, FX from Bank of Zambia daily, effective 2026-11-02."
+- HEMBOX launch markup is **10% (1,000 basis points)**.
+- Apply a **K25 minimum gross margin** (2,500 ZMW minor units) after FX conversion.
+- Add a **K1.00 per USD** buffer to the BoZ middle rate, then re-price daily.
+- Record provenance for every price: BoZ middle rate date, K1 buffer, 1,000 bp markup and K25 minimum margin.
 
 ## 5. Enter and enable the catalogue
 
