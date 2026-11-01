@@ -8,6 +8,14 @@ The public `/domains` page remains enquiry-led. Provider-independent pricing pol
 
 The pricing layer now uses integer minor-unit arithmetic, an explicit FX scaling convention, basis-point markup, upward rounding, a 24-hour freshness gate, and restricted price-history snapshots. Admins can maintain a TLD catalogue through role-protected server routes. Public catalogue responses expose retail-only ZMW prices and never imply domain availability. This foundation is not a live quote or checkout.
 
+
+## 2026-11-01 — Fulfilment payment-evidence reconciliation
+
+- The guarded manual-registration RPC previously accepted only a verified legacy `domain_manual_payment_claims` row. Because the real customer flow pays through the unified billing ledger (the legacy claim endpoint redirects billed orders to Portal → Bills), no genuinely paid order could be fulfilled.
+- `20261101090000_domain_fulfilment_payment_evidence.sql` now requires settled evidence from either source: a verified legacy claim, or the order's linked unified invoice in `paid` state with allocations covering its total, matching customer, currency and `domain_registration` source. Evidence is returned to the caller and written into the audit event.
+- The admin order queue shows invoice settlement state and offers the fulfilment action only for `payment_confirmed` orders.
+- Still missing before a real registration can be completed: customer registrant/contact data capture and an explicit checkout review/confirmation step. Live registration, real payment collection and production migrations remain disabled.
+
 ## Current blockers and reliability notes
 
 - **NameSilo read-only connection verified; transactional readiness remains gated.** The first authenticated Preview smoke test returned a valid OTE availability result for example.com (unavailable in the sandbox), with provider namesilo, environment test, and live=false. This is not real registry availability. A Node-only OTE operation client now defines get-domain-info, registration, renewal, transfer and nameserver calls, with a local CLI for safe read-only tests and deliberately guarded sandbox mutations. It requires DOMAIN_PROVIDER_MODE=namesilo-sandbox plus NAMESILO_SANDBOX_API_KEY, hard-pins the sandbox host, applies confirmation and preflight guards to mutations, and is not wired to a customer-facing route. No state-changing OTE call has been performed. Live registration remains disabled. Before production use, review API Manager IP restrictions and commercial terms. Before production use, review API Manager IP restrictions and account readiness. The NameSilo [reseller terms](https://www.namesilo.com/support/v2/articles/about/reseller-options) say there is no special reseller pricing; its Discount Program requires account funds and the account-funding page lists a $50 minimum, so confirm the funding economics before relying on discounts.

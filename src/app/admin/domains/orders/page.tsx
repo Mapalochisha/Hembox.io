@@ -11,18 +11,29 @@ type DomainOrder = {
   id: string; customer_email: string; customer_name: string | null; domain_name: string; status: string
   retail_currency: string; registration_retail_minor: number | null; renewal_retail_minor: number | null
   provider_id: string | null; provider_order_reference: string | null; created_at: string
+  billing_invoice_id?: string | null
 }
+type PaymentInvoice = { id: string; invoice_number: string; status: string; currency: string; total_minor: number; paid_at: string | null }
 type AuditEvent = { id: string; order_id: string | null; event_type: string; created_at: string; actor_user_id: string | null }
+
+const FULFILLABLE_STATUSES = ["payment_confirmed"]
 
 function money(minor: number | null, currency: string) {
   if (minor === null) return "Not quoted"
   return new Intl.NumberFormat("en-ZM", { style: "currency", currency: currency || "ZMW", maximumFractionDigits: 2 }).format(minor / 100)
 }
 function title(value: string) { return value.replaceAll("_", " ").replace(/\b\w/g, (letter) => letter.toUpperCase()) }
+function evidenceLabel(value: string | undefined) {
+  if (value === "unified_billing_invoice") return "settled unified billing invoice"
+  if (value === "domain_manual_claim") return "verified manual payment claim"
+  if (value === "previously_recorded") return "previously recorded evidence"
+  return "recorded payment evidence"
+}
 
 export default function AdminDomainOrdersPage() {
   const [status, setStatus] = useState<(typeof statuses)[number]>("all")
   const [orders, setOrders] = useState<DomainOrder[]>([])
+  const [paymentInvoices, setPaymentInvoices] = useState<PaymentInvoice[]>([])
   const [events, setEvents] = useState<AuditEvent[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState("")
@@ -38,7 +49,7 @@ export default function AdminDomainOrdersPage() {
       const response = await fetch(`/api/admin/domains/orders${query}`, { cache: "no-store" })
       const result = await response.json()
       if (!response.ok) throw new Error(result.error || "Unable to load domain orders.")
-      setOrders(result.orders ?? []); setEvents(result.auditEvents ?? [])
+      setOrders(result.orders ?? []); setEvents(result.auditEvents ?? []); setPaymentInvoices(result.paymentInvoices ?? [])
     } catch (loadError) {
       setError(loadError instanceof Error ? loadError.message : "Unable to load domain orders.")
     } finally { setLoading(false) }
@@ -46,6 +57,11 @@ export default function AdminDomainOrdersPage() {
 
   useEffect(() => { void loadOrders() }, [loadOrders])
   const selectedFulfillmentOrder = orders.find((order) => order.id === fulfillOrderId) ?? null
+  const invoicesById = new Map(paymentInvoices.map((invoice) => [invoice.id, invoice]))
+  function settlementFor(order: DomainOrder) {
+    if (!order.billing_invoice_id) return null
+    return invoicesById.get(order.billing_invoice_id) ?? null
+  }
 
   async function recordManualRegistration(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
@@ -92,7 +108,8 @@ export default function AdminDomainOrdersPage() {
       if (!response.ok) throw new Error(result.error || "Unable to record the registration.")
       await loadOrders()
       setFulfillOrderId("")
-      setNotice(`Manual registration recorded for ${selectedFulfillmentOrder.domain_name}. The registrar was not called by HEMBOX TECH.`)
+      const recorded = Array.isArray(result.result) ? result.result[0] : result.result
+      setNotice(`Manual registration recorded for ${selectedFulfillmentOrder.domain_name} using ${evidenceLabel(recorded?.payment_evidence)}. The registrar was not called by HEMBOX TECH.`)
     } catch (e) {
       setFulfillError(e instanceof Error ? e.message : "Unable to record the registration.")
     } finally { setFulfillBusy(false) }
@@ -104,7 +121,7 @@ export default function AdminDomainOrdersPage() {
       <div>
         <Link href="/admin/domains" className="inline-flex items-center gap-2 text-sm font-semibold text-slate-500 hover:text-teal"><ArrowLeft className="h-4 w-4" /> Catalogue & pricing</Link>
         <div className="mt-4 flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
-          <div><p className="text-xs font-bold uppercase tracking-[0.16em] text-teal">Operations</p><h1 className="mt-2 text-3xl font-black tracking-tight text-navy">Domain order queue</h1><p className="mt-2 text-sm text-slate-600">Read-only order and audit visibility. No payment or registration actions are available yet.</p></div>
+          <div><p className="text-xs font-bold uppercase tracking-[0.16em] text-teal">Operations</p><h1 className="mt-2 text-3xl font-black tracking-tight text-navy">Domain order queue</h1><p className="mt-2 text-sm text-slate-600">Payment status, order state and audit trail. Registration recording is limited to orders whose payment is settled.</p></div>
           <div className="flex gap-2">
             <Link href="/admin/domains/recovery" className="inline-flex h-10 items-center rounded-xl border border-slate-200 bg-white px-3 text-sm font-bold">Recovery</Link>
             <select value={status} onChange={(event) => setStatus(event.target.value as (typeof statuses)[number])} className="h-10 rounded-xl border border-slate-200 bg-white px-3 text-sm">
@@ -114,20 +131,29 @@ export default function AdminDomainOrdersPage() {
           </div>
         </div>
       </div>
-      <div className="rounded-2xl border border-amber-200 bg-amber-50 p-4 text-sm leading-6 text-amber-950"><strong>Manual fulfillment:</strong> the registration action below only records a domain that an administrator has already registered in the registrar console. It does not call NameSilo. Verify settled payment, live availability, final price, and the actual registrar result first.</div>
+      <div className="rounded-2xl border border-amber-200 bg-amber-50 p-4 text-sm leading-6 text-amber-950"><strong>Manual fulfillment:</strong> recording a registration only stores a domain that an administrator has already registered in the registrar console. It does not call NameSilo. The order must be payment-confirmed by settled evidence (a fully paid HEMBOX TECH Bills invoice or a verified manual payment claim), and you must confirm live availability, the final price, and the actual registrar result first.</div>
       {error ? <p role="alert" className="rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900">{error}</p> : null}\n      {notice ? <p role="status" className="rounded-xl border border-teal/30 bg-teal/5 p-4 text-sm text-navy">{notice}</p> : null}
       {loading ? <div className="flex h-40 items-center justify-center"><Loader2 className="h-7 w-7 animate-spin text-teal" /></div> : null}
       {!loading && !error && orders.length === 0 ? <div className="rounded-2xl border border-slate-200 bg-white p-8 text-center text-sm text-slate-600">No orders match this filter.</div> : null}
       {!loading && orders.length > 0 ? (
         <div className="overflow-x-auto rounded-2xl border border-slate-200 bg-white">
           <table className="w-full min-w-[900px] text-left text-sm">
-            <thead className="border-b border-slate-200 bg-slate-50 text-xs uppercase tracking-wide text-slate-500"><tr><th className="px-4 py-3">Domain / order</th><th className="px-4 py-3">Customer</th><th className="px-4 py-3">Status</th><th className="px-4 py-3">Registration</th><th className="px-4 py-3">Renewal</th><th className="px-4 py-3">Provider reference</th><th className="px-4 py-3">Created</th><th className="px-4 py-3">Action</th></tr></thead>
+            <thead className="border-b border-slate-200 bg-slate-50 text-xs uppercase tracking-wide text-slate-500"><tr><th className="px-4 py-3">Domain / order</th><th className="px-4 py-3">Customer</th><th className="px-4 py-3">Order status</th><th className="px-4 py-3">Payment</th><th className="px-4 py-3">Registration</th><th className="px-4 py-3">Renewal</th><th className="px-4 py-3">Provider reference</th><th className="px-4 py-3">Created</th><th className="px-4 py-3">Action</th></tr></thead>
             <tbody>{orders.map((order) => <tr key={order.id} className="border-b border-slate-100 last:border-0">
               <td className="px-4 py-4"><p className="font-bold text-navy">{order.domain_name}</p><p className="mt-1 text-xs text-slate-500">{order.id}</p></td>
               <td className="px-4 py-4"><p>{order.customer_name || "Customer"}</p><p className="mt-1 text-xs text-slate-500">{order.customer_email}</p></td>
               <td className="px-4 py-4"><span className="rounded-full bg-slate-100 px-2.5 py-1 text-xs font-bold">{title(order.status)}</span></td>
+              <td className="px-4 py-4 text-xs">{(() => {
+                const invoice = settlementFor(order)
+                if (!order.billing_invoice_id) return <span className="text-slate-500">No billing invoice</span>
+                if (!invoice) return <span className="text-slate-500">Invoice not readable</span>
+                return <><p className="font-bold text-navy">{title(invoice.status)}</p><p className="mt-1 text-slate-500">{invoice.invoice_number} · {money(invoice.total_minor, invoice.currency)}</p>{invoice.paid_at ? <p className="mt-1 text-slate-500">Paid {new Date(invoice.paid_at).toLocaleString()}</p> : null}</>
+              })()}</td>
               <td className="px-4 py-4">{money(order.registration_retail_minor, order.retail_currency)}</td><td className="px-4 py-4">{money(order.renewal_retail_minor, order.retail_currency)}</td>
               <td className="px-4 py-4 text-xs">{order.provider_id ? `${order.provider_id}: ${order.provider_order_reference || "No reference"}` : "Not provisioned"}</td><td className="px-4 py-4 text-xs text-slate-500">{new Date(order.created_at).toLocaleDateString()}</td>
+              <td className="px-4 py-4">{FULFILLABLE_STATUSES.includes(order.status)
+                ? <button type="button" onClick={() => { setFulfillError(""); setFulfillOrderId(order.id) }} className="h-9 rounded-lg border border-slate-200 px-3 text-xs font-bold">Record registration</button>
+                : <span className="text-xs text-slate-500">{order.status === "registered" ? "Registered" : "Awaiting settled payment"}</span>}</td>
             </tr>)}</tbody>
           </table>
         </div>
