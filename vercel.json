@@ -4,8 +4,8 @@
     "deploymentEnabled": {
       "main": true
     }
-  }
-  ,"crons": [
+  },
+  "crons": [
     { "path": "/api/cron/domain-fx-refresh", "schedule": "0 14 * * *" }
   ]
 }
