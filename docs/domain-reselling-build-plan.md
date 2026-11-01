@@ -1042,3 +1042,19 @@ When resuming this project:
 - The advisor's eight authenticated SECURITY DEFINER warnings are not blanket permission to revoke those RPCs. `get_user_role(uuid)` was inspected: it derives caller identity from `auth.uid()`, permits self-role lookup, and permits cross-user lookup only for admins. The remaining RPCs still require individual body/ownership review.
 - The advisor's INFO findings for `domain_tld_catalog` and `domain_price_snapshots` were checked: neither `anon` nor `authenticated` has SELECT; only `service_role` does. Their RLS-enabled/no-policy posture is intentional server-only access.
 - Leaked-password protection is currently disabled in Supabase Auth; review/enable separately after considering its effect on account sign-in and password reset.
+
+
+## 3.2 Bank of Zambia FX and automated retail pricing — 2026-11-02
+
+Implemented on `feature/boz-fx-daily-pricing`:
+
+- BoZ USD/ZMW published middle rate is the pricing reference. The authoritative publication is the Bank of Zambia exchange-rate page.
+- Because the BoZ website is dynamically rendered and no documented public JSON API was identified, the implementation currently uses AllRatesToday as a machine-readable republication of the BoZ table. This is a third-party transport layer, not a BoZ-operated API; the code validates the bank identity, publication date, direct USD/ZMW middle row and rejects derived, future or more-than-five-day-old rates. Both source URLs are retained in FX history.
+- Daily Vercel Cron is configured for 16:00 CAT. `CRON_SECRET` is configured as a Production-only secret. The endpoint is also manually invokable by an authenticated administrator from Admin → Domains.
+- FX history is stored in `domain_fx_rate_snapshots`, including published rate, K1.00/USD buffer, effective rate, publication date and retrieval timestamp.
+- Domain pricing now applies 10% markup, K25 minimum gross margin and upward rounding to the next whole kwacha. Registration and renewal are recalculated separately.
+- Every refresh writes immutable price history, updates USD wholesale catalogue rows, and preserves each TLD's enabled/disabled state. Sandbox/OTE/test cost rows are skipped and cannot be enabled through the admin catalogue API.
+- The existing 24-hour price freshness gate and live-provider quote guard remain in force. FX refresh does not enable TLDs or activate live registration/payment.
+- CI now replays the FX schema migration and tests service-role-only access. New unit tests cover direct BoZ middle-rate parsing, stale/future/derived feed rejection and minimum-margin calculations.
+
+**Release gates still open:** production Supersede migration `20261102100000_boz_fx_daily_pricing.sql` must be applied after CI verification; the BoZ republication feed must be smoke-tested from the deployed Vercel function; NameSilo production-account registration and renewal costs must be verified before enabling `.com` or any other TLD. No TLD has been enabled by this work.
