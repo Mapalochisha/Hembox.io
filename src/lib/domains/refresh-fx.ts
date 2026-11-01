@@ -1,6 +1,6 @@
 import type { SupabaseClient } from "@supabase/supabase-js"
 import { createServiceClient } from "@/lib/supabase/service"
-import { calculateRetailPrice, DEFAULT_MINIMUM_MARGIN_ZMW_MINOR } from "./pricing"
+import { calculateRetailPrice, DEFAULT_MINIMUM_MARGIN_ZMW_MINOR, isPricingSnapshotFresh } from "./pricing"
 import { BOZ_FX_BUFFER_ZMW, fetchBozFxRate } from "./boz-fx"
 
 type CatalogEntry = {
@@ -10,6 +10,8 @@ type CatalogEntry = {
   registration_wholesale_minor: number | null
   renewal_wholesale_minor: number | null
   pricing_source: string | null
+  wholesale_cost_verified_at: string | null
+  price_updated_at: string | null
 }
 
 export async function refreshBozFxAndReprice() {
@@ -39,16 +41,19 @@ export async function refreshBozFxAndReprice() {
 
   const { data, error } = await supabase
     .from("domain_tld_catalog")
-    .select("tld,provider_id,wholesale_currency,registration_wholesale_minor,renewal_wholesale_minor,pricing_source")
+    .select("tld,provider_id,wholesale_currency,registration_wholesale_minor,renewal_wholesale_minor,pricing_source,wholesale_cost_verified_at,price_updated_at")
   if (error) throw new Error("Could not load the TLD catalogue for repricing.")
 
   const rows = (data ?? []) as CatalogEntry[]
   const updated: string[] = []
   const skipped: string[] = []
   const now = new Date().toISOString()
+  const nowMs = Date.parse(now)
 
   for (const row of rows) {
-    if (row.wholesale_currency !== "USD" || row.registration_wholesale_minor === null || row.renewal_wholesale_minor === null || /sandbox|ote|test/i.test(row.pricing_source ?? "")) {
+    const costVerifiedAt = row.wholesale_cost_verified_at ?? row.price_updated_at
+    const costIsFresh = isPricingSnapshotFresh(costVerifiedAt, nowMs, 30 * 24 * 60 * 60 * 1000)
+    if (row.wholesale_currency !== "USD" || row.registration_wholesale_minor === null || row.renewal_wholesale_minor === null || !costIsFresh || /sandbox|ote|test/i.test(row.pricing_source ?? "")) {
       skipped.push(row.tld)
       continue
     }
@@ -79,6 +84,7 @@ export async function refreshBozFxAndReprice() {
       fx_rate_micros: fxRateMicros,
       margin_basis_points: 1000,
       minimum_margin_zmw_minor: DEFAULT_MINIMUM_MARGIN_ZMW_MINOR,
+      wholesale_cost_verified_at: costVerifiedAt,
       retail_currency: "ZMW",
       registration_retail_minor: registration.retailZmwMinor,
       renewal_retail_minor: renewal.retailZmwMinor,
