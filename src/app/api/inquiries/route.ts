@@ -22,13 +22,6 @@ const inquirySchema = z.object({
   honeypot: z.string().optional().default(""),
 })
 
-const attempts = new Map<string, { count: number; resetAt: number }>()
-const WINDOW_MS = 60_000
-const MAX_ATTEMPTS = 8
-
-function getClientKey(request: Request) {
-  return request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() || "unknown"
-}
 
 function isEmail(value: string) {
   return z.string().email().safeParse(value).success
@@ -40,20 +33,7 @@ function isPhone(value: string) {
 }
 
 export async function POST(request: Request) {
-  try {
-    const key = getClientKey(request)
-    const now = Date.now()
-    const current = attempts.get(key)
-
-    if (!current || current.resetAt <= now) {
-      attempts.set(key, { count: 1, resetAt: now + WINDOW_MS })
-    } else if (current.count >= MAX_ATTEMPTS) {
-      return NextResponse.json({ error: "Too many requests. Please try again shortly." }, { status: 429 })
-    } else {
-      current.count += 1
-    }
-
-    const body = await request.json()
+  try {    const body = await request.json()
     const parsed = inquirySchema.safeParse(body)
 
     if (!parsed.success || (!isEmail(parsed.data.contact) && !isPhone(parsed.data.contact))) {
