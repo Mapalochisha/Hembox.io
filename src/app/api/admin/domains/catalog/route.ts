@@ -76,6 +76,9 @@ export async function POST(request: Request) {
   }
 
   const value = parsed.data
+  if (value.enabled && /sandbox|ote|test/i.test(value.pricingSource)) {
+    return NextResponse.json({ error: "Sandbox or test wholesale evidence cannot be used to publish a customer-facing TLD price." }, { status: 400 })
+  }
   let registration: ReturnType<typeof calculateRetailPrice>
   let renewal: ReturnType<typeof calculateRetailPrice>
   try {
