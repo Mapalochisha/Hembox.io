@@ -27,6 +27,7 @@ test("accepts an object-shaped middle-rate table and rejects non-middle fallback
 
 test("rejects non-BoZ, derived, missing, malformed, future and stale observations", () => {
   assert.throws(() => parseBozFxPayload({ ...payload, bank: "other" }), /Bank of Zambia/)
+  assert.throws(() => parseBozFxPayload({ ...payload, stale: true }), /marks this observation stale/)
   assert.throws(() => parseBozFxPayload({ ...payload, rates: [{ ...payload.rates[1], derived: true }] }), /Derived/)
   assert.throws(() => parseBozFxPayload({ ...payload, rate_date: "not-a-date" }), /publication date/)
   assert.throws(() => parseBozFxPayload({ ...payload, rate_date: "2026-11-04" }, "2026-11-02T14:00:00.000Z"), /future/)
