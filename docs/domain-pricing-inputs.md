@@ -54,7 +54,7 @@ Rules:
 - Do **not** hand-edit retail prices; the server recalculates them from cost × FX × markup.
 - Prices older than 24 hours are suppressed automatically (`price_stale`), so someone must own the daily refresh. Suppression is the safe failure mode — it never shows a stale price.
 
-## 4. Markup policy (owner decision)
+## 4. Markup policy (approved launch policy)
 
 - HEMBOX launch markup is **10% (1,000 basis points)**.
 - Apply a **K25 minimum gross margin** (2,500 ZMW minor units) after FX conversion.
@@ -82,17 +82,17 @@ With `DOMAIN_PROVIDER_MODE=namesilo-sandbox`:
 5. Register a disposable test domain in the NameSilo OTE account (sandbox funds), then record it through the guarded manual fulfilment action with the real sandbox order reference and expiry date.
 6. Confirm the audit trail shows the registrant capture, the payment evidence source and the registration record.
 
-## 7. Approval record to complete before launch
+## 7. Approval record
 
-| Input | Value | Source / evidence | Observed at | Approved by |
-|---|---|---|---|---|
-| FX source | | | | |
-| FX rate | | | | |
-| Launch TLDs | | | | |
-| Markup per TLD | | | | |
-| Minimum margin floor | | | | |
-| Daily refresh owner | | | | |
-| Production cost re-verification | | | | |
+| Input | Approved value | Source / evidence | Status |
+|---|---|---|---|
+| FX source | Bank of Zambia USD/ZMW middle rate | BoZ official publication, machine-readable republication | Approved |
+| FX buffer | K1.00 per USD | HEMBOX pricing policy | Approved |
+| Markup | 10% / 1,000 bp | HEMBOX pricing policy | Approved |
+| Minimum margin floor | K25 / 2,500 minor units | HEMBOX pricing policy | Approved |
+| Daily refresh | Vercel Cron, 16:00 CAT | Automated scheduled endpoint | Configured |
+| Launch TLDs | Pending production wholesale verification | NameSilo production account | Pending |
+| Production cost verification | Required before enabling any TLD | NameSilo production account | Pending |
 
 ## 8. Still blocked outside this procedure
 
