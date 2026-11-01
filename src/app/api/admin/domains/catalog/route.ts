@@ -14,7 +14,8 @@ const catalogSchema = z.object({
   registrationWholesaleMinor: z.number().int().nonnegative().safe(),
   renewalWholesaleMinor: z.number().int().nonnegative().safe(),
   fxRateMicros: z.number().int().positive().safe(),
-  marginBasisPoints: z.number().int().min(0).max(100000),
+  marginBasisPoints: z.number().int().min(0).max(100000).default(1000),
+  minimumMarginZmwMinor: z.number().int().nonnegative().safe().default(2500),
   pricingSource: z.string().trim().min(1).max(160),
   enabled: z.boolean(),
 })
@@ -82,6 +83,7 @@ export async function POST(request: Request) {
       wholesaleMinor: value.registrationWholesaleMinor,
       fxRateMicros: value.fxRateMicros,
       marginBasisPoints: value.marginBasisPoints,
+      minimumMarginZmwMinor: value.minimumMarginZmwMinor,
     })
     renewal = calculateRetailPrice({
       wholesaleMinor: value.renewalWholesaleMinor,
@@ -107,6 +109,8 @@ export async function POST(request: Request) {
         renewal_wholesale_minor: value.renewalWholesaleMinor,
         wholesale_fx_rate_micros: value.fxRateMicros,
         margin_basis_points: value.marginBasisPoints,
+        minimum_margin_zmw_minor: value.minimumMarginZmwMinor,
+        minimum_margin_zmw_minor: value.minimumMarginZmwMinor,
         pricing_source: value.pricingSource,
         retail_currency: "ZMW",
         registration_retail_minor: registration.retailZmwMinor,
