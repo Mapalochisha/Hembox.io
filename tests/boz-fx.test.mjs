@@ -19,10 +19,17 @@ test("accepts only the directly published BoZ USD/ZMW middle rate", () => {
   assert.equal(BOZ_FX_BUFFER_ZMW, 1)
 })
 
+test("accepts an object-shaped middle-rate table and rejects non-middle fallback rates", () => {
+  const objectPayload = { bank: "Bank of Zambia", rate_date: "2026-11-02", rates: { USD: { middle: 20.15, derived: false } } }
+  assert.equal(parseBozFxPayload(objectPayload, "2026-11-02T14:00:00.000Z").midRate, 20.15)
+  assert.throws(() => parseBozFxPayload({ bank: "boz", rate_date: "2026-11-02", rate: 20.1, rate_type: "buy" }, "2026-11-02T14:00:00.000Z"), /middle rate/)
+})
+
 test("rejects non-BoZ, derived, missing, malformed, future and stale observations", () => {
   assert.throws(() => parseBozFxPayload({ ...payload, bank: "other" }), /Bank of Zambia/)
   assert.throws(() => parseBozFxPayload({ ...payload, rates: [{ ...payload.rates[1], derived: true }] }), /Derived/)
   assert.throws(() => parseBozFxPayload({ ...payload, rate_date: "not-a-date" }), /publication date/)
+  assert.throws(() => parseBozFxPayload({ ...payload, rate_date: "2026-11-04" }, "2026-11-02T14:00:00.000Z"), /future/)
   assert.throws(() => parseBozFxPayload({ ...payload, rates: [] }), /middle rate/)
   assert.throws(() => parseBozFxPayload({ ...payload, rate_date: "2026-10-20" }, "2026-11-02T14:00:00.000Z"), /five days/)
 })
