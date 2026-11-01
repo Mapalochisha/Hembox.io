@@ -109,7 +109,7 @@ jobs:
           );
           create table auth.users (
             id uuid primary key default gen_random_uuid(),
-            email text,
+            email text not null default 'test@example.test',
             raw_user_meta_data jsonb not null default '{}'::jsonb
           );
           create table public.profiles (
