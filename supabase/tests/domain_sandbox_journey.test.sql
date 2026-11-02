@@ -145,6 +145,6 @@ begin
     null;
   end;
 end;
-$$;
+$sandbox_test$;
 
 rollback;
