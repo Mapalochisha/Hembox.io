@@ -23,6 +23,7 @@ begin
     where id = 'bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb'
       and payment_mode = 'sandbox_simulated'
       and payment_status = 'not_started'
+      and test_payment_reference is null
       and provider_environment = 'test'
   ) then
     raise exception 'sandbox orders must default to test-only provider and payment modes';
