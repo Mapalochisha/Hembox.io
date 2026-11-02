@@ -1,6 +1,7 @@
 "use client"
 
 import { useCallback, useEffect, useState } from "react"
+import type { FormEvent } from "react"
 import Link from "next/link"
 import { ArrowLeft, ArrowRight, CheckCircle2, CircleAlert, Globe2, Loader2, ShieldCheck } from "lucide-react"
 import { Navbar } from "@/components/landing/navbar"
@@ -40,14 +41,14 @@ export default function DomainSandboxPage() {
     const response = await fetch("/api/domains/sandbox/orders", { cache: "no-store" })
     const body = await response.json()
     if (response.ok) setOrders(body.orders ?? [])
-    else if (response.status !== 401) setError(body.error ?? "Could not load sandbox orders.")
+    else setError(body.error ?? "Could not load sandbox orders.")
   }, [])
 
   useEffect(() => {
     loadOrders().finally(() => setLoading(false))
   }, [loadOrders])
 
-  async function searchDomain(event: React.FormEvent) {
+  async function searchDomain(event: FormEvent) {
     event.preventDefault()
     setError(""); setNotice(""); setAvailability("idle"); setChecking(true); setOrder(null)
     try {
