@@ -8,12 +8,17 @@ create table if not exists public.domain_sandbox_orders (
   domain_name text not null,
   term_years integer not null default 1 check (term_years between 1 and 10),
   status text not null default 'quoted'
-    check (status in ('quoted','registration_pending','registration_unknown','registered','registration_failed')),
+    check (status in ('quoted','payment_pending','registration_pending','registration_unknown','registered','registration_failed')),
   payment_mode text not null default 'sandbox_simulated'
     check (payment_mode = 'sandbox_simulated'),
   payment_status text not null default 'not_started'
-    check (payment_status in ('not_started','simulated')),
+    check (payment_status in ('not_started','submitted','simulated_approved','simulated_rejected')),
   registrant_details jsonb not null,
+  test_payment_reference text,
+  test_payment_submitted_at timestamptz,
+  test_payment_reviewed_at timestamptz,
+  test_payment_reviewed_by uuid references auth.users(id) on delete set null,
+  test_payment_admin_note text,
   provider_id text not null default 'namesilo',
   provider_environment text not null default 'test'
     check (provider_environment = 'test'),
@@ -31,7 +36,11 @@ create table if not exists public.domain_sandbox_orders (
   constraint domain_sandbox_orders_domain_check
     check (domain_name = lower(domain_name) and domain_name ~ '^[a-z0-9]([a-z0-9-]{0,61}[a-z0-9])?(\.[a-z0-9]([a-z0-9-]{0,61}[a-z0-9])?)+$'),
   constraint domain_sandbox_orders_idempotency_check
-    check (length(idempotency_key) between 8 and 120)
+    check (length(idempotency_key) between 8 and 120),
+  constraint domain_sandbox_orders_test_payment_reference_check
+    check ((payment_status = 'not_started' and test_payment_reference is null) or (payment_status <> 'not_started' and test_payment_reference is not null)),
+  constraint domain_sandbox_orders_test_payment_reference_length_check
+    check (test_payment_reference is null or length(test_payment_reference) between 8 and 100)
 );
 
 create unique index if not exists domain_sandbox_orders_customer_idempotency_idx
@@ -57,7 +66,7 @@ create table if not exists public.domain_sandbox_events (
   details jsonb not null default '{}'::jsonb,
   created_at timestamptz not null default now(),
   constraint domain_sandbox_events_type_check
-    check (event_type in ('order_created','payment_simulated','registration_started','registration_acknowledged','registration_reconciled','registration_failed','registration_ambiguous','domain_info_checked','renewal_applied','nameservers_changed','registration_retry_authorized'))
+    check (event_type in ('order_created','payment_simulated','payment_claim_submitted','payment_simulated_approved','payment_simulated_rejected','registration_started','registration_acknowledged','registration_reconciled','registration_failed','registration_ambiguous','domain_info_checked','renewal_applied','nameservers_changed','registration_retry_authorized'))
 );
 
 alter table public.domain_sandbox_orders enable row level security;
