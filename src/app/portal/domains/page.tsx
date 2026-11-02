@@ -435,6 +435,11 @@ export default function CustomerDomainsPage() {
                 <div><h2 className="text-xl font-black">{order.domain_name}</h2><p className="mt-1 text-xs text-slate-500">Order {order.id.slice(0, 8)} · Requested {new Date(order.created_at).toLocaleDateString()}</p></div>
                 <span className="w-fit rounded-full bg-slate-100 px-3 py-1.5 text-xs font-bold text-slate-700">{statusLabel(order.status)}</span>
               </div>
+              {order.status === "registered" ? (
+                <div className="mt-4">
+                  <Link href={`/portal/domains/${order.id}`} className="inline-flex h-10 items-center rounded-xl border border-teal/30 bg-teal/5 px-4 text-sm font-bold text-teal">Manage domain</Link>
+                </div>
+              ) : null}
               <div className="mt-5 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
                 <Metric label="Registration" value={money(order.registration_retail_minor, order.retail_currency)} />
                 <Metric label="Renewal" value={money(order.renewal_retail_minor, order.retail_currency)} />
