@@ -60,7 +60,9 @@ export async function POST(request: Request) {
     if (readError) throw readError
     if (!row || row.status !== "requested") return json({ error: "Open management request not found." }, 404)
 
-    const order = row.domain_orders as { id: string; domain_name: string; status: string; expires_at: string | null; nameservers: string[] | null }
+    const relatedOrder = Array.isArray(row.domain_orders) ? row.domain_orders[0] : row.domain_orders
+    const order = relatedOrder as unknown as { id: string; domain_name: string; status: string; expires_at: string | null; nameservers: string[] | null } | null
+    if (!order) return json({ error: "The linked domain order could not be loaded." }, 404)
     if (order.status !== "registered") return json({ error: "The linked domain is no longer in a manageable state." }, 409)
 
     if (parsed.data.action === "reject") {
