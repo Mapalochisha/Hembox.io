@@ -70,7 +70,7 @@ update public.domain_sandbox_orders
       test_payment_submitted_at = now()
   where id = 'bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb';
 
-do $
+do $sandbox_test$
 begin
   if not exists (
     select 1 from public.domain_sandbox_orders
@@ -84,7 +84,7 @@ begin
 end;
 $;
 
-do $
+do $sandbox_test$
 begin
   begin
     insert into public.domain_sandbox_orders (
