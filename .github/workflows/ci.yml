@@ -215,11 +215,11 @@ jobs:
       - name: Revoke direct API execution of the auth signup trigger
         run: psql -v ON_ERROR_STOP=1 -f supabase/migrations/20261101170000_harden_auth_signup_trigger.sql
 
-      - name: Apply Bank of Zambia FX pricing migration
-        run: psql -v ON_ERROR_STOP=1 -f supabase/migrations/20261102100000_boz_fx_daily_pricing.sql
-
       - name: Apply domain management requests migration
         run: psql -v ON_ERROR_STOP=1 -f supabase/migrations/20261102090000_domain_management_requests.sql
+
+      - name: Apply Bank of Zambia FX pricing migration
+        run: psql -v ON_ERROR_STOP=1 -f supabase/migrations/20261102100000_boz_fx_daily_pricing.sql
 
       - name: Apply isolated NameSilo OTE sandbox journey migration
         run: psql -v ON_ERROR_STOP=1 -f supabase/migrations/20261102130000_domain_sandbox_journey.sql
