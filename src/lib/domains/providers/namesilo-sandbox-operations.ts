@@ -221,8 +221,8 @@ export type NameSiloSandboxOperations = {
 
 /**
  * Explicit OTE-only operations tool. There is no production-host option in this
- * module. It is not wired to a customer-facing API route; callers must choose
- * the OTE confirmation token for every state-changing operation.
+ * module. Customer and administrator sandbox routes are the only application
+ * callers; every state-changing operation requires the OTE confirmation token.
  */
 export function createNameSiloSandboxOperations(dependencies: SandboxDependencies = {}): NameSiloSandboxOperations {
   const env = dependencies.env ?? process.env
