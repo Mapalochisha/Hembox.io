@@ -83,6 +83,27 @@ begin
     null;
   end;
 
+  begin
+    insert into public.domain_sandbox_orders (
+      customer_id, domain_name, term_years, status, payment_status,
+      test_payment_reference, test_payment_submitted_at,
+      registrant_details, idempotency_key
+    ) values (
+      'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa',
+      'sandbox-journey-check.com',
+      1,
+      'payment_pending',
+      'submitted',
+      'HEMBOX-TEST-REF-002',
+      now(),
+      '{}'::jsonb,
+      'sandbox-test-key-0004'
+    );
+    raise exception 'a second payment-pending order for the same domain must be rejected';
+  exception when unique_violation then
+    null;
+  end;
+
   update public.domain_sandbox_orders
     set status = 'registration_pending'
     where id = 'bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb';
