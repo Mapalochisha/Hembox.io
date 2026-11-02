@@ -51,7 +51,7 @@ create index if not exists domain_sandbox_orders_status_created_idx
   on public.domain_sandbox_orders(status, created_at desc);
 create unique index if not exists domain_sandbox_orders_active_domain_idx
   on public.domain_sandbox_orders(domain_name)
-  where status in ('registration_pending','registration_unknown','registered');
+  where status in ('payment_pending','registration_pending','registration_unknown','registered');
 
 drop trigger if exists set_domain_sandbox_orders_updated_at on public.domain_sandbox_orders;
 create trigger set_domain_sandbox_orders_updated_at
@@ -79,6 +79,6 @@ grant all on public.domain_sandbox_events to service_role;
 comment on table public.domain_sandbox_orders is
   'Isolated NameSilo OTE test orders. Not production orders and never linked to billing invoices or real payment claims. Registrant details are server-only.';
 comment on column public.domain_sandbox_orders.payment_mode is
-  'Always sandbox_simulated. This is an explicit test acknowledgement, not a payment or payment claim.';
+  'Always sandbox_simulated. This is a zero-value test reference for admin review, not a real payment or billing claim.';
 comment on column public.domain_sandbox_orders.provider_environment is
   'Always test. The application must reject all writes unless NameSilo OTE mode is configured.';
