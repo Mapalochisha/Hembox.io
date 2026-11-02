@@ -17,7 +17,7 @@ const schema = z.object({
     lastName: z.string().trim().min(1).max(32),
     organisationName: z.string().trim().max(64).optional(),
     email: z.string().trim().email().max(128),
-    phone: z.string().trim().transform((value) => value.replace(/[\\s()-]/g, "")).pipe(z.string().regex(/^\+260[0-9]{9}$/)),
+    phone: z.string().trim().transform((value) => value.replace(/[\s()-]/g, "")).pipe(z.string().regex(/^\+260[0-9]{9}$/)),
     addressLine1: z.string().trim().min(3).max(128),
     addressLine2: z.string().trim().max(128).optional(),
     city: z.string().trim().min(2).max(64),
