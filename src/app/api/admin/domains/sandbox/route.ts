@@ -28,11 +28,11 @@ function authError(status: 401 | 403 | 503) {
 type SandboxRegistrant = {
   firstName: string
   lastName: string
-  organisationName?: string | null
+  organisationName?: string
   email: string
   phone: string
   addressLine1: string
-  addressLine2?: string | null
+  addressLine2?: string
   city: string
   region: string
   postalCode: string
