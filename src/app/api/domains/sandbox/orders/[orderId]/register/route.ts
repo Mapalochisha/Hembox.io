@@ -51,7 +51,14 @@ export async function POST(request: Request, context: { params: { orderId: strin
       { order_id: order.id, actor_user_id: user.id, event_type: "payment_simulated", details: { payment_mode: "sandbox_simulated", amount_minor: 0, real_payment: false } },
       { order_id: order.id, actor_user_id: user.id, event_type: "registration_started", details: { provider: "namesilo", environment: "test", domain: order.domain_name, term_years: order.term_years } },
     ])
-    if (eventError) throw eventError
+    if (eventError) {
+      await db.from("domain_sandbox_orders").update({
+        status: "quoted", payment_status: "not_started",
+        last_provider_check_at: new Date().toISOString(),
+        last_provider_message: "The sandbox audit event could not be saved; registrar registration was not attempted.",
+      }).eq("id", order.id).eq("status", "registration_pending")
+      throw eventError
+    }
 
     const registrant = order.registrant_details
     const outcome = await operations.registerDomain({
