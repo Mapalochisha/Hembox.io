@@ -376,7 +376,7 @@ export function createNameSiloSandboxOperations(dependencies: SandboxDependencie
     if (input.contactId?.trim()) parameters.contact_id = input.contactId.trim()
     if (input.registrant) {
       const registrant = input.registrant
-      const phone = registrant.phone.replace(/^\\+260/, "")
+      const phone = registrant.phone.replace(/^\+260/, "")
       if (registrant.countryCode !== "ZM" || !/^[0-9]{9}$/.test(phone)) {
         throw new Error("NameSilo OTE registrant phone must be a Zambian national number without the +260 country prefix.")
       }
