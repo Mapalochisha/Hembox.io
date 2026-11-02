@@ -63,7 +63,28 @@ begin
 end;
 $$;
 
-do $$
+update public.domain_sandbox_orders
+  set status = 'payment_pending',
+      payment_status = 'submitted',
+      test_payment_reference = 'HEMBOX-TEST-REF-001',
+      test_payment_submitted_at = now()
+  where id = 'bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb';
+
+do $
+begin
+  if not exists (
+    select 1 from public.domain_sandbox_orders
+    where id = 'bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb'
+      and status = 'payment_pending'
+      and payment_status = 'submitted'
+      and test_payment_reference = 'HEMBOX-TEST-REF-001'
+  ) then
+    raise exception 'sandbox payment submission must be recorded without a real payment';
+  end if;
+end;
+$;
+
+do $
 begin
   begin
     insert into public.domain_sandbox_orders (
