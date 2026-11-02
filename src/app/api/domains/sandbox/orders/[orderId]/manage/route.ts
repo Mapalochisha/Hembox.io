@@ -8,6 +8,7 @@ import { normalizeNameSiloSandboxNameservers } from "@/lib/domains/providers/nam
 
 export const dynamic = "force-dynamic"
 export const runtime = "nodejs"
+export const maxDuration = 60
 const json = (body: unknown, status = 200) => NextResponse.json(body, { status, headers: { "Cache-Control": "no-store" } })
 const schema = z.discriminatedUnion("action", [
   z.object({ action: z.literal("renew"), years: z.number().int().min(1).max(10) }).strict(),
