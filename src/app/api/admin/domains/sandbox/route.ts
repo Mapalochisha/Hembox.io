@@ -122,7 +122,15 @@ export async function POST(request: Request) {
         order_id: order.id, actor_user_id: auth.user.id, event_type: "payment_simulated_rejected",
         details: { test_reference: order.test_payment_reference, amount_minor: 0, real_payment: false, admin_note: adminNote || null },
       })
-      if (eventError) throw eventError
+      if (eventError) {
+        await db.from("domain_sandbox_orders").update({
+          status: "payment_pending", payment_status: "submitted",
+          test_payment_reviewed_at: null, test_payment_reviewed_by: null,
+          test_payment_admin_note: null,
+          last_provider_message: "The rejection audit could not be saved. The test payment remains awaiting review.",
+        }).eq("id", order.id).eq("status", "quoted").eq("payment_status", "simulated_rejected")
+        throw eventError
+      }
       return json({ success: true, order: updated, message: "Sandbox payment reference rejected. The customer can submit another test reference." })
     }
 
@@ -229,10 +237,23 @@ export async function POST(request: Request) {
         provider_code: null, provider_order_amount: null,
         last_provider_check_at: new Date().toISOString(),
         last_provider_message: "Administrator confirmed the domain is not active in OTE and currently available; a new sandbox payment reference may be submitted.",
-      }).eq("id", order.id)
+      }).eq("id", order.id).eq("status", order.status)
       if (resetError) throw resetError
       const { error: eventError } = await db.from("domain_sandbox_events").insert({ order_id: order.id, actor_user_id: auth.user.id, event_type: "registration_retry_authorized", details: { provider_code: info.providerCode, availability: availability[0]?.availability, admin_confirmed: true } })
-      if (eventError) throw eventError
+      if (eventError) {
+        await db.from("domain_sandbox_orders").update({
+          status: order.status, payment_status: order.payment_status,
+          test_payment_reference: order.test_payment_reference,
+          test_payment_submitted_at: order.test_payment_submitted_at,
+          test_payment_reviewed_at: order.test_payment_reviewed_at,
+          test_payment_reviewed_by: order.test_payment_reviewed_by,
+          test_payment_admin_note: order.test_payment_admin_note,
+          provider_code: order.provider_code,
+          provider_order_amount: order.provider_order_amount,
+          last_provider_message: order.last_provider_message,
+        }).eq("id", order.id).eq("status", "quoted").eq("payment_status", "not_started")
+        throw eventError
+      }
       return json({ reset: true, orderId: order.id, message: "OTE confirms no active registration and fresh availability. The customer may submit a new sandbox payment reference." })
     }
 
