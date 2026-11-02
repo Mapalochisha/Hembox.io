@@ -82,7 +82,7 @@ begin
     raise exception 'sandbox payment submission must be recorded without a real payment';
   end if;
 end;
-$;
+$sandbox_test$;
 
 do $sandbox_test$
 begin
