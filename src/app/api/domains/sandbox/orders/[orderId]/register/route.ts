@@ -38,18 +38,20 @@ export async function POST(request: Request, context: { params: { orderId: strin
     }
 
     const startedAt = new Date().toISOString()
-    const { error: lockError } = await db.from("domain_sandbox_orders").update({
+    const { data: lockedOrder, error: lockError } = await db.from("domain_sandbox_orders").update({
       status: "registration_pending",
       payment_status: "simulated",
       last_provider_check_at: startedAt,
       last_provider_message: "Sandbox payment acknowledged. No real funds were collected.",
-    }).eq("id", order.id).eq("status", "quoted")
+    }).eq("id", order.id).eq("status", "quoted").select("id").maybeSingle()
     if (lockError) throw lockError
+    if (!lockedOrder) return json({ error: "Another request has already started registration for this order. Refresh the order status before continuing." }, 409)
 
-    await db.from("domain_sandbox_events").insert([
+    const { error: eventError } = await db.from("domain_sandbox_events").insert([
       { order_id: order.id, actor_user_id: user.id, event_type: "payment_simulated", details: { payment_mode: "sandbox_simulated", amount_minor: 0, real_payment: false } },
       { order_id: order.id, actor_user_id: user.id, event_type: "registration_started", details: { provider: "namesilo", environment: "test", domain: order.domain_name, term_years: order.term_years } },
     ])
+    if (eventError) throw eventError
 
     const registrant = order.registrant_details
     const outcome = await operations.registerDomain({
