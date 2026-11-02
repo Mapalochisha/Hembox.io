@@ -8,6 +8,47 @@
 > **Pull request:** https://github.com/Mapalochisha/Hembox.io/pull/2  
 > **Related technical roadmap:** [domain-reselling-roadmap.md](./domain-reselling-roadmap.md)
 
+## Current execution target — Full self-service customer + admin journey (2026-11-02)
+
+The owner has authorized completion of the domain product as a full end-to-end experience, not another enquiry-only release. The acceptance target is a customer who can:
+
+1. Discover/search a domain from the public HEMBOX TECH website and receive truthful availability and ZMW pricing.
+2. Review the exact domain, registration term, renewal price, registrant identity/contact details, consent and total before placing the order.
+3. Place an idempotent order and receive a unified billing invoice.
+4. Pay using the currently supported manual payment methods, submit a claim/reference, and see review/settlement status.
+5. Have payment independently verified by an admin before fulfilment is permitted.
+6. Have the domain registered through NameSilo OTE during this release, with registrar response/reference, registration/expiry dates and audit trail persisted.
+7. See domain ownership/registration details and renewal date in the portal, and manage only provider capabilities actually implemented and verified.
+8. Reach support and see actionable states for pending, failed, ambiguous, expired, renewal-due and completed orders.
+
+The corresponding admin journey must include: TLD catalogue and price controls; provider health/account/pricing diagnostics; order/payment queues; payment verification and reconciliation; registrant-data review; OTE registration with strict confirmation and idempotency; ambiguous-outcome reconciliation without blind retry; registration/expiry recording; customer support/status visibility; audit history; and safe failure/recovery operations.
+
+### Release and safety boundaries
+- Work on `feature/domain-self-service-ote-journey`; preserve main and the existing Vercel deployment policy. No preview deployments or deployment-policy changes.
+- Keep NameSilo OTE isolated from live credentials and endpoints. No live registrar registration, live payment gateway, or real customer funds.
+- The production Supabase database is currently the only database. Treat it as live: additive, backwards-compatible migrations only; no destructive resets, test registrations/orders, or synthetic customer payment records in production.
+- OTE registrations are real mutations within NameSilo's sandbox account and may persist. Do not register any test domain until the owner explicitly approves the exact disposable domain and the OTE key is securely available to the executing environment.
+- No customer-facing TLD may be enabled until its registration AND renewal wholesale costs have been verified for the intended environment and saved with the existing pricing provenance/freshness fields. Do not invent catalogue prices.
+- Existing manual billing remains the payment path. A submitted receipt/reference is not settlement; fulfilment must continue to require the existing server-verified paid-invoice evidence.
+- DNS/nameserver, transfer, privacy and renewal actions must be capability-gated. If NameSilo OTE does not support a capability, show its actual unavailable/assisted state rather than simulate success.
+- Report acceptance by evidence: tests, CI, production deployment state, OTE test result (when safely approved), and an explicit list of any externally blocked release gates. Do not call the full journey complete while a critical path is blocked.
+
+### Execution workstreams and acceptance checklist
+- [ ] W1 — Reconcile public storefront, domain search, pricing and account entry points; eliminate enquiry-only dead ends for supported TLDs.
+- [ ] W2 — Build a complete review/confirmation checkout, terms, registrant validation/consent, durable order and invoice.
+- [ ] W3 — Complete manual payment instructions, claim submission, admin verification, allocation and customer status/reconciliation.
+- [ ] W4 — Integrate the existing OTE registration operation into the paid-order fulfilment service with server-side authorization, provider idempotency, explicit OTE guard, timeout/ambiguous reconciliation and audit.
+- [ ] W5 — Complete customer domain portfolio/detail views: registrar status, dates, renewal information, nameserver/DNS controls where supported, and support pathways.
+- [ ] W6 — Complete admin operational surfaces: TLD pricing, provider diagnostics, orders, payment review, registration fulfilment/recovery, domain details, reconciliation and audit.
+- [ ] W7 — Add integration/contract/security tests and authenticated customer/admin journey tests; ensure production database changes are additive and reviewed.
+- [ ] W8 — Verify CI green and production deployment READY without changing Vercel policy; execute the explicitly approved OTE test and document its permanent sandbox side effect.
+- [ ] W9 — Update this plan and handover with exact completion evidence and remaining external/live-release gates.
+
+### Baseline production state checked 2026-11-02
+Production Supabase currently has 0 TLD catalogue rows, 0 enabled TLDs, 0 domain price snapshots, 0 domain orders, 0 saved quotes and 0 registrant records. FX snapshot exists, but that alone does not establish registrar wholesale pricing. The public page is enquiry-led; `POST /api/domains/quotes` explicitly rejects any provider whose environment is not `live`, returns `checkoutEnabled: false` and `registrationEnabled: false`; the existing OTE registration operations are not wired to the customer order workflow. No production data has been changed during this assessment.
+
+---
+
 ## 1. Product objective
 
 Build a reliable, self-service domain-reselling product within Hembox Tech. Customers must be able to discover domains, understand the registration and renewal costs, pay securely, register domains, and manage supported domain settings without being required to buy Hembox Tech web-development services.
