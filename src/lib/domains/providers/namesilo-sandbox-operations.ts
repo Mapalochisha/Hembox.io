@@ -382,11 +382,11 @@ export function createNameSiloSandboxOperations(dependencies: SandboxDependencie
       }
       parameters.fn = registrant.firstName.trim()
       parameters.ln = registrant.lastName.trim()
-      parameters.cp = registrant.organisationName?.trim() ?? ""
+      if (registrant.organisationName?.trim()) parameters.cp = registrant.organisationName.trim()
       parameters.em = registrant.email.trim()
       parameters.ph = phone
       parameters.ad = registrant.addressLine1.trim()
-      parameters.ad2 = registrant.addressLine2?.trim() ?? ""
+      if (registrant.addressLine2?.trim()) parameters.ad2 = registrant.addressLine2.trim()
       parameters.cy = registrant.city.trim()
       parameters.st = registrant.region.trim()
       parameters.zp = registrant.postalCode.trim()
