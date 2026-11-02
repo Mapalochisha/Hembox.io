@@ -10,7 +10,7 @@ type Order = {
   id: string; domain_name: string; term_years: number; status: string
   payment_mode: string; payment_status: string; test_payment_reference: string | null
   test_payment_submitted_at: string | null; test_payment_reviewed_at: string | null
-  test_payment_admin_note: string | null; registered_at: string | null
+  registered_at: string | null
   expires_at: string | null; nameservers: string[]; last_provider_message: string | null
 }
 const emptyRegistrant = {
