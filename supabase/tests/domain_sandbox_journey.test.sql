@@ -47,10 +47,16 @@ begin
      or has_table_privilege('authenticated','public.domain_sandbox_events','SELECT') then
     raise exception 'sandbox event ledger must not be directly readable by API roles';
   end if;
-  if not has_table_privilege('service_role','public.domain_sandbox_orders','SELECT,INSERT,UPDATE,DELETE') then
+  if not (has_table_privilege('service_role','public.domain_sandbox_orders','SELECT')
+          and has_table_privilege('service_role','public.domain_sandbox_orders','INSERT')
+          and has_table_privilege('service_role','public.domain_sandbox_orders','UPDATE')
+          and has_table_privilege('service_role','public.domain_sandbox_orders','DELETE')) then
     raise exception 'service_role must manage sandbox orders';
   end if;
-  if not has_table_privilege('service_role','public.domain_sandbox_events','SELECT,INSERT,UPDATE,DELETE') then
+  if not (has_table_privilege('service_role','public.domain_sandbox_events','SELECT')
+          and has_table_privilege('service_role','public.domain_sandbox_events','INSERT')
+          and has_table_privilege('service_role','public.domain_sandbox_events','UPDATE')
+          and has_table_privilege('service_role','public.domain_sandbox_events','DELETE')) then
     raise exception 'service_role must manage sandbox events';
   end if;
 end;
