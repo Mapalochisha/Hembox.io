@@ -52,7 +52,7 @@ export async function POST(request: Request) {
     const operations = createNameSiloSandboxOperations()
     const info = await operations.getDomainInfo(order.domain_name)
     if (body.action === "reset_if_unregistered") {
-      if (!["registration_pending", "registration_unknown"].includes(order.status)) return json({ error: "Only pending or ambiguous registrations can be reset." }, 409)
+      if (!["registration_pending", "registration_unknown", "registration_failed"].includes(order.status)) return json({ error: "Only pending, ambiguous or failed registrations can be reset." }, 409)
       const availability = await operations.checkAvailability([order.domain_name])
       if (info.state !== "unknown" || info.providerCode !== 200 || availability[0]?.availability !== "available") {
         return json({ error: "OTE has not independently confirmed that registration did not occur. The order remains held; do not retry." }, 409)
