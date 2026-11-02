@@ -4,6 +4,7 @@ import { useCallback, useEffect, useState } from "react"
 import { useParams } from "next/navigation"
 import Link from "next/link"
 import { ArrowLeft, Loader2, RefreshCw } from "lucide-react"
+import { PortalShell } from "@/components/portal/portal-shell"
 
 type Order = { id: string; domain_name: string; status: string; expires_at: string | null; nameservers: string[] | null; nameservers_updated_at: string | null }
 type ManagementRequest = { id: string; request_type: string; requested_years: number | null; requested_nameservers: string[] | null; status: string; customer_note: string | null; admin_note: string | null; created_at: string; applied_at: string | null }
@@ -54,7 +55,7 @@ export default function ManageDomainPage() {
     finally{setBusy(false)}
   }
 
-  return <main className="mx-auto max-w-5xl px-5 py-10 sm:px-8">
+  return <PortalShell title="Manage domain"><main className="mx-auto max-w-5xl px-0 pb-8">
     <Link href="/portal/domains" className="inline-flex items-center gap-2 text-sm font-semibold text-slate-500 hover:text-teal"><ArrowLeft className="h-4 w-4"/>Back to domains</Link>
     <div className="mt-6 flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between"><div><p className="text-xs font-bold uppercase tracking-wider text-teal">Domain ownership</p><h1 className="mt-1 text-3xl font-black text-navy">Manage domain</h1><p className="mt-2 text-sm text-slate-500">Renewal and nameserver changes are reviewed and recorded by HEMBOX.</p></div><button onClick={()=>{setLoading(true);load().catch(e=>setError(e instanceof Error?e.message:"Refresh failed.")).finally(()=>setLoading(false))}} className="inline-flex h-10 items-center gap-2 rounded-xl border border-slate-200 px-3 text-sm font-bold"><RefreshCw className="h-4 w-4"/>Refresh</button></div>
     {error?<p role="alert" className="mt-5 rounded-xl bg-rose-50 p-3 text-sm text-rose-800">{error}</p>:null}{notice?<p role="status" className="mt-5 rounded-xl bg-teal/10 p-3 text-sm text-slate-800">{notice}</p>:null}
@@ -63,5 +64,5 @@ export default function ManageDomainPage() {
     <label className="mt-5 block rounded-2xl border border-slate-200 bg-white p-5 text-sm font-semibold">Note for HEMBOX (optional)<textarea value={note} onChange={e=>setNote(e.target.value)} rows={3} maxLength={500} className="mt-2 w-full rounded-xl border border-slate-200 p-3 font-normal" placeholder="Add any instructions or context…"/></label>
     <section className="mt-6 rounded-2xl border border-slate-200 bg-white p-5"><h2 className="font-black text-navy">Request history</h2>{requests.length===0?<p className="mt-3 text-sm text-slate-500">No management requests yet.</p>:<div className="mt-3 divide-y divide-slate-100">{requests.map(item=><div key={item.id} className="py-3"><div className="flex flex-wrap items-center justify-between gap-2"><p className="font-bold capitalize">{item.request_type}</p><span className="rounded-full bg-slate-100 px-2 py-1 text-xs font-bold">{item.status}</span></div><p className="mt-1 text-xs text-slate-500">{new Date(item.created_at).toLocaleString()} · {item.request_type==="renewal"?`${item.requested_years} year(s)`:item.requested_nameservers?.join(", ")}</p>{item.admin_note?<p className="mt-1 text-sm text-slate-600">{item.admin_note}</p>:null}</div>)}</div>}</section>
     </>:null}
-  </main>
+  </main></PortalShell>
 }
