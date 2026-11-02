@@ -7,6 +7,7 @@ import { createNameSiloSandboxOperations } from "@/lib/domains/providers/namesil
 
 export const dynamic = "force-dynamic"
 export const runtime = "nodejs"
+export const maxDuration = 60
 const json = (body: unknown, status = 200) => NextResponse.json(body, { status, headers: { "Cache-Control": "no-store" } })
 const schema = z.object({
   action: z.enum(["apply", "reject"]),
