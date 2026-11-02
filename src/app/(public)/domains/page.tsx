@@ -172,6 +172,9 @@ export default function DomainsPage() {
             <p className="mx-auto mt-6 max-w-2xl text-base leading-7 text-slate-600 sm:text-lg sm:leading-8">
               Find a home for your brand. Tell us the domain you want and we’ll check availability and confirm registration and renewal pricing before you commit.
             </p>
+            <Link href="/domains/sandbox" className="mt-5 inline-flex items-center gap-2 rounded-xl border border-teal/30 bg-teal/5 px-4 py-2.5 text-sm font-bold text-teal transition hover:bg-teal/10">
+              Try the NameSilo sandbox journey <ArrowRight className="h-4 w-4" />
+            </Link>
           </div>
 
           <div className="mx-auto mt-10 max-w-3xl rounded-[28px] border border-slate-200 bg-white p-3 shadow-[0_24px_80px_-32px_rgba(15,23,42,0.25)] sm:mt-12 sm:rounded-[32px] sm:p-5">
