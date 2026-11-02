@@ -465,3 +465,79 @@ test("account balance classifies an unexpected string without exposing its conte
   assert.doesNotMatch(JSON.stringify(balance), /sandbox balance is not set/)
 })
 
+
+test("registration sends the customer's consented Zambian registrant details to OTE", async () => {
+  const requests = []
+  const api = createNameSiloSandboxOperations({
+    env: env(),
+    fetchImpl: async (url) => {
+      const parsed = new URL(String(url))
+      requests.push(parsed)
+      if (parsed.pathname.endsWith("/checkRegisterAvailability")) {
+        return response({ reply: { code: 300, available: { domain: "owner-test.com" } } })
+      }
+      if (parsed.pathname.endsWith("/registerDomain")) {
+        return response({ reply: { code: 300, detail: "success", domain: "owner-test.com", order_amount: "8.00" } })
+      }
+      throw new Error("Unexpected operation")
+    },
+  })
+
+  const result = await api.registerDomain({
+    confirmSandboxOnly: "OTE_ONLY",
+    domain: "owner-test.com",
+    years: 2,
+    privateWhois: true,
+    autoRenew: false,
+    registrant: {
+      firstName: "Test",
+      lastName: "Owner",
+      email: "owner@example.test",
+      phone: "+260971234567",
+      addressLine1: "1 Test Street",
+      city: "Lusaka",
+      region: "Lusaka",
+      postalCode: "10101",
+      countryCode: "ZM",
+    },
+  })
+
+  assert.equal(result.state, "acknowledged")
+  const registration = requests[1]
+  assert.equal(registration.searchParams.get("fn"), "Test")
+  assert.equal(registration.searchParams.get("ln"), "Owner")
+  assert.equal(registration.searchParams.get("em"), "owner@example.test")
+  assert.equal(registration.searchParams.get("ph"), "971234567")
+  assert.equal(registration.searchParams.get("ct"), "ZM")
+  assert.equal(registration.searchParams.get("ad"), "1 Test Street")
+  assert.equal(registration.searchParams.get("years"), "2")
+  assert.equal(registration.searchParams.get("private"), "1")
+  assert.equal(registration.searchParams.get("auto_renew"), "0")
+  assert.equal(registration.searchParams.has("key"), true)
+})
+
+test("registration refuses non-Zambian or malformed E.164 phone data before contacting OTE", async () => {
+  let registerCalls = 0
+  const api = createNameSiloSandboxOperations({
+    env: env(),
+    fetchImpl: async (url) => {
+      const parsed = new URL(String(url))
+      if (parsed.pathname.endsWith("/checkRegisterAvailability")) {
+        return response({ reply: { code: 300, available: { domain: "owner-test.com" } } })
+      }
+      registerCalls++
+      return response({ reply: { code: 300, domain: "owner-test.com" } })
+    },
+  })
+  await assert.rejects(api.registerDomain({
+    confirmSandboxOnly: "OTE_ONLY",
+    domain: "owner-test.com",
+    years: 1,
+    registrant: {
+      firstName: "Test", lastName: "Owner", email: "owner@example.test",
+      phone: "+12025550123", addressLine1: "1 Test Street", city: "Lusaka",
+      region: "Lusaka", postalCode: "10101", countryCode: "US",
+    },
+  }), /Zambian national number/)
+  assert.equal(registerCalls, 0)
+})
