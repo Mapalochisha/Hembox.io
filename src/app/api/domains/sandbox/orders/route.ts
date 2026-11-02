@@ -49,7 +49,7 @@ export async function GET() {
   try {
     const db = createServiceClient() as unknown as SupabaseClient
     const { data, error } = await db.from("domain_sandbox_orders")
-      .select("id,domain_name,term_years,status,payment_mode,payment_status,provider_environment,registered_at,expires_at,nameservers,last_provider_check_at,last_provider_message,created_at")
+      .select("id,domain_name,term_years,status,payment_mode,payment_status,test_payment_reference,test_payment_submitted_at,test_payment_reviewed_at,test_payment_admin_note,provider_environment,registered_at,expires_at,nameservers,last_provider_check_at,last_provider_message,created_at")
       .eq("customer_id", user.id).order("created_at", { ascending: false }).limit(50)
     if (error) throw error
     return json({ orders: data ?? [] })
@@ -117,13 +117,17 @@ export async function POST(request: Request) {
       idempotency_key: parsed.data.idempotencyKey,
       last_provider_check_at: new Date().toISOString(),
       last_provider_message: availability[0].message,
-    }).select("id,domain_name,term_years,status,payment_mode,payment_status,provider_environment,created_at").single()
+    }).select("id,domain_name,term_years,status,payment_mode,payment_status,test_payment_reference,test_payment_submitted_at,provider_environment,created_at").single()
     if (error) throw error
 
-    await db.from("domain_sandbox_events").insert({
+    const { error: eventError } = await db.from("domain_sandbox_events").insert({
       order_id: data.id, actor_user_id: user.id, event_type: "order_created",
       details: { domain_name: domainName, term_years: parsed.data.termYears, provider: "namesilo", environment: "test", availability: "available_at_check" },
     })
+    if (eventError) {
+      await db.from("domain_sandbox_orders").delete().eq("id", data.id).eq("customer_id", user.id)
+      throw eventError
+    }
     return json({ order: data, replay: false }, 201)
   } catch (error) {
     console.error("Sandbox domain order creation failed:", error instanceof Error ? error.name : "unknown")
