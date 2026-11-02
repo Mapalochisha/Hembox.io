@@ -82,6 +82,10 @@ begin
     null;
   end;
 
+  update public.domain_sandbox_orders
+    set status = 'registration_pending'
+    where id = 'bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb';
+
   begin
     insert into public.domain_sandbox_orders (
       customer_id, domain_name, term_years, status, registrant_details, idempotency_key
