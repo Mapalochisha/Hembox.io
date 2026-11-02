@@ -57,7 +57,7 @@ create table if not exists public.domain_sandbox_events (
   details jsonb not null default '{}'::jsonb,
   created_at timestamptz not null default now(),
   constraint domain_sandbox_events_type_check
-    check (event_type in ('order_created','payment_simulated','registration_started','registration_acknowledged','registration_reconciled','registration_failed','registration_ambiguous','domain_info_checked','renewal_applied','nameservers_changed'))
+    check (event_type in ('order_created','payment_simulated','registration_started','registration_acknowledged','registration_reconciled','registration_failed','registration_ambiguous','domain_info_checked','renewal_applied','nameservers_changed','registration_retry_authorized'))
 );
 
 alter table public.domain_sandbox_orders enable row level security;
