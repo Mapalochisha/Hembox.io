@@ -69,7 +69,7 @@ export async function POST(request: Request, context: { params: { orderId: strin
       .eq("order_id", order.id).eq("customer_id", user.id).in("status", ["requested","processing","unknown"]).eq("request_type", requestType)
     const { data: duplicate, error: duplicateError } = parsed.data.action === "renew"
       ? await duplicateQuery.eq("requested_years", parsed.data.years).maybeSingle()
-      : await duplicateQuery.contains("requested_nameservers", requestedNameservers).maybeSingle()
+      : await duplicateQuery.contains("requested_nameservers", requestedNameservers ?? []).maybeSingle()
     if (duplicateError) throw duplicateError
     if (duplicate) return json({ request: duplicate, message: "An identical request is already awaiting review or reconciliation." }, 200)
     const payload = parsed.data.action === "renew"
