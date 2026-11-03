@@ -19,7 +19,8 @@ export default function SandboxDomainManagePage() {
   const [loading, setLoading] = useState(true)
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState("")
-  const [notice, setNotice] = useState("")\n  const [requests, setRequests] = useState<ManagementRequest[]>([])
+  const [notice, setNotice] = useState("")
+  const [requests, setRequests] = useState<ManagementRequest[]>([])
 
   const refresh = useCallback(async () => {
     const response = await fetch(`/api/domains/sandbox/orders/${params.orderId}/manage`, { cache: "no-store" })

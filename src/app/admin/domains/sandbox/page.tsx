@@ -16,7 +16,8 @@ type Action = "approve_payment" | "reject_payment" | "reconcile" | "reset_if_unr
 type ManagementRequest = { id:string; order_id:string; customer_id:string; request_type:"renewal"|"nameservers"; requested_years:number|null; requested_nameservers:string[]|null; customer_note:string|null; status:string; admin_note:string|null; created_at:string; domain_sandbox_orders:{domain_name:string} }
 
 export default function AdminDomainSandboxPage() {
-  const [orders,setOrders]=useState<SandboxOrder[]>([])\n  const [management,setManagement]=useState<ManagementRequest[]>([])
+  const [orders,setOrders]=useState<SandboxOrder[]>([])
+  const [management,setManagement]=useState<ManagementRequest[]>([])
   const [loading,setLoading]=useState(true)
   const [busy,setBusy]=useState("")
   const [notes,setNotes]=useState<Record<string,string>>({})
@@ -26,7 +27,11 @@ export default function AdminDomainSandboxPage() {
     const response=await fetch("/api/admin/domains/sandbox",{cache:"no-store"})
     const body=await response.json()
     if(!response.ok)throw new Error(body.error??"Sandbox queue unavailable.")
-    setOrders(body.orders??[])\n    const queueResponse=await fetch("/api/admin/domains/sandbox/management",{cache:"no-store"})\n    const queueBody=await queueResponse.json()\n    if(!queueResponse.ok)throw new Error(queueBody.error??"Management queue unavailable.")\n    setManagement(queueBody.requests??[])
+    setOrders(body.orders??[])
+    const queueResponse=await fetch("/api/admin/domains/sandbox/management",{cache:"no-store"})
+    const queueBody=await queueResponse.json()
+    if(!queueResponse.ok)throw new Error(queueBody.error??"Management queue unavailable.")
+    setManagement(queueBody.requests??[])
   },[])
   useEffect(()=>{load().catch(e=>setError(e instanceof Error?e.message:"Could not load queue.")).finally(()=>setLoading(false))},[load])
 
