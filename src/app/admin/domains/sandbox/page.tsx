@@ -13,9 +13,10 @@ type SandboxOrder = {
   last_provider_check_at: string | null; last_provider_message: string | null; created_at: string
 }
 type Action = "approve_payment" | "reject_payment" | "reconcile" | "reset_if_unregistered"
+type ManagementRequest = { id:string; order_id:string; customer_id:string; request_type:"renewal"|"nameservers"; requested_years:number|null; requested_nameservers:string[]|null; customer_note:string|null; status:string; admin_note:string|null; created_at:string; domain_sandbox_orders:{domain_name:string} }
 
 export default function AdminDomainSandboxPage() {
-  const [orders,setOrders]=useState<SandboxOrder[]>([])
+  const [orders,setOrders]=useState<SandboxOrder[]>([])\n  const [management,setManagement]=useState<ManagementRequest[]>([])
   const [loading,setLoading]=useState(true)
   const [busy,setBusy]=useState("")
   const [notes,setNotes]=useState<Record<string,string>>({})
@@ -25,7 +26,7 @@ export default function AdminDomainSandboxPage() {
     const response=await fetch("/api/admin/domains/sandbox",{cache:"no-store"})
     const body=await response.json()
     if(!response.ok)throw new Error(body.error??"Sandbox queue unavailable.")
-    setOrders(body.orders??[])
+    setOrders(body.orders??[])\n    const queueResponse=await fetch("/api/admin/domains/sandbox/management",{cache:"no-store"})\n    const queueBody=await queueResponse.json()\n    if(!queueResponse.ok)throw new Error(queueBody.error??"Management queue unavailable.")\n    setManagement(queueBody.requests??[])
   },[])
   useEffect(()=>{load().catch(e=>setError(e instanceof Error?e.message:"Could not load queue.")).finally(()=>setLoading(false))},[load])
 
@@ -44,6 +45,17 @@ export default function AdminDomainSandboxPage() {
     finally{setBusy("")}
   }
 
+  async function manageRequest(requestId:string,action:"apply"|"reject"|"reconcile"){
+    setBusy(requestId);setError("");setNotice("")
+    try{
+      const response=await fetch("/api/admin/domains/sandbox/management",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({requestId,action})})
+      const body=await response.json()
+      if(!response.ok&&response.status!==202)throw new Error(body.error??"Management action failed.")
+      setNotice(body.error??(action==="reject"?"Request rejected.":body.success?"Registrar change confirmed and saved.":"Request requires read-only reconciliation."))
+      await load()
+    }catch(e){setError(e instanceof Error?e.message:"Management action failed.")}
+    finally{setBusy("")}
+  }
   const date=(v:string|null)=>v?new Date(v).toLocaleString():"—"
   return <div className="space-y-6">
     <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
@@ -53,6 +65,21 @@ export default function AdminDomainSandboxPage() {
     <div className="flex items-start gap-3 rounded-2xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-950"><ShieldCheck className="h-5 w-5 shrink-0"/><p>Sandbox payments are zero-value test acknowledgements, not invoices or verified funds. The HEMBOX retail TLD price catalogue is currently empty. Approval calls NameSilo OTE only; it never enables live registration.</p></div>
     {error?<p role="alert" className="rounded-xl bg-rose-50 p-3 text-sm text-rose-800">{error}</p>:null}
     {notice?<p role="status" className="rounded-xl bg-teal/10 p-3 text-sm text-slate-800">{notice}</p>:null}
+    <section className="overflow-hidden rounded-2xl border border-slate-200 bg-white">
+      <div className="border-b border-slate-100 p-5"><h2 className="text-xl font-black text-navy">Customer domain-management requests</h2><p className="mt-1 text-sm text-slate-500">Approve or reject renewal and nameserver requests. Ambiguous outcomes can only be reconciled; they cannot be blindly re-applied.</p></div>
+      {management.length===0?<p className="p-5 text-sm text-slate-500">No management requests.</p>:<div className="divide-y divide-slate-100">{management.map(item=><div key={item.id} className="flex flex-col gap-3 p-5 lg:flex-row lg:items-center lg:justify-between">
+        <div><p className="font-bold text-navy">{item.domain_sandbox_orders?.domain_name??item.order_id} · {item.request_type==="renewal"?`Renewal (${item.requested_years} year(s))`:"Nameserver change"}</p>
+          {item.requested_nameservers?.length?<p className="mt-1 break-all text-xs text-slate-500">{item.requested_nameservers.join(", ")}</p>:null}
+          {item.customer_note?<p className="mt-1 text-xs text-slate-500">Customer note: {item.customer_note}</p>:null}
+          {item.admin_note?<p className="mt-1 text-xs text-slate-500">Admin note: {item.admin_note}</p>:null}
+          <p className="mt-1 text-xs text-slate-400">{date(item.created_at)} · {item.status}</p>
+        </div>
+        <div className="flex flex-wrap gap-2">
+          {item.status==="requested"?<><button onClick={()=>void manageRequest(item.id,"apply")} disabled={!!busy} className="rounded-lg bg-navy px-3 py-2 text-xs font-bold text-white disabled:opacity-50">Approve & apply in OTE</button><button onClick={()=>void manageRequest(item.id,"reject")} disabled={!!busy} className="rounded-lg border border-slate-200 px-3 py-2 text-xs font-bold disabled:opacity-50">Reject</button></>:null}
+          {item.status==="unknown"?<button onClick={()=>void manageRequest(item.id,"reconcile")} disabled={!!busy} className="rounded-lg bg-amber-700 px-3 py-2 text-xs font-bold text-white disabled:opacity-50">Reconcile OTE (read-only)</button>:null}
+        </div>
+      </div>)}</div>}
+    </section>
     <section className="overflow-hidden rounded-2xl border border-slate-200 bg-white">
       <div className="overflow-x-auto"><table className="w-full min-w-[1250px] text-left text-sm">
         <thead className="bg-slate-50 text-xs uppercase tracking-wider text-slate-500"><tr><th className="px-4 py-3">Domain / order</th><th className="px-4 py-3">Customer ID</th><th className="px-4 py-3">Order state</th><th className="px-4 py-3">Test payment</th><th className="px-4 py-3">Expiry</th><th className="px-4 py-3">Provider state</th><th className="px-4 py-3">Admin action</th></tr></thead>
