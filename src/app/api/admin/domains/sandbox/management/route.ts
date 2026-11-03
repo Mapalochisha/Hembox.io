@@ -69,7 +69,7 @@ export async function POST(request: Request) {
       }).eq("id", row.id).eq("status", "requested").select("id").maybeSingle()
       if (lockError) throw lockError
       if (!locked) return json({ error: "This request is no longer pending. Unknown or processing requests must be reconciled, never re-applied." }, 409)
-    } else if (row.status !== "unknown") {
+    } else if (!["unknown","processing"].includes(row.status)) {
       return json({ error: "Only an unknown registrar outcome can be reconciled." }, 409)
     }
 

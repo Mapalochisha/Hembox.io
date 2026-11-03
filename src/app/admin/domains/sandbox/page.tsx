@@ -81,7 +81,7 @@ export default function AdminDomainSandboxPage() {
         </div>
         <div className="flex flex-wrap gap-2">
           {item.status==="requested"?<><button onClick={()=>void manageRequest(item.id,"apply")} disabled={!!busy} className="rounded-lg bg-navy px-3 py-2 text-xs font-bold text-white disabled:opacity-50">Approve & apply in OTE</button><button onClick={()=>void manageRequest(item.id,"reject")} disabled={!!busy} className="rounded-lg border border-slate-200 px-3 py-2 text-xs font-bold disabled:opacity-50">Reject</button></>:null}
-          {item.status==="unknown"?<button onClick={()=>void manageRequest(item.id,"reconcile")} disabled={!!busy} className="rounded-lg bg-amber-700 px-3 py-2 text-xs font-bold text-white disabled:opacity-50">Reconcile OTE (read-only)</button>:null}
+          {["unknown","processing"].includes(item.status)?<button onClick={()=>void manageRequest(item.id,"reconcile")} disabled={!!busy} className="rounded-lg bg-amber-700 px-3 py-2 text-xs font-bold text-white disabled:opacity-50">Reconcile OTE (read-only)</button>:null}
         </div>
       </div>)}</div>}
     </section>
