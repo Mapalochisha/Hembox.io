@@ -224,6 +224,9 @@ jobs:
       - name: Apply isolated NameSilo OTE sandbox journey migration
         run: psql -v ON_ERROR_STOP=1 -f supabase/migrations/20261102130000_domain_sandbox_journey.sql
 
+      - name: Apply sandbox domain management request migration
+        run: psql -v ON_ERROR_STOP=1 -f supabase/migrations/20261103100000_domain_sandbox_management_requests.sql
+
       - name: Assert client portal schema and ownership policies
         run: psql -v ON_ERROR_STOP=1 -f supabase/tests/client_portal_workspace.test.sql
 
@@ -271,6 +274,9 @@ jobs:
 
       - name: Assert isolated sandbox order ledger and payment isolation
         run: psql -v ON_ERROR_STOP=1 -f supabase/tests/domain_sandbox_journey.test.sql
+
+      - name: Assert sandbox management queue isolation and state guards
+        run: psql -v ON_ERROR_STOP=1 -f supabase/tests/domain_sandbox_management_requests.test.sql
 
       - name: Assert unified billing ledger invariants
         run: psql -v ON_ERROR_STOP=1 -f supabase/tests/unified_billing_foundation.test.sql

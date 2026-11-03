@@ -63,9 +63,18 @@ export async function POST(request: Request, context: { params: { orderId: strin
       .eq("customer_id", user.id).eq("idempotency_key", parsed.data.idempotencyKey).maybeSingle()
     if (existing.error) throw existing.error
     if (existing.data) return json({ request: existing.data, message: "This request was already submitted." }, 200)
+    const requestType = parsed.data.action === "renew" ? "renewal" : "nameservers"
+    const requestedNameservers = parsed.data.action === "nameservers" ? normalizeNameSiloSandboxNameservers(parsed.data.nameservers) : null
+    const duplicateQuery = db.from("domain_sandbox_management_requests").select("id,request_type,requested_years,requested_nameservers,status,created_at")
+      .eq("order_id", order.id).eq("customer_id", user.id).in("status", ["requested","processing","unknown"]).eq("request_type", requestType)
+    const { data: duplicate, error: duplicateError } = parsed.data.action === "renew"
+      ? await duplicateQuery.eq("requested_years", parsed.data.years).maybeSingle()
+      : await duplicateQuery.contains("requested_nameservers", requestedNameservers).maybeSingle()
+    if (duplicateError) throw duplicateError
+    if (duplicate) return json({ request: duplicate, message: "An identical request is already awaiting review or reconciliation." }, 200)
     const payload = parsed.data.action === "renew"
       ? { request_type: "renewal", requested_years: parsed.data.years, requested_nameservers: null }
-      : { request_type: "nameservers", requested_years: null, requested_nameservers: normalizeNameSiloSandboxNameservers(parsed.data.nameservers) }
+      : { request_type: "nameservers", requested_years: null, requested_nameservers: requestedNameservers }
     const { data: created, error: insertError } = await db.from("domain_sandbox_management_requests").insert({
       order_id: order.id, customer_id: user.id, ...payload,
       previous_expires_at: order.expires_at, previous_nameservers: order.nameservers ?? [],
