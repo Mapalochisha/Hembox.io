@@ -222,10 +222,10 @@ jobs:
         run: psql -v ON_ERROR_STOP=1 -f supabase/migrations/20261102100000_boz_fx_daily_pricing.sql
 
       - name: Apply isolated NameSilo OTE sandbox journey migration
-        run: psql -v ON_ERROR_STOP=1 -f supabase/migrations/20261102130000_domain_sandbox_journey.sql
+        run: psql -v ON_ERROR_STOP=1 -f supabase/migrations/20261102134924_domain_sandbox_journey.sql
 
       - name: Apply sandbox domain management request migration
-        run: psql -v ON_ERROR_STOP=1 -f supabase/migrations/20261103100000_domain_sandbox_management_requests.sql
+        run: psql -v ON_ERROR_STOP=1 -f supabase/migrations/20261103182518_domain_sandbox_management_requests.sql
 
       - name: Assert client portal schema and ownership policies
         run: psql -v ON_ERROR_STOP=1 -f supabase/tests/client_portal_workspace.test.sql
