@@ -19,23 +19,23 @@ Goal: establish a coherent, secure, reproducible code and database baseline, and
 
 ### A1. Integrate the known-good sandbox implementation
 - [ ] Reconcile PR #22 with current `main`; confirm its base/head SHAs and changed-file scope.
-- [ ] Confirm the admin management API uses server-verified Supabase identity and administrator role checks; reject caller-supplied identity headers.
+- [x] Confirm the admin management API on the release branch uses server-verified Supabase identity and administrator role checks; reject caller-supplied identity headers. The older `main` route remains unsafe/stale until PR #22 is merged.
 - [ ] Confirm customer endpoints enforce authenticated ownership and do not expose service-role credentials or registrant data.
 - [ ] Resolve all build/import failures on the release candidate and obtain green GitHub CI plus Vercel Preview.
 - [ ] Update PR description and handover docs to match actual Production migration history and current sandbox limitations.
 - **Acceptance:** CI and Preview are green on the exact reviewed SHA; no unauthenticated or header-spoofed access to customer/admin operations; no merge/deploy performed without release authorization.
 
 ### A2. Reconcile Supabase migration history before any further migration
-- [ ] Compare every sandbox migration filename in source, CI, and Production migration history.
-- [ ] Remove duplicate SQL migration files only after proving their contents are identical and selecting the already-applied Production version as canonical.
-- [ ] Align CI replay filenames with the canonical applied versions.
+- [x] Compare every sandbox migration filename in source, CI, and Production migration history; Production records `20261102134924` and `20261103182518`.
+- [x] Remove duplicate SQL migration files after confirming the two journey files had identical Git blob hashes and selecting the already-applied Production version as canonical.
+- [x] Align CI replay filenames with the canonical applied versions.
 - [ ] Confirm the sandbox management migration's source version matches the Production history entry; preserve the SQL body and verify the resulting schema.
-- [ ] Run the complete migration chain against a fresh disposable PostgreSQL database.
+- [x] Run the complete migration chain against a fresh disposable PostgreSQL database; GitHub Actions run 41812095775 passed the schema replay and SQL regression job.
 - [ ] Compare the resulting schema, constraints, indexes, functions, grants, and RLS settings with Production using read-only inspection.
 - **Acceptance:** one canonical source file per applied migration version; no pending/duplicate sandbox migration; fresh-database CI replay succeeds; schema comparison has no unexplained drift. Do not run `supabase db push` or apply migrations to Production as part of this task.
 
 ### A3. Complete security review of privileged database functions
-- [ ] Review each flagged `SECURITY DEFINER` function: `authenticated_accept_billing_arrangement`, `authenticated_create_billing_invoice`, `authenticated_request_billing_arrangement`, `authenticated_review_billing_arrangement`, `authenticated_review_billing_payment_claim`, `authenticated_void_billing_invoice`, and `get_user_role`.
+- [x] Review each flagged `SECURITY DEFINER` function. The six authenticated billing wrappers derive identity from `auth.uid()`; admin-only wrappers verify the caller's admin role; customer wrappers delegate with the caller's own identity; each has a fixed empty `search_path` and restricted EXECUTE grants. `get_user_role` returns the caller's own role and only permits cross-user lookup for admins. This is a source review, not a claim that the advisor warnings disappeared.
 - [ ] Verify `auth.uid()` is the identity source for customer actions; validate ownership, admin/elevated-role authorization, input constraints, fixed `search_path`, and EXECUTE grants.
 - [ ] Add/extend SQL regression tests for authorization boundaries and cross-user access.
 - [ ] Enable Supabase leaked-password protection after assessing Auth impact and confirming recovery/reset behavior.
@@ -43,7 +43,7 @@ Goal: establish a coherent, secure, reproducible code and database baseline, and
 - **Acceptance:** every privileged function has a recorded review outcome and regression coverage; no caller can select another user's identity or bypass admin authorization; Auth protection is enabled or a documented blocker is approved.
 
 ### A4. Automated verification and dependency hygiene
-- [ ] Keep Node versions aligned between GitHub CI and Vercel, or explicitly test both configured versions.
+- [x] Keep Node versions aligned between GitHub CI and Vercel (Node 24); GitHub CI run 41812095775 passed.
 - [ ] Add a dependency vulnerability audit to CI with a defined severity policy and reviewed exceptions.
 - [ ] Ensure CI covers lint, TypeScript, domain tests, full migration replay, SQL authorization tests, and production build.
 - [ ] Add authenticated browser/API E2E coverage for customer and admin sandbox flows, including ambiguous provider outcomes and safe reconciliation.
@@ -102,7 +102,7 @@ These are not code tasks and must not be fabricated or silently assumed:
 - Production live `domain_orders`: 0; sandbox order ledger contains 1 test order; no recorded billing payments.
 - Production environment has `NAMESILO_SANDBOX_API_KEY`; live `NAMESILO_API_KEY` was observed only in Preview. Production provider mode was observed as `namesilo-sandbox`.
 - PR #22 is open/draft and contains the corrected admin management route; its base `main` still contains the older broken route.
-- Production migration history and source/CI sandbox migration versions differ; this must be reconciled before another migration.
+- Production migration history was rechecked read-only on 2026-11-04: 29 migration entries are present, including `20261102134924` and `20261103182518`. Source filenames and CI now match those canonical versions on the remediation branch. Sandbox tables are present in Production with RLS enabled and service-role-only grants. A full schema diff is still outstanding.
 - One sandbox nameserver operation remained `unknown` because NameSilo OTE read-back did not confirm the requested values. This is correctly treated as unresolved, not success.
 
 ## Work log
@@ -111,3 +111,5 @@ These are not code tasks and must not be fabricated or silently assumed:
 |---|---|---|
 | 2026-11-04 | Created this remediation plan on `production-readiness/stage-a`. | No Production or database changes. |
 | 2026-11-04 | Rechecked PR #22 and admin management route on `main` vs feature branch. | Feature route verifies Supabase user and admin role; `main` still has stale imports and trusts `x-user-id`. |
+| 2026-11-04 | Reconciled sandbox migration filenames and CI replay on `production-readiness/stage-a`; opened draft PR #23 against the sandbox feature branch. | Duplicate journey migration removed; canonical versions match Production history; fresh PostgreSQL migration/schema tests, lint, TypeScript, domain tests, and Node 24 build all passed in CI run 41812095775. Vercel Preview `dpl_HK4ygjz3p6jqSHeL4sCb7KXjs5Bs` is READY. No Production migration or deployment. |
+| 2026-11-04 | Read-only Production migration/schema/grant inspection and source review of seven flagged SECURITY DEFINER functions. | Production records 29 migrations including the two canonical sandbox versions; sandbox tables are RLS-enabled and service-role-only. Authenticated wrappers use `auth.uid()` and role checks. Leaked-password protection remains disabled; additional cross-user regression coverage and full schema diff remain open. |
