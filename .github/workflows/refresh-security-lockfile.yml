@@ -6,6 +6,13 @@ on:
     paths:
       - package.json
       - .github/workflows/refresh-security-lockfile.yml
+  pull_request:
+    branches:
+      - main
+    paths:
+      - package.json
+      - .github/workflows/refresh-security-lockfile.yml
+  workflow_dispatch:
 permissions:
   contents: write
 jobs:
