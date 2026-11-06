@@ -10,6 +10,39 @@ insert into public.profiles(id,email,role) values
   ('88888888-8888-4888-8888-888888888882','runtime-admin@example.test','admin')
 on conflict (id) do update set email=excluded.email, role=excluded.role;
 
+-- A customer may read their own role, but cannot use this helper to enumerate another user's role.
+select set_config('request.jwt.claim.sub','88888888-8888-4888-8888-888888888881',true);
+set local role authenticated;
+do $test$
+begin
+  if public.get_user_role('88888888-8888-4888-8888-888888888881') is distinct from 'user' then
+    raise exception 'Customer must be able to read their own role';
+  end if;
+  if public.get_user_role('88888888-8888-4888-8888-888888888882') is not null then
+    raise exception 'Customer must not be able to read another user role';
+  end if;
+end
+$test$;
+reset role;
+
+-- Administrators may inspect another user's role; anonymous callers may not execute the helper.
+select set_config('request.jwt.claim.sub','88888888-8888-4888-8888-888888888882',true);
+set local role authenticated;
+do $test$
+begin
+  if public.get_user_role('88888888-8888-4888-8888-888888888881') is distinct from 'user' then
+    raise exception 'Administrator must be able to inspect a customer's role';
+  end if;
+  if public.get_user_role('88888888-8888-4888-8888-888888888882') is distinct from 'admin' then
+    raise exception 'Administrator must be able to read their own role';
+  end if;
+  if has_function_privilege('anon', 'public.get_user_role(uuid)', 'EXECUTE') then
+    raise exception 'Anonymous role must not execute get_user_role';
+  end if;
+end
+$test$;
+reset role;
+
 -- Authenticated non-admins may execute the wrapper but cannot invoke the privileged operation.
 select set_config('request.jwt.claim.sub','88888888-8888-4888-8888-888888888881',true);
 set local role authenticated;
