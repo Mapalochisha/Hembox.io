@@ -1,8 +1,9 @@
 # HEMBOX Production Readiness Remediation Plan
 
 **Status:** In progress  
-**Merged release commit:** `0f161959a638eced0ee997420953e0d5aae647cf` on `main`  
-**Baseline:** PR #22 (feature branch merged 2026-11-06)  
+**Merged feature commit:** `0f161959a638eced0ee997420953e0d5aae647cf` (PR #22)  
+**Merged security commit:** `587d4afb8f5d05aba4c349c32e1e5cb956e7d320` (PR #24)  
+**Current main HEAD:** `413eb415831b0766c6049017d563fa367b2279a1`  
 **Production changes:** Not authorized by this plan. No Production deployment, live registrar mutation, payment, or database migration is permitted without separate explicit approval.
 
 This plan converts the repository and infrastructure audit into verifiable release gates. Checkboxes are updated only when evidence exists. A passing build or Preview does not by itself authorize a Production release.
@@ -130,5 +131,4 @@ These are not code tasks and must not be fabricated or silently assumed:
 | 2026-11-06 | Read-only verification of sandbox Production schema and grants. | Three sandbox tables have RLS enabled, no client policies, and only `service_role` table grants. Full database schema diff remains open. |
 | 2026-11-06 | Added cross-user role authorization regression tests. | Customer self-role lookup succeeds; customer cross-user role lookup is denied; admin cross-user lookup succeeds; anonymous EXECUTE is denied. SQL integration job passed in run `42268893665`. |
 | 2026-11-06 | Remediated dependency vulnerabilities on `production-readiness/stage-a-followup`. | Upgraded Next.js 16.4.5 / React 19.2.9, Supabase SSR 0.12.7 and Zod 4.6.7; migrated async cookies and route params; refreshed lockfile. `npm audit` reported 0 vulnerabilities. Lint, domain tests, TypeScript and production build passed in run `42272251525`. PR #24 merged the security upgrade into `main` as `587d4afb8f5d05aba4c349c32e1e5cb956e7d320`; exact-commit CI run `42272580745` passed and Preview `dpl_4rNeFm1WE3YWPqM1j9qdUcos2peT` is READY.
-
 | 2026-11-06 | Merged the dependency-security hardening PR #24 to `main`. | Merge commit `587d4afb8f5d05aba4c349c32e1e5cb956e7d320`; PR CI run `42272580745` passed audit, lint, TypeScript, domain provider tests, SQL integration tests and build; Preview `dpl_4rNeFm1WE3YWPqM1j9qdUcos2peT` is READY. The automatic Production-target deployment triggered by the merge was canceled because separate Production deployment authorization was not given. No Production DB migration, live registrar mutation or real payment occurred. |
