@@ -31,7 +31,7 @@ set local role authenticated;
 do $test$
 begin
   if public.get_user_role('88888888-8888-4888-8888-888888888881') is distinct from 'user' then
-    raise exception 'Administrator must be able to inspect a customer's role';
+    raise exception 'Administrator must be able to inspect customer role';
   end if;
   if public.get_user_role('88888888-8888-4888-8888-888888888882') is distinct from 'admin' then
     raise exception 'Administrator must be able to read their own role';
