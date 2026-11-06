@@ -70,6 +70,22 @@ npm run namesilo:ote -- nameservers <your-active-sandbox-domain.com> ns1.namesil
 
 Transfers are implemented in the OTE operations module but not exposed in this CLI, because EPP authorization codes should be entered through a future secure prompt rather than command-line arguments or shell history.
 
+## Customer management request workflow
+
+The sandbox customer domain page does not call registrar mutation operations. A
+renewal or nameserver change creates a row in
+`domain_sandbox_management_requests` and remains in `requested` until an
+administrator reviews it at **Admin → Domains → Sandbox domain operations**.
+The administrator can reject the request or approve it for an OTE-only change.
+The admin API confirms the registrar state after the mutation before updating
+the HEMBOX sandbox order.
+
+If NameSilo returns an ambiguous response, the request is marked `unknown`.
+The administrator must use **Reconcile OTE (read-only)**. The request cannot be
+applied a second time. Customers can see request status and administrator notes
+in the management page. The management-request table is isolated from normal
+domain orders and billing records.
+
 ## Reconciliation rules
 
 - A successful registrar reply is an acknowledgement, not by itself the final internal order status.

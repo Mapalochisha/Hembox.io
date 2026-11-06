@@ -195,6 +195,19 @@ export type NameSiloSandboxOperations = {
     privateWhois?: boolean
     autoRenew?: boolean
     contactId?: string
+    registrant?: {
+      firstName: string
+      lastName: string
+      organisationName?: string
+      email: string
+      phone: string
+      addressLine1: string
+      addressLine2?: string
+      city: string
+      region: string
+      postalCode: string
+      countryCode: string
+    }
   }): Promise<NameSiloMutationOutcome>
   renewDomain(input: MutatingConfirmation & { domain: string; years: number }): Promise<NameSiloMutationOutcome>
   transferDomain(input: MutatingConfirmation & {
@@ -208,8 +221,9 @@ export type NameSiloSandboxOperations = {
 
 /**
  * Explicit OTE-only operations tool. There is no production-host option in this
- * module. It is not wired to a customer-facing API route; callers must choose
- * the OTE confirmation token for every state-changing operation.
+ * module. Only the administrator sandbox routes call state-changing methods;
+ * customer routes persist requests and never mutate the registrar. Every
+ * state-changing operation requires the OTE confirmation token.
  */
 export function createNameSiloSandboxOperations(dependencies: SandboxDependencies = {}): NameSiloSandboxOperations {
   const env = dependencies.env ?? process.env
@@ -361,6 +375,24 @@ export function createNameSiloSandboxOperations(dependencies: SandboxDependencie
       auto_renew: input.autoRenew ? "1" : "0",
     }
     if (input.contactId?.trim()) parameters.contact_id = input.contactId.trim()
+    if (input.registrant) {
+      const registrant = input.registrant
+      const phone = registrant.phone.replace(/^\+260/, "")
+      if (registrant.countryCode !== "ZM" || !/^[0-9]{9}$/.test(phone)) {
+        throw new Error("NameSilo OTE registrant phone must be a Zambian national number without the +260 country prefix.")
+      }
+      parameters.fn = registrant.firstName.trim()
+      parameters.ln = registrant.lastName.trim()
+      if (registrant.organisationName?.trim()) parameters.cp = registrant.organisationName.trim()
+      parameters.em = registrant.email.trim()
+      parameters.ph = phone
+      parameters.ad = registrant.addressLine1.trim()
+      if (registrant.addressLine2?.trim()) parameters.ad2 = registrant.addressLine2.trim()
+      parameters.cy = registrant.city.trim()
+      parameters.st = registrant.region.trim()
+      parameters.zp = registrant.postalCode.trim()
+      parameters.ct = "ZM"
+    }
 
     const result = await call("registerDomain", parameters)
     return parseNameSiloMutationOutcome(result.payload, "registerDomain", domain, result.transportSucceeded)
