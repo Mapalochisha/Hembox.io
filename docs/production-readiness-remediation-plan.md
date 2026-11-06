@@ -1,8 +1,8 @@
 # HEMBOX Production Readiness Remediation Plan
 
 **Status:** In progress  
-**Working branch:** `production-readiness/stage-a`  
-**Baseline:** PR #22, `feature/sandbox-domain-customer-journey`  
+**Merged release commit:** `0f161959a638eced0ee997420953e0d5aae647cf` on `main`  
+**Baseline:** PR #22 (feature branch merged 2026-11-06)  
 **Production changes:** Not authorized by this plan. No Production deployment, live registrar mutation, payment, or database migration is permitted without separate explicit approval.
 
 This plan converts the repository and infrastructure audit into verifiable release gates. Checkboxes are updated only when evidence exists. A passing build or Preview does not by itself authorize a Production release.
@@ -18,34 +18,34 @@ A limited launch must not be enabled until all Stage A and Stage B release gates
 Goal: establish a coherent, secure, reproducible code and database baseline, and prove the non-live customer/admin journey.
 
 ### A1. Integrate the known-good sandbox implementation
-- [ ] Reconcile PR #22 with current `main`; confirm its base/head SHAs and changed-file scope.
-- [x] Confirm the admin management API on the release branch uses server-verified Supabase identity and administrator role checks; reject caller-supplied identity headers. The older `main` route remains unsafe/stale until PR #22 is merged.
+- [x] Reconcile and merge PR #22 into `main`; base SHA `7850a8d3ba5e26aacba86c9a4d469f24b33f9f4b`, reviewed head SHA `4169e628b5f48012fc969ca5eb799c0ba81e74fd`, merge commit `0f161959a638eced0ee997420953e0d5aae647cf`.
+- [x] Confirm the merged admin management API uses server-verified Supabase identity and administrator role checks; reject caller-supplied identity headers.
 - [ ] Confirm customer endpoints enforce authenticated ownership and do not expose service-role credentials or registrant data.
-- [ ] Resolve all build/import failures on the release candidate and obtain green GitHub CI plus Vercel Preview.
-- [ ] Update PR description and handover docs to match actual Production migration history and current sandbox limitations.
+- [x] Resolve build/import failures and obtain green GitHub CI plus Vercel Preview on head `4169e628b5f48012fc969ca5eb799c0ba81e74fd`; CI run `42268037248` passed and Preview `dpl_GB7pXBzxUumMWkbAEFUmaiD19EYp` is READY.
+- [x] Update PR #22 description and sandbox handover documentation to match Production migration history and known OTE limitations.
 - **Acceptance:** CI and Preview are green on the exact reviewed SHA; no unauthenticated or header-spoofed access to customer/admin operations; no merge/deploy performed without release authorization.
 
 ### A2. Reconcile Supabase migration history before any further migration
 - [x] Compare every sandbox migration filename in source, CI, and Production migration history; Production records `20261102134924` and `20261103182518`.
 - [x] Remove duplicate SQL migration files after confirming the two journey files had identical Git blob hashes and selecting the already-applied Production version as canonical.
 - [x] Align CI replay filenames with the canonical applied versions.
-- [ ] Confirm the sandbox management migration's source version matches the Production history entry; preserve the SQL body and verify the resulting schema.
-- [x] Run the complete migration chain against a fresh disposable PostgreSQL database; GitHub Actions run 41812095775 passed the schema replay and SQL regression job.
+- [x] Confirm the sandbox management migration source filename `20261103182518` matches Production migration history and that the SQL-created table/columns, constraints, indexes, trigger and service-role-only grants are present in Production.
+- [x] Run the complete migration chain against a fresh disposable PostgreSQL database; GitHub Actions run `42268037248` passed schema replay and SQL regression tests on the merged candidate.
 - [ ] Compare the resulting schema, constraints, indexes, functions, grants, and RLS settings with Production using read-only inspection.
 - **Acceptance:** one canonical source file per applied migration version; no pending/duplicate sandbox migration; fresh-database CI replay succeeds; schema comparison has no unexplained drift. Do not run `supabase db push` or apply migrations to Production as part of this task.
 
 ### A3. Complete security review of privileged database functions
 - [x] Review each flagged `SECURITY DEFINER` function. The six authenticated billing wrappers derive identity from `auth.uid()`; admin-only wrappers verify the caller's admin role; customer wrappers delegate with the caller's own identity; each has a fixed empty `search_path` and restricted EXECUTE grants. `get_user_role` returns the caller's own role and only permits cross-user lookup for admins. This is a source review, not a claim that the advisor warnings disappeared.
-- [ ] Verify `auth.uid()` is the identity source for customer actions; validate ownership, admin/elevated-role authorization, input constraints, fixed `search_path`, and EXECUTE grants.
+- [ ] Complete cross-user regression coverage for customer ownership and admin/elevated-role authorization. Source review confirms authenticated wrappers derive identity from `auth.uid()`, use fixed `search_path`, and restrict EXECUTE grants; runtime impersonation tests remain outstanding.
 - [ ] Add/extend SQL regression tests for authorization boundaries and cross-user access.
-- [ ] Enable Supabase leaked-password protection after assessing Auth impact and confirming recovery/reset behavior.
-- [ ] Review service-role-only tables and ensure no unnecessary client policies or grants are introduced.
+- [ ] Enable Supabase leaked-password protection. The user approved enabling it in the future; it remains intentionally disabled until Auth impact and password-reset/recovery behavior are reviewed and tested.
+- [x] Verify the three sandbox tables have RLS enabled, no table policies, and grants only to `service_role`; no `anon` or `authenticated` table grants were found.
 - **Acceptance:** every privileged function has a recorded review outcome and regression coverage; no caller can select another user's identity or bypass admin authorization; Auth protection is enabled or a documented blocker is approved.
 
 ### A4. Automated verification and dependency hygiene
 - [x] Keep Node versions aligned between GitHub CI and Vercel (Node 24); GitHub CI run 41812095775 passed.
 - [ ] Add a dependency vulnerability audit to CI with a defined severity policy and reviewed exceptions.
-- [ ] Ensure CI covers lint, TypeScript, domain tests, full migration replay, SQL authorization tests, and production build.
+- [x] CI covers lint, TypeScript, domain provider tests, full migration replay, SQL regression tests, and production build; all jobs passed in run `42268037248`.
 - [ ] Add authenticated browser/API E2E coverage for customer and admin sandbox flows, including ambiguous provider outcomes and safe reconciliation.
 - **Acceptance:** all required checks pass on the same candidate SHA; dependency findings are triaged; E2E proves isolation and safe handling of ambiguous mutations.
 
@@ -85,6 +85,18 @@ Goal: support customers and recover safely from failures after launch.
 - [ ] Document launch rollback/kill-switch procedure for live registrar writes and payment acceptance.
 - **Acceptance:** on-call/operator ownership is clear; critical alerts are tested; restore and incident procedures are rehearsed; customer notification and renewal operations are verified.
 
+## Commercial recommendations (proposed, not yet approved)
+
+- Start with Zambia as the primary market; default invoices and retail quotes to ZMW, with USD available for international customers.
+- Start with a limited, curated TLD catalogue rather than enabling every extension.
+- Use verified manual payments initially; do not connect live registration to unverified payment evidence.
+- Show registration and renewal prices separately, including renewal dates and terms before checkout.
+- Use the existing pricing proposal as a starting point: BoZ FX rate + K1 conversion buffer, 10% markup, and K25 minimum gross margin, subject to verified wholesale costs, taxes, payment fees, rounding and a final price review.
+- Register domains using the customer's verified registrant details and clearly explain HEMBOX's management/support role.
+- Publish failure, duplicate-payment, delayed-confirmation and refund rules before accepting live orders.
+
+These are recommendations only; retail pricing, allowed TLDs and customer terms still require explicit approval.
+
 ## External prerequisites and decisions
 
 These are not code tasks and must not be fabricated or silently assumed:
@@ -101,8 +113,8 @@ These are not code tasks and must not be fabricated or silently assumed:
 - Production `domain_tld_catalog`: 0 rows; no enabled retail TLDs.
 - Production live `domain_orders`: 0; sandbox order ledger contains 1 test order; no recorded billing payments.
 - Production environment has `NAMESILO_SANDBOX_API_KEY`; live `NAMESILO_API_KEY` was observed only in Preview. Production provider mode was observed as `namesilo-sandbox`.
-- PR #22 is open/draft and contains the corrected admin management route; its base `main` still contains the older broken route.
-- Production migration history was rechecked read-only on 2026-11-04: 29 migration entries are present, including `20261102134924` and `20261103182518`. Source filenames and CI now match those canonical versions on the remediation branch. Sandbox tables are present in Production with RLS enabled and service-role-only grants. A full schema diff is still outstanding.
+- PR #22 was merged into `main` as `0f161959a638eced0ee997420953e0d5aae647cf`; the corrected admin route is now on `main`.
+- Production migration history was rechecked read-only: 29 entries were present, including `20261102134924` and `20261103182518`. Source filenames and CI replay now use those canonical versions. Production sandbox inventory confirms expected columns, constraints, indexes and update triggers; RLS is enabled and grants are service-role-only. A complete all-schema source-vs-Production diff remains outstanding.
 - One sandbox nameserver operation remained `unknown` because NameSilo OTE read-back did not confirm the requested values. This is correctly treated as unresolved, not success.
 
 ## Work log
@@ -113,3 +125,5 @@ These are not code tasks and must not be fabricated or silently assumed:
 | 2026-11-04 | Rechecked PR #22 and admin management route on `main` vs feature branch. | Feature route verifies Supabase user and admin role; `main` still has stale imports and trusts `x-user-id`. |
 | 2026-11-04 | Reconciled sandbox migration filenames and CI replay on `production-readiness/stage-a`; opened draft PR #23 against the sandbox feature branch. | Duplicate journey migration removed; canonical versions match Production history; fresh PostgreSQL migration/schema tests, lint, TypeScript, domain tests, and Node 24 build all passed in CI run 41812095775. Vercel Preview `dpl_HK4ygjz3p6jqSHeL4sCb7KXjs5Bs` is READY. No Production migration or deployment. |
 | 2026-11-04 | Read-only Production migration/schema/grant inspection and source review of seven flagged SECURITY DEFINER functions. | Production records 29 migrations including the two canonical sandbox versions; sandbox tables are RLS-enabled and service-role-only. Authenticated wrappers use `auth.uid()` and role checks. Leaked-password protection remains disabled; additional cross-user regression coverage and full schema diff remain open. |
+| 2026-11-06 | Merged the sandbox customer journey and migration-history remediation to `main`. | PR #23 merged into the feature branch, then PR #22 merged to `main` as `0f161959a638eced0ee997420953e0d5aae647cf`. GitHub CI run `42268037248` passed schema replay, SQL tests, lint, TypeScript, domain tests and production build. Vercel Preview `dpl_GB7pXBzxUumMWkbAEFUmaiD19EYp` is READY. Merge triggered a Production-target Vercel build automatically; it was canceled because a separate Production deployment was not authorized. No Production database migration, live registrar operation or real payment was performed. |
+| 2026-11-06 | Read-only verification of sandbox Production schema and grants. | Three sandbox tables have RLS enabled, no client policies, and only `service_role` table grants. Full database schema diff and cross-user authorization regression tests remain open. |
