@@ -6,7 +6,7 @@ export const dynamic="force-dynamic"
 function json(body:unknown,status=200){return NextResponse.json(body,{status,headers:{"Cache-Control":"no-store"}})}
 export async function GET(){
  try{
-  const authClient=createClient();const {data:{user},error:userError}=await authClient.auth.getUser()
+  const authClient=await createClient();const {data:{user},error:userError}=await authClient.auth.getUser()
   if(userError||!user)return json({error:"Authentication required."},401)
   const {data:role,error:roleError}=await authClient.rpc("get_user_role",{user_id:user.id})
   if(roleError)return json({error:"Unable to verify administrator access."},503)

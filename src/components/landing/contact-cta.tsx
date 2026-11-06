@@ -3,7 +3,8 @@
 import { Button } from "@/components/ui/button"
 import { openMockupModal } from "@/components/landing/mockup-modal"
 import { useAgency } from "@/components/providers/agency-provider"
-import { ArrowRight, Mail, Phone, Instagram, Facebook, Twitter, Linkedin, MessageCircle } from "lucide-react"
+import { ArrowRight, Mail, Phone, MessageCircle } from "lucide-react"
+import { FaInstagram as Instagram, FaFacebook as Facebook, FaXTwitter as Twitter, FaLinkedin as Linkedin } from "react-icons/fa6"
 
 export function ContactCTA() {
   const {

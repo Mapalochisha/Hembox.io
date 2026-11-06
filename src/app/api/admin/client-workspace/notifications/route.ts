@@ -11,7 +11,7 @@ export async function POST(request:Request){
  const body=await request.json().catch(()=>null)
  const parsed=schema.safeParse(body)
  if(!parsed.success)return json({error:"Provide valid notification details."},400)
- const auth=createAuthClient()
+ const auth=await createAuthClient()
  const {data:{user},error:userError}=await auth.auth.getUser()
  if(userError||!user)return json({error:"Authentication required."},401)
  const {data:role,error:roleError}=await auth.rpc("get_user_role",{user_id:user.id})

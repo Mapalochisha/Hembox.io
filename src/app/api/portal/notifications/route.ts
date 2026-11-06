@@ -10,7 +10,7 @@ function json(body: unknown, status = 200) { return NextResponse.json(body, { st
 
 export async function GET() {
   try {
-    const auth = createAuthClient()
+    const auth = await createAuthClient()
     const { data: { user }, error: authError } = await auth.auth.getUser()
     if (authError || !user) return json({ error: "Sign in to view notifications." }, 401)
     const db = auth as unknown as SupabaseClient
@@ -31,7 +31,7 @@ export async function PATCH(request: Request) {
   const parsed = schema.safeParse(body)
   if (!parsed.success || (!parsed.data.notificationId && !parsed.data.markAllRead)) return json({ error: "Provide a notification to mark as read." }, 400)
   try {
-    const auth = createAuthClient()
+    const auth = await createAuthClient()
     const { data: { user }, error: authError } = await auth.auth.getUser()
     if (authError || !user) return json({ error: "Sign in to update notifications." }, 401)
     const db: any = createServiceClient()

@@ -15,10 +15,10 @@ function json(body: unknown, status = 200) { return NextResponse.json(body, { st
 
 export async function GET() {
   try {
-    const authClient = createClient()
+    const authClient = await createClient()
     const { data: { user }, error: authError } = await authClient.auth.getUser()
     if (authError || !user) return json({ error: "Sign in to view payment arrangements." }, 401)
-    const db = createClient() as unknown as SupabaseClient
+    const db = await createClient() as unknown as SupabaseClient
     const { data, error } = await db.from("billing_arrangement_requests")
       .select("id,invoice_id,conversation_id,requested_method_key,requested_terms,requested_currency,requested_amount_minor,status,decision_note,agreed_terms,decided_at,customer_confirmed_at,created_at")
       .eq("customer_id", user.id).order("created_at", { ascending: false }).limit(100)
@@ -35,10 +35,10 @@ export async function POST(request: Request) {
   const parsed = createSchema.safeParse(body)
   if (!parsed.success) return json({ error: "Provide an invoice and valid arrangement terms." }, 400)
   try {
-    const authClient = createClient()
+    const authClient = await createClient()
     const { data: { user }, error: authError } = await authClient.auth.getUser()
     if (authError || !user || !user.email) return json({ error: "Sign in with an email address to request an arrangement." }, 401)
-    const db = createClient() as unknown as SupabaseClient
+    const db = await createClient() as unknown as SupabaseClient
     const { data: invoice, error: invoiceError } = await db.from("billing_invoices")
       .select("id,invoice_number,customer_id,currency,total_minor,status").eq("id", parsed.data.invoiceId).maybeSingle()
     if (invoiceError) throw invoiceError
@@ -90,10 +90,10 @@ export async function PATCH(request: Request) {
   const parsed = acceptSchema.safeParse(body)
   if (!parsed.success) return json({ error: "Provide a valid arrangement request." }, 400)
   try {
-    const authClient = createClient()
+    const authClient = await createClient()
     const { data: { user }, error: authError } = await authClient.auth.getUser()
     if (authError || !user) return json({ error: "Sign in to accept an arrangement." }, 401)
-    const db = createClient() as unknown as SupabaseClient
+    const db = await createClient() as unknown as SupabaseClient
     const { data, error } = await db.rpc("authenticated_accept_billing_arrangement", { p_arrangement_id: parsed.data.arrangementId })
     if (error) {
       if (error.code === "P0002") return json({ error: "Arrangement request not found." }, 404)

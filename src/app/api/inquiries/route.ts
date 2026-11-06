@@ -84,7 +84,7 @@ export async function POST(request: Request) {
         try {
           let customerId: string | null = null
           try {
-            const authClient = createAuthClient()
+            const authClient = await createAuthClient()
             const { data: { user } } = await authClient.auth.getUser()
             customerId = user?.id ?? null
           } catch {

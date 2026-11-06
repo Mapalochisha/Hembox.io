@@ -36,7 +36,7 @@ function sandboxEnabled() {
 }
 
 async function customer() {
-  const auth = createClient()
+  const auth = await createClient()
   const { data: { user }, error } = await auth.auth.getUser()
   if (error || !user) return null
   return user

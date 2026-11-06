@@ -4,7 +4,7 @@ import { useMemo } from "react"
 import { createClient, isSupabaseConfigured } from "@/lib/supabase/client"
 import { Button } from "@/components/ui/button"
 import { useToast } from "@/hooks/use-toast"
-import { Chrome } from "lucide-react"
+import { FaChrome as Chrome } from "react-icons/fa6"
 
 export function GoogleAuthButton() {
   const supabase = useMemo(() => isSupabaseConfigured() ? createClient() : null, [])

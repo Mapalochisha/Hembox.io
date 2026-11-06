@@ -13,7 +13,7 @@ function json(body: unknown, status = 200) {
 }
 
 async function requireAdmin() {
-  const authClient = createClient()
+  const authClient = await createClient()
   const { data: { user }, error: userError } = await authClient.auth.getUser()
   if (userError || !user) return 401 as const
   const { data: role, error: roleError } = await authClient.rpc("get_user_role", { user_id: user.id })

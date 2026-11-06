@@ -8,7 +8,7 @@ const BUCKET="client-deliverables"
 const MAX_BYTES=20*1024*1024
 const ALLOWED:Record<string,string>={"image/png":"png","image/jpeg":"jpg","image/webp":"webp","image/svg+xml":"svg","application/pdf":"pdf","application/zip":"zip","text/plain":"txt","text/markdown":"md","application/json":"json","application/octet-stream":"bin"}
 function json(body:unknown,status=200){return NextResponse.json(body,{status,headers:{"Cache-Control":"no-store"}})}
-async function adminContext(){const auth=createAuthClient();const {data:{user},error:userError}=await auth.auth.getUser();if(userError||!user)return {status:401 as const};const {data:role,error:roleError}=await auth.rpc("get_user_role",{user_id:user.id});if(roleError)return {status:503 as const};if(role!=="admin")return {status:403 as const};return {status:200 as const,user}}
+async function adminContext(){const auth=await createAuthClient();const {data:{user},error:userError}=await auth.auth.getUser();if(userError||!user)return {status:401 as const};const {data:role,error:roleError}=await auth.rpc("get_user_role",{user_id:user.id});if(roleError)return {status:503 as const};if(role!=="admin")return {status:403 as const};return {status:200 as const,user}}
 
 export async function POST(request:Request){
  const context=await adminContext()

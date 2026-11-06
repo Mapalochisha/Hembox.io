@@ -12,7 +12,7 @@ const schema = z.object({
 }).strict()
 function json(body: unknown, status = 200) { return NextResponse.json(body, { status, headers: { "Cache-Control": "no-store" } }) }
 async function requireAdmin() {
-  const client = createClient()
+  const client = await createClient()
   const { data: { user }, error } = await client.auth.getUser()
   if (error || !user) return { status: 401 as const }
   const { data: role, error: roleError } = await client.rpc("get_user_role", { user_id: user.id })
@@ -24,7 +24,7 @@ export async function GET() {
   try {
     const auth = await requireAdmin()
     if (auth.status !== 200) return json({ error: auth.status === 401 ? "Authentication required." : auth.status === 403 ? "Administrator access required." : "Unable to verify administrator access." }, auth.status)
-    const db = createClient() as unknown as SupabaseClient
+    const db = await createClient() as unknown as SupabaseClient
     const { data, error } = await db.from("billing_arrangement_requests")
       .select("id,invoice_id,customer_id,conversation_id,requested_method_key,requested_terms,requested_currency,requested_amount_minor,status,decision_note,agreed_terms,decided_by,decided_at,customer_confirmed_at,created_at")
       .order("created_at", { ascending: false }).limit(200)
@@ -53,7 +53,7 @@ export async function POST(request: Request) {
   try {
     const auth = await requireAdmin()
     if (auth.status !== 200) return json({ error: auth.status === 401 ? "Authentication required." : auth.status === 403 ? "Administrator access required." : "Unable to verify administrator access." }, auth.status)
-    const db = createClient() as unknown as SupabaseClient
+    const db = await createClient() as unknown as SupabaseClient
     const { data, error } = await db.rpc("authenticated_review_billing_arrangement", {
       p_arrangement_id: parsed.data.arrangementId,
       p_decision: parsed.data.decision, p_decision_note: parsed.data.decisionNote?.trim() || null,

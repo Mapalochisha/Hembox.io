@@ -12,7 +12,7 @@ interface FAQ { question?: string; answer?: string }
 const asArray = <T,>(value: unknown): T[] => Array.isArray(value) ? value as T[] : []
 
 export default async function ServicePage({ params }: { params: { slug: string } }) {
-  const supabase = createClient()
+  const supabase = await createClient()
   const { data } = await supabase.from("services").select("*").eq("slug", params.slug).eq("status", "active").maybeSingle()
   const service = data as any
 

@@ -16,7 +16,7 @@ function json(body: unknown, status = 200) { return NextResponse.json(body, { st
 
 export async function GET() {
   try {
-    const auth = createAuthClient()
+    const auth = await createAuthClient()
     const { data: { user }, error: authError } = await auth.auth.getUser()
     if (authError || !user) return json({ error: "Sign in to manage preferences." }, 401)
     const db = auth as unknown as SupabaseClient
@@ -34,7 +34,7 @@ export async function PUT(request: Request) {
   const parsed = schema.safeParse(body)
   if (!parsed.success) return json({ error: "Provide valid notification preferences." }, 400)
   try {
-    const auth = createAuthClient()
+    const auth = await createAuthClient()
     const { data: { user }, error: authError } = await auth.auth.getUser()
     if (authError || !user) return json({ error: "Sign in to save preferences." }, 401)
     const db = auth as unknown as SupabaseClient

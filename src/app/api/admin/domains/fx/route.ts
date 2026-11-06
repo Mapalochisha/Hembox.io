@@ -8,7 +8,7 @@ export const dynamic = "force-dynamic"
 export const runtime = "nodejs"
 
 async function adminStatus() {
-  const auth = createClient()
+  const auth = await createClient()
   const { data: { user }, error } = await auth.auth.getUser()
   if (error || !user) return 401
   const { data: role, error: roleError } = await auth.rpc("get_user_role", { user_id: user.id })

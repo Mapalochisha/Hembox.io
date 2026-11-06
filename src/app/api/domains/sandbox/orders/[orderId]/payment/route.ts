@@ -11,12 +11,13 @@ const schema = z.object({
 }).strict()
 const json = (body: unknown, status = 200) => NextResponse.json(body, { status, headers: { "Cache-Control": "no-store" } })
 
-export async function POST(request: Request, context: { params: { orderId: string } }) {
+export async function POST(request: Request, context: { params: Promise<{ orderId: string }> }) {
+  const { orderId } = await context.params
   if (process.env.DOMAIN_PROVIDER_MODE?.trim().toLowerCase() !== "namesilo-sandbox") return json({ error: "Sandbox checkout is disabled." }, 404)
   const parsed = schema.safeParse(await request.json().catch(() => null))
   if (!parsed.success) return json({ error: "Enter a test payment reference between 8 and 100 characters using letters, numbers, dots, dashes or underscores." }, 400)
 
-  const auth = createClient()
+  const auth = await createClient()
   const { data: { user }, error: authError } = await auth.auth.getUser()
   if (authError || !user) return json({ error: "Sign in to submit the sandbox payment step." }, 401)
 
@@ -24,7 +25,7 @@ export async function POST(request: Request, context: { params: { orderId: strin
   try {
     const { data: order, error } = await db.from("domain_sandbox_orders")
       .select("id,status,payment_status,test_payment_reference,test_payment_submitted_at")
-      .eq("id", context.params.orderId).eq("customer_id", user.id).maybeSingle()
+      .eq("id", orderId).eq("customer_id", user.id).maybeSingle()
     if (error) throw error
     if (!order) return json({ error: "Sandbox order not found." }, 404)
     if (order.status !== "quoted" || !["not_started", "simulated_rejected"].includes(order.payment_status)) {

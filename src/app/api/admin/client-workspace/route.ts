@@ -13,7 +13,7 @@ const schema=z.discriminatedUnion("action",[
  z.object({action:z.literal("review_change_request"),changeRequestId:z.string().uuid(),status:z.enum(["under_review","approved","declined","completed"]),decisionNote:z.string().trim().max(2000).optional().default("")}).strict(),
 ])
 async function adminContext(){
- const auth=createAuthClient()
+ const auth=await createAuthClient()
  const {data:{user},error:userError}=await auth.auth.getUser()
  if(userError||!user)return {status:401 as const}
  const {data:role,error:roleError}=await auth.rpc("get_user_role",{user_id:user.id})
