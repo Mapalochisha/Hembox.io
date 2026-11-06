@@ -9,8 +9,9 @@ import { useToast } from "@/hooks/use-toast"
 import { createClient } from "@/lib/supabase/client"
 import { 
   Save, Phone, FileText, Info, ShieldCheck, HelpCircle, Loader2, 
-  ArrowUpRight, Instagram, Facebook, Twitter, Linkedin, Share2, MessageCircle
+  ArrowUpRight, Share2, MessageCircle
 } from "lucide-react"
+import { FaInstagram as Instagram, FaFacebook as Facebook, FaXTwitter as Twitter, FaLinkedin as Linkedin } from "react-icons/fa6"
 
 export default function SettingsPage() {
   const [isLoading, setIsLoading] = useState(true)

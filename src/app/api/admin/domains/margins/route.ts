@@ -34,7 +34,7 @@ function response(body: unknown, status = 200) {
 }
 
 async function requireAdmin() {
-  const authClient = createClient()
+  const authClient = await createClient()
   const { data: { user }, error: userError } = await authClient.auth.getUser()
   if (userError || !user) return 401 as const
 

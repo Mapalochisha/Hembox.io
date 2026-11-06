@@ -11,7 +11,7 @@ const itemSchema = z.object({
   unitAmountMinor: z.number().int().min(0).max(Number.MAX_SAFE_INTEGER),
   sourceType: z.string().trim().max(80).optional(),
   sourceId: z.string().uuid().optional(),
-  itemSnapshot: z.record(z.unknown()).optional(),
+  itemSnapshot: z.record(z.string(), z.unknown()).optional(),
 }).strict()
 const createSchema = z.object({
   customerId: z.string().uuid(),
@@ -23,14 +23,14 @@ const createSchema = z.object({
   sourceId: z.string().uuid().optional().nullable(),
   customerNote: z.string().trim().max(1000).optional(),
   taxMinor: z.number().int().min(0).max(Number.MAX_SAFE_INTEGER).default(0),
-  commercialSnapshot: z.record(z.unknown()).optional(),
+  commercialSnapshot: z.record(z.string(), z.unknown()).optional(),
   creationKey: z.string().trim().min(8).max(160).regex(/^[A-Za-z0-9._:-]+$/),
   items: z.array(itemSchema).min(1).max(50),
 }).strict()
 
 function json(body: unknown, status = 200) { return NextResponse.json(body, { status, headers: { "Cache-Control": "no-store" } }) }
 async function requireAdmin() {
-  const authClient = createClient()
+  const authClient = await createClient()
   const { data: { user }, error } = await authClient.auth.getUser()
   if (error || !user) return { status: 401 as const }
   const { data: role, error: roleError } = await authClient.rpc("get_user_role", { user_id: user.id })
@@ -43,7 +43,7 @@ export async function GET() {
   try {
     const auth = await requireAdmin()
     if (auth.status !== 200) return json({ error: auth.status === 401 ? "Authentication required." : auth.status === 403 ? "Administrator access required." : "Unable to verify administrator access." }, auth.status)
-    const db = createClient() as unknown as SupabaseClient
+    const db = await createClient() as unknown as SupabaseClient
     const [{ data: invoices, error }, { data: profiles, error: profilesError }] = await Promise.all([
       db.from("billing_invoices").select("id,invoice_number,customer_id,status,currency,subtotal_minor,tax_minor,total_minor,issued_at,due_at,source_type,source_id,created_at").order("created_at", { ascending: false }).limit(200),
       db.from("profiles").select("id,email,full_name").order("full_name", { ascending: true }).limit(1000),
@@ -73,7 +73,7 @@ export async function POST(request: Request) {
   try {
     const auth = await requireAdmin()
     if (auth.status !== 200) return json({ error: auth.status === 401 ? "Authentication required." : auth.status === 403 ? "Administrator access required." : "Unable to verify administrator access." }, auth.status)
-    const db = createClient() as unknown as SupabaseClient
+    const db = await createClient() as unknown as SupabaseClient
     const { data, error } = await db.rpc("authenticated_create_billing_invoice", {
       p_customer_id: parsed.data.customerId,
       p_invoice_number: parsed.data.invoiceNumber,
@@ -110,7 +110,7 @@ export async function PATCH(request: Request) {
   try {
     const auth = await requireAdmin()
     if (auth.status !== 200) return json({ error: auth.status === 401 ? "Authentication required." : auth.status === 403 ? "Administrator access required." : "Unable to verify administrator access." }, auth.status)
-    const db = createClient() as unknown as SupabaseClient
+    const db = await createClient() as unknown as SupabaseClient
     const { data, error } = await db.rpc("authenticated_void_billing_invoice", { p_invoice_id: parsed.data.invoiceId, p_reason: parsed.data.reason.trim() })
     if (error) {
       if (error.code === "42501") return json({ error: "Administrator access is required." }, 403)

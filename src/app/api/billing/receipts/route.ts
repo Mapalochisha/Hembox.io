@@ -9,7 +9,7 @@ function json(body: unknown, status = 200) { return NextResponse.json(body, { st
 
 export async function POST(request: Request) {
   try {
-    const authClient = createClient()
+    const authClient = await createClient()
     const { data: { user }, error: authError } = await authClient.auth.getUser()
     if (authError || !user) return json({ error: "Sign in to upload payment evidence." }, 401)
     const form = await request.formData()

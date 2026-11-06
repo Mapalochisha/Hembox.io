@@ -14,16 +14,17 @@ const schema = z.discriminatedUnion("action", [
   z.object({ action: z.literal("nameservers"), nameservers: z.array(z.string()).min(2).max(8), idempotencyKey: z.string().min(8).max(120), customerNote: z.string().trim().max(500).optional() }).strict(),
 ])
 
-export async function GET(_request: Request, context: { params: { orderId: string } }) {
+export async function GET(_request: Request, context: { params: Promise<{ orderId: string }> }) {
+  const { orderId } = await context.params
   if (process.env.DOMAIN_PROVIDER_MODE?.trim().toLowerCase() !== "namesilo-sandbox") return json({ error: "Sandbox management is disabled." }, 404)
-  const auth = createClient()
+  const auth = await createClient()
   const { data: { user }, error } = await auth.auth.getUser()
   if (error || !user) return json({ error: "Sign in to manage this domain." }, 401)
   const db = createServiceClient() as unknown as SupabaseClient
   try {
     const { data: order, error: orderError } = await db.from("domain_sandbox_orders")
       .select("id,customer_id,domain_name,status,expires_at,nameservers,provider_environment")
-      .eq("id", context.params.orderId).eq("customer_id", user.id).maybeSingle()
+      .eq("id", orderId).eq("customer_id", user.id).maybeSingle()
     if (orderError) throw orderError
     if (!order || order.status !== "registered") return json({ error: "Only your confirmed registered sandbox domains can be managed." }, 404)
     const [info, requestsResult] = await Promise.all([
@@ -45,18 +46,19 @@ export async function GET(_request: Request, context: { params: { orderId: strin
   }
 }
 
-export async function POST(request: Request, context: { params: { orderId: string } }) {
+export async function POST(request: Request, context: { params: Promise<{ orderId: string }> }) {
+  const { orderId } = await context.params
   if (process.env.DOMAIN_PROVIDER_MODE?.trim().toLowerCase() !== "namesilo-sandbox") return json({ error: "Sandbox management is disabled." }, 404)
   const parsed = schema.safeParse(await request.json().catch(() => null))
   if (!parsed.success) return json({ error: "Provide a valid renewal term or nameserver list and request key." }, 400)
-  const auth = createClient()
+  const auth = await createClient()
   const { data: { user }, error } = await auth.auth.getUser()
   if (error || !user) return json({ error: "Sign in to manage this domain." }, 401)
   const db = createServiceClient() as unknown as SupabaseClient
   try {
     const { data: order, error: orderError } = await db.from("domain_sandbox_orders")
       .select("id,customer_id,domain_name,status,expires_at,nameservers")
-      .eq("id", context.params.orderId).eq("customer_id", user.id).maybeSingle()
+      .eq("id", orderId).eq("customer_id", user.id).maybeSingle()
     if (orderError) throw orderError
     if (!order || order.status !== "registered") return json({ error: "Only your confirmed registered sandbox domains can be managed." }, 404)
     const existing = await db.from("domain_sandbox_management_requests").select("*")

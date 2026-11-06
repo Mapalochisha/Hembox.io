@@ -21,7 +21,7 @@ export async function POST(request: Request) {
   const parsed = schema.safeParse(body)
   if (!parsed.success) return json({ error: "Complete the service type and provide a short project brief." }, 400)
   try {
-    const auth = createAuthClient()
+    const auth = await createAuthClient()
     const { data: { user }, error: authError } = await auth.auth.getUser()
     if (authError || !user || !user.email) return json({ error: "Sign in with an email address to request a service." }, 401)
 

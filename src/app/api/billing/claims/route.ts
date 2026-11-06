@@ -55,11 +55,11 @@ export async function POST(request: Request) {
   if (!!parsed.data.receiptObjectKey !== !!parsed.data.receiptMimeType || !!parsed.data.receiptObjectKey !== !!parsed.data.receiptSizeBytes) return json({ error: "Receipt metadata is incomplete." }, 400)
 
   try {
-    const authClient = createClient()
+    const authClient = await createClient()
     const { data: { user }, error: authError } = await authClient.auth.getUser()
     if (authError || !user) return json({ error: "Sign in to submit a payment claim." }, 401)
 
-    const db = createClient() as unknown as SupabaseClient
+    const db = await createClient() as unknown as SupabaseClient
     const input = parsed.data
     const { data: existing, error: existingError } = await db
       .from("billing_payment_claims")
@@ -197,10 +197,10 @@ export async function PATCH(request: Request) {
   if (!parsed.success) return json({ error: "Provide valid updated payment details." }, 400)
   if (!!parsed.data.receiptObjectKey !== !!parsed.data.receiptMimeType || !!parsed.data.receiptObjectKey !== !!parsed.data.receiptSizeBytes) return json({ error: "Receipt metadata is incomplete." }, 400)
   try {
-    const authClient = createClient()
+    const authClient = await createClient()
     const { data: { user }, error: authError } = await authClient.auth.getUser()
     if (authError || !user) return json({ error: "Sign in to update this claim." }, 401)
-    const db = createClient() as unknown as SupabaseClient
+    const db = await createClient() as unknown as SupabaseClient
     const { data: claim, error: claimError } = await db.from("billing_payment_claims")
       .select("id,invoice_id,customer_id,status,review_note,receipt_object_key,receipt_mime_type,receipt_size_bytes")
       .eq("id", parsed.data.claimId).eq("customer_id", user.id).maybeSingle()

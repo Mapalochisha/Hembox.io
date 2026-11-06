@@ -46,7 +46,7 @@ export async function GET(request: Request) {
       return json({ error: "Provide a valid order id." }, 400)
     }
 
-    const authClient = createClient()
+    const authClient = await createClient()
     const { data: { user }, error: authError } = await authClient.auth.getUser()
     if (authError || !user) return json({ error: "Sign in to view registrant details." }, 401)
 
@@ -87,7 +87,7 @@ export async function POST(request: Request) {
   }
 
   try {
-    const authClient = createClient()
+    const authClient = await createClient()
     const { data: { user }, error: authError } = await authClient.auth.getUser()
     if (authError || !user) return json({ error: "Sign in to save registrant details." }, 401)
 

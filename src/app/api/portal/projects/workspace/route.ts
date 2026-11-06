@@ -33,7 +33,7 @@ async function getOwnedProject(db: SupabaseClient, projectId: string, customerId
 
 export async function GET(request: Request) {
   try {
-    const auth = createAuthClient()
+    const auth = await createAuthClient()
     const { data: { user }, error: authError } = await auth.auth.getUser()
     if (authError || !user) return json({ error: "Sign in to view project collaboration." }, 401)
     const projectId = new URL(request.url).searchParams.get("projectId")
@@ -65,7 +65,7 @@ export async function POST(request: Request) {
   const parsed = actionSchema.safeParse(body)
   if (!parsed.success) return json({ error: "Provide a valid project action." }, 400)
   try {
-    const auth = createAuthClient()
+    const auth = await createAuthClient()
     const { data: { user }, error: authError } = await auth.auth.getUser()
     if (authError || !user) return json({ error: "Sign in to update this project." }, 401)
     const db = auth as unknown as SupabaseClient

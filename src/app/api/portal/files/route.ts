@@ -16,7 +16,7 @@ const ALLOWED: Record<string, string> = {
 function json(body: unknown, status = 200) { return NextResponse.json(body, { status, headers: { "Cache-Control": "no-store" } }) }
 
 async function currentUser() {
-  const auth = createAuthClient()
+  const auth = await createAuthClient()
   const { data: { user }, error } = await auth.auth.getUser()
   return error || !user ? null : { auth, user }
 }

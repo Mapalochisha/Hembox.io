@@ -12,7 +12,7 @@ const json = (body: unknown, status = 200) => NextResponse.json(body, { status, 
 const sandboxEnabled = () => process.env.DOMAIN_PROVIDER_MODE?.trim().toLowerCase() === "namesilo-sandbox"
 
 async function adminContext() {
-  const auth = createClient()
+  const auth = await createClient()
   const { data: { user }, error } = await auth.auth.getUser()
   if (error || !user) return { status: 401 as const }
   const { data: role, error: roleError } = await auth.rpc("get_user_role", { user_id: user.id })

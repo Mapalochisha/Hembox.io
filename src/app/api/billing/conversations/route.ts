@@ -6,7 +6,7 @@ export const dynamic="force-dynamic"
 const sendSchema=z.object({conversationId:z.string().uuid(),body:z.string().trim().min(1).max(5000)}).strict()
 function json(body:unknown,status=200){return NextResponse.json(body,{status,headers:{"Cache-Control":"no-store"}})}
 async function currentCustomer(){
- const client=createClient()
+ const client=await createClient()
  const {data:{user},error}=await client.auth.getUser()
  if(error||!user||!user.email)return null
  return user
@@ -22,7 +22,7 @@ export async function GET(request:Request){
   if(!user)return json({error:"Sign in to view this conversation."},401)
   const id=new URL(request.url).searchParams.get("conversationId")
   if(!id||!/^[0-9a-f-]{36}$/i.test(id))return json({error:"Provide a valid conversation."},400)
-  const db=createClient() as unknown as SupabaseClient
+  const db=await createClient() as unknown as SupabaseClient
   const conversation=await ownedConversation(db,id,user.id)
   if(!conversation)return json({error:"Conversation not found."},404)
   const {data,error}=await db.from("inquiry_messages").select("id,inquiry_id,sender_role,body,created_at").eq("inquiry_id",id).order("created_at",{ascending:true}).limit(200)
@@ -37,7 +37,7 @@ export async function POST(request:Request){
  try{
   const user=await currentCustomer()
   if(!user)return json({error:"Sign in to send a message."},401)
-  const db=createClient() as unknown as SupabaseClient
+  const db=await createClient() as unknown as SupabaseClient
   const conversation=await ownedConversation(db,parsed.data.conversationId,user.id)
   if(!conversation)return json({error:"Conversation not found."},404)
   const {data,error}=await db.from("inquiry_messages").insert({inquiry_id:conversation.id,sender_role:"customer",sender_id:user.id,body:parsed.data.body.trim()}).select("id,inquiry_id,sender_role,body,created_at").single()

@@ -16,7 +16,7 @@ function json(body: unknown, status = 200) {
 }
 
 async function requireAdmin() {
-  const authClient = createClient()
+  const authClient = await createClient()
   const { data: { user }, error: userError } = await authClient.auth.getUser()
   if (userError || !user) return { status: 401 as const }
   const { data: role, error: roleError } = await authClient.rpc("get_user_role", { user_id: user.id })
@@ -29,7 +29,7 @@ export async function GET() {
   try {
     const auth = await requireAdmin()
     if (auth.status !== 200) return json({ error: auth.status === 401 ? "Authentication required." : auth.status === 403 ? "Administrator access required." : "Unable to verify administrator access." }, auth.status)
-    const db = createClient() as unknown as SupabaseClient
+    const db = await createClient() as unknown as SupabaseClient
     const { data: claims, error } = await db.from("billing_payment_claims")
       .select("id,invoice_id,customer_id,method_key_snapshot,method_name_snapshot,transaction_reference,claimed_amount_minor,currency,customer_note,receipt_object_key,receipt_mime_type,receipt_size_bytes,status,review_note,reviewed_by,reviewed_at,created_at")
       .order("created_at", { ascending: true }).limit(200)
@@ -57,7 +57,7 @@ export async function POST(request: Request) {
   try {
     const auth = await requireAdmin()
     if (auth.status !== 200) return json({ error: auth.status === 401 ? "Authentication required." : auth.status === 403 ? "Administrator access required." : "Unable to verify administrator access." }, auth.status)
-    const db = createClient() as unknown as SupabaseClient
+    const db = await createClient() as unknown as SupabaseClient
     const { data, error } = await db.rpc("authenticated_review_billing_payment_claim", {
       p_claim_id: parsed.data.claimId,
       p_decision: parsed.data.decision,

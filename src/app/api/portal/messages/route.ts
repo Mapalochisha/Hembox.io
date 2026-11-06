@@ -10,7 +10,7 @@ function json(body: unknown, status = 200) { return NextResponse.json(body, { st
 
 export async function GET() {
   try {
-    const auth = createAuthClient()
+    const auth = await createAuthClient()
     const { data: { user }, error: authError } = await auth.auth.getUser()
     if (authError || !user) return json({ error: "Sign in to view your messages." }, 401)
     const db: any = createServiceClient()
@@ -37,7 +37,7 @@ export async function POST(request: Request) {
   const parsed = sendSchema.safeParse(body)
   if (!parsed.success) return json({ error: "Enter a valid conversation and a message of up to 5,000 characters." }, 400)
   try {
-    const auth = createAuthClient()
+    const auth = await createAuthClient()
     const { data: { user }, error: authError } = await auth.auth.getUser()
     if (authError || !user) return json({ error: "Sign in to send a message." }, 401)
     const db: any = createServiceClient()

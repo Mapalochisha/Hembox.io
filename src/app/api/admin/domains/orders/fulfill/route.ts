@@ -28,7 +28,7 @@ export async function POST(request: Request) {
   if (!parsed.success) return json({ error: "Complete the registration details and confirm the required pre-registration checks." }, 400)
 
   try {
-    const authClient = createClient()
+    const authClient = await createClient()
     const { data: { user }, error: userError } = await authClient.auth.getUser()
     if (userError || !user) return json({ error: "Authentication required." }, 401)
     const { data: role, error: roleError } = await authClient.rpc("get_user_role", { user_id: user.id })

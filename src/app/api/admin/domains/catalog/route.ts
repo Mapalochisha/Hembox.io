@@ -21,7 +21,7 @@ const catalogSchema = z.object({
 })
 
 async function getAdminId() {
-  const authClient = createClient()
+  const authClient = await createClient()
   const { data: { user }, error: userError } = await authClient.auth.getUser()
   if (userError || !user) return { userId: null, status: 401 as const }
 

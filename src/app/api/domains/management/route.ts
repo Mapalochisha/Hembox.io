@@ -18,7 +18,7 @@ const schema = z.object({
 }).strict()
 
 async function currentUser() {
-  const auth = createClient()
+  const auth = await createClient()
   const { data: { user }, error } = await auth.auth.getUser()
   return error || !user ? null : user
 }

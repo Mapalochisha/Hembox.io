@@ -28,7 +28,7 @@ export async function POST(request: Request) {
   if (!parsed.success) return json({ error: "Provide a valid order and payment details." }, 400)
 
   try {
-    const authClient = createClient()
+    const authClient = await createClient()
     const { data: { user }, error: authError } = await authClient.auth.getUser()
     if (authError || !user) return json({ error: "Sign in to continue." }, 401)
 
