@@ -18,6 +18,7 @@ const inter = Inter({
 });
 
 export const metadata: Metadata = {
+  metadataBase: new URL("https://hembox.tech"),
   title: `${BRAND_NAME} — ${BRAND_TAGLINE}`,
   description: `${BRAND_NAME} builds beyond boundaries with branding, websites, applications, and digital solutions that help businesses move forward.`,
   openGraph: {
