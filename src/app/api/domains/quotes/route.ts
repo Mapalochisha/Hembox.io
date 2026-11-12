@@ -12,6 +12,7 @@ import {
   type DomainQuoteCatalogRecord,
 } from "@/lib/domains/quote-service"
 import { isDomainQuoteUsable, type DomainQuoteSnapshot } from "@/lib/domains/quotes"
+import { checkRateLimit, QUOTE_RATE_LIMIT } from "@/lib/domains/rate-limit"
 
 export const dynamic = "force-dynamic"
 export const runtime = "nodejs"
@@ -118,6 +119,15 @@ async function getSavedQuote(db: SupabaseClient, orderId: string) {
 }
 
 export async function POST(request: Request) {
+  const ip =
+    request.headers.get("x-forwarded-for") ??
+    request.headers.get("x-real-ip") ??
+    "unknown"
+  const rateLimit = checkRateLimit(ip, QUOTE_RATE_LIMIT.windowMs, QUOTE_RATE_LIMIT.maxRequests)
+  if (!rateLimit.allowed) {
+    return json({ error: "Too many requests. Please wait before trying again." }, 429)
+  }
+
   const body = await request.json().catch(() => null)
   const parsed = requestSchema.safeParse(body)
   if (!parsed.success) {

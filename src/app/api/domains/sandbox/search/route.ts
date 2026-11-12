@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server"
 import { z } from "zod"
 import { createNameSiloSandboxOperations } from "@/lib/domains/providers/namesilo-sandbox-operations"
+import { checkRateLimit, SEARCH_RATE_LIMIT } from "@/lib/domains/rate-limit"
 
 export const dynamic = "force-dynamic"
 export const runtime = "nodejs"
@@ -9,6 +10,17 @@ const schema = z.object({ domainName: z.string().trim().toLowerCase().min(3).max
 const headers = { "Cache-Control": "no-store", "X-Robots-Tag": "noindex" }
 
 export async function POST(request: Request) {
+  const ip =
+    request.headers.get("x-forwarded-for") ??
+    request.headers.get("x-real-ip") ??
+    "unknown"
+  const rateLimit = checkRateLimit(ip, SEARCH_RATE_LIMIT.windowMs, SEARCH_RATE_LIMIT.maxRequests)
+  if (!rateLimit.allowed) {
+    return NextResponse.json(
+      { error: "Too many requests. Please wait before trying again." },
+      { status: 429, headers: { ...headers, "Retry-After": String(Math.ceil(rateLimit.retryAfterMs / 1000)) } },
+    )
+  }
   if (process.env.DOMAIN_PROVIDER_MODE?.trim().toLowerCase() !== "namesilo-sandbox") {
     return NextResponse.json({ error: "The domain sandbox is not enabled." }, { status: 404, headers })
   }

@@ -1,11 +1,24 @@
 import { NextResponse } from "next/server"
 import { getDomainProvider } from "@/lib/domains/provider"
 import { parseDomainSearchRequest } from "@/lib/domains/validation"
+import { checkRateLimit, SEARCH_RATE_LIMIT } from "@/lib/domains/rate-limit"
 
 export const dynamic = "force-dynamic"
 export const runtime = "nodejs"
 
 export async function POST(request: Request) {
+  const ip =
+    request.headers.get("x-forwarded-for") ??
+    request.headers.get("x-real-ip") ??
+    "unknown"
+  const rateLimit = checkRateLimit(ip, SEARCH_RATE_LIMIT.windowMs, SEARCH_RATE_LIMIT.maxRequests)
+  if (!rateLimit.allowed) {
+    return NextResponse.json(
+      { error: "Too many requests. Please wait before trying again." },
+      { status: 429, headers: { "Retry-After": String(Math.ceil(rateLimit.retryAfterMs / 1000)) } },
+    )
+  }
+
   let body: unknown
 
   try {
