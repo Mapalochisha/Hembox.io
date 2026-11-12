@@ -198,7 +198,7 @@ export default function DomainsPage() {
                       setError("")
                       setSuccess(false)
                     }}
-                    placeholder="yourbusiness.com"
+                    placeholder="Search for a domain (e.g. yourbusiness.com)"
                     className="h-14 min-w-0 w-full bg-transparent text-base font-semibold outline-none placeholder:font-normal placeholder:text-slate-400"
                     aria-describedby="domain-note"
                   />

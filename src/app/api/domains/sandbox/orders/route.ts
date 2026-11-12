@@ -52,7 +52,24 @@ export async function GET() {
       .select("id,domain_name,term_years,status,payment_mode,payment_status,test_payment_reference,test_payment_submitted_at,test_payment_reviewed_at,provider_environment,registered_at,expires_at,nameservers,last_provider_check_at,last_provider_message,created_at")
       .eq("customer_id", user.id).order("created_at", { ascending: false }).limit(50)
     if (error) throw error
-    return json({ orders: data ?? [] })
+    const orders = data ?? []
+    // Fetch pending management request counts for registered orders
+    const registeredIds = orders.filter((o) => o.status === "registered").map((o) => o.id)
+    let pendingCountsByOrder: Record<string, number> = {}
+    if (registeredIds.length > 0) {
+      const { data: pending } = await db.from("domain_sandbox_management_requests")
+        .select("order_id")
+        .in("order_id", registeredIds)
+        .eq("customer_id", user.id)
+        .in("status", ["requested", "processing", "unknown"])
+      if (pending) {
+        for (const row of pending) {
+          pendingCountsByOrder[row.order_id] = (pendingCountsByOrder[row.order_id] ?? 0) + 1
+        }
+      }
+    }
+    const enriched = orders.map((o) => ({ ...o, pending_management_requests: pendingCountsByOrder[o.id] ?? 0 }))
+    return json({ orders: enriched })
   } catch {
     return json({ error: "Sandbox domain orders are unavailable. The sandbox migration may not be deployed yet." }, 503)
   }
