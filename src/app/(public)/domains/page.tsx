@@ -259,7 +259,7 @@ export default function DomainsPage() {
                       <div className="text-left sm:text-right">
                         <p className="text-xs uppercase tracking-wider text-slate-400">Annual Rate</p>
                         <p className="text-2xl font-black text-navy">
-                          {formatCatalogPrice(searchResult.registrationPriceMinor)}
+                          {formatCatalogPrice(searchResult.registrationPriceMinor ?? null)}
                         </p>
                         <p className="text-xs text-slate-500">per year</p>
                       </div>
