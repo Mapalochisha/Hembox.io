@@ -413,11 +413,19 @@ export function createNameSiloSandboxOperations(dependencies: SandboxDependencie
     // NameSilo's renewDomain can restore a domain during its restoration period.
     // This tool only allows renewal for an active sandbox domain, avoiding
     // accidental restoration charges. Restoration needs a separate explicit flow.
+    const isPastExpiry = Boolean(existing.expiresAt && Number.isFinite(Date.parse(existing.expiresAt)) && Date.parse(existing.expiresAt) < Date.now())
     if (existing.providerStatus?.toLowerCase() !== "active") {
       return createNotAttemptedOutcome(
         "renewDomain",
         domain,
         "Renewal was not attempted because the sandbox domain is not confirmed active. Expired/processing domains require separate review.",
+      )
+    }
+    if (isPastExpiry) {
+      return createNotAttemptedOutcome(
+        "renewDomain",
+        domain,
+        "Renewal was not attempted because the sandbox domain expiry is in the past. Expired domains require restoration review.",
       )
     }
 
@@ -453,11 +461,19 @@ export function createNameSiloSandboxOperations(dependencies: SandboxDependencie
         "Nameserver change was not attempted because OTE domain information could not confirm that the domain is in the sandbox account.",
       )
     }
+    const isPastExpiry = Boolean(existing.expiresAt && Number.isFinite(Date.parse(existing.expiresAt)) && Date.parse(existing.expiresAt) < Date.now())
     if (existing.providerStatus?.toLowerCase() !== "active") {
       return createNotAttemptedOutcome(
         "changeNameServers",
         domain,
         "Nameserver change was not attempted because the sandbox domain is not confirmed active.",
+      )
+    }
+    if (isPastExpiry) {
+      return createNotAttemptedOutcome(
+        "changeNameServers",
+        domain,
+        "Nameserver change was not attempted because the sandbox domain expiry is in the past.",
       )
     }
 

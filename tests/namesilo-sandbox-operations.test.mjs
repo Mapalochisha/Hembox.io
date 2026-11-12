@@ -178,6 +178,70 @@ test("renewal will not call the transactional endpoint for an expired domain", a
   })
   assert.equal(outcome.state, "not_attempted")
   assert.deepEqual(operations, ["/api/getDomainInfo"])
+  assert.match(outcome.message, /not confirmed active/i)
+})
+
+test("renewal will not call the transactional endpoint when domain expiry date is in the past", async () => {
+  const operations = []
+  const api = createNameSiloSandboxOperations({
+    env: env(),
+    fetchImpl: async (url) => {
+      const parsed = new URL(String(url))
+      operations.push(parsed.pathname)
+      return response({ reply: { code: 300, detail: "success", status: "Active", created: "2024-10-22", expires: "2025-10-22" } })
+    },
+  })
+
+  const outcome = await api.renewDomain({
+    confirmSandboxOnly: "OTE_ONLY",
+    domain: "giglgfhiikk.com",
+    years: 1,
+  })
+  assert.equal(outcome.state, "not_attempted")
+  assert.deepEqual(operations, ["/api/getDomainInfo"])
+  assert.match(outcome.message, /in the past/i)
+})
+
+test("nameserver change will not call the transactional endpoint for an expired domain", async () => {
+  const operations = []
+  const api = createNameSiloSandboxOperations({
+    env: env(),
+    fetchImpl: async (url) => {
+      const parsed = new URL(String(url))
+      operations.push(parsed.pathname)
+      return response({ reply: { code: 300, detail: "success", status: "Expired", created: "2024-10-22", expires: "2025-10-22" } })
+    },
+  })
+
+  const outcome = await api.changeNameServers({
+    confirmSandboxOnly: "OTE_ONLY",
+    domain: "example.com",
+    nameservers: ["ns1.namesilo.com", "ns2.namesilo.com"],
+  })
+  assert.equal(outcome.state, "not_attempted")
+  assert.deepEqual(operations, ["/api/getDomainInfo"])
+  assert.match(outcome.message, /not confirmed active/i)
+})
+
+test("nameserver change will not call the transactional endpoint when domain expiry date is in the past", async () => {
+  const operations = []
+  const api = createNameSiloSandboxOperations({
+    env: env(),
+    fetchImpl: async (url) => {
+      const parsed = new URL(String(url))
+      operations.push(parsed.pathname)
+      return response({ reply: { code: 300, detail: "success", status: "Active", created: "2024-10-22", expires: "2025-10-22" } })
+    },
+  })
+
+  const outcome = await api.changeNameServers({
+    confirmSandboxOnly: "OTE_ONLY",
+    domain: "giglgfhiikk.com",
+    nameservers: ["ns1.namesilo.com", "ns2.namesilo.com"],
+  })
+  assert.equal(outcome.state, "not_attempted")
+  assert.deepEqual(operations, ["/api/getDomainInfo"])
+  assert.match(outcome.message, /in the past/i)
 })
 
 

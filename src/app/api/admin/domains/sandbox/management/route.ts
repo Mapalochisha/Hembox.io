@@ -75,14 +75,36 @@ export async function POST(request: Request) {
 
     const operations = createNameSiloSandboxOperations()
     const info = await operations.getDomainInfo(order.domain_name)
-    if (info.state !== "found" || info.providerStatus?.toLowerCase() !== "active") {
-      if (parsed.data.action === "apply") {
-        await db.from("domain_sandbox_management_requests").update({ status: "failed", provider_result: { state: "not_attempted", message: info.message } }).eq("id", row.id).eq("status", "processing")
-      }
-      return json({ error: "OTE does not confirm an active domain. No registrar mutation was attempted.", providerInfo: info }, 409)
+    const isPastExpiry = Boolean(info.expiresAt && Number.isFinite(Date.parse(info.expiresAt)) && Date.parse(info.expiresAt) < Date.now())
+    const isInactive = info.state !== "found" || info.providerStatus?.toLowerCase() !== "active" || isPastExpiry
+
+    if (parsed.data.action === "apply" && isInactive) {
+      const failureReason = info.state !== "found"
+        ? "Domain information could not be confirmed in NameSilo OTE."
+        : isPastExpiry || info.providerStatus?.toLowerCase() === "expired"
+          ? `Domain is expired in NameSilo OTE (${info.expiresAt ? `expired on ${new Date(info.expiresAt).toLocaleDateString()}` : "past expiry date"}). Reconcile or restore provider state before requesting changes.`
+          : `Domain status in NameSilo OTE is ${info.providerStatus ?? "unknown"}, not active. No registrar mutation was attempted.`
+
+      await db.from("domain_sandbox_management_requests").update({
+        status: "failed",
+        admin_note: parsed.data.adminNote?.trim() || failureReason,
+        provider_result: {
+          operation: row.request_type === "renewal" ? "renewDomain" : "changeNameServers",
+          state: "not_attempted",
+          message: failureReason,
+          providerStatus: info.providerStatus,
+          expiresAt: info.expiresAt,
+        },
+      }).eq("id", row.id).eq("status", "processing")
+
+      return json({
+        error: failureReason,
+        providerState: "not_attempted",
+        providerInfo: info,
+      }, 409)
     }
 
-    let providerResult: { state: string; operation: string; providerCode: number | null; providerOrderAmount?: string | null } | null = null
+    let providerResult: { state: string; operation: string; providerCode: number | null; providerOrderAmount?: string | null; message?: string } | null = null
     let confirmedNameservers: string[] | null = null
     let newExpiresAt: string | null = null
     if (parsed.data.action === "apply") {
@@ -93,16 +115,38 @@ export async function POST(request: Request) {
           providerResult = await operations.changeNameServers({ confirmSandboxOnly: "OTE_ONLY", domain: order.domain_name, nameservers: row.requested_nameservers as string[] })
         }
       } catch (e) {
-        await db.from("domain_sandbox_management_requests").update({ status: "unknown", provider_result: { state: "unknown", error: e instanceof Error ? e.name : "provider_error" } }).eq("id", row.id).eq("status", "processing")
-        return json({ error: "The registrar outcome is uncertain. Reconcile OTE state before any further action.", reconciliationRequired: true }, 202)
+        const errorMsg = "The registrar outcome is uncertain. Reconcile OTE state before any further action."
+        await db.from("domain_sandbox_management_requests").update({
+          status: "unknown",
+          admin_note: parsed.data.adminNote?.trim() || errorMsg,
+          provider_result: { state: "unknown", error: e instanceof Error ? e.name : "provider_error" },
+        }).eq("id", row.id).eq("status", "processing")
+        return json({ error: errorMsg, reconciliationRequired: true }, 202)
       }
       if (!["acknowledged","acknowledged_with_warning"].includes(providerResult.state)) {
         const uncertain = providerResult.state === "ambiguous"
+        const notAttempted = providerResult.state === "not_attempted"
+        const failureMessage = providerResult.message || (notAttempted
+          ? "Domain is expired or not active in NameSilo OTE. No registrar mutation was attempted."
+          : uncertain
+            ? "OTE returned an ambiguous outcome. Reconcile before any further action."
+            : "OTE did not apply the requested change.")
+
         await db.from("domain_sandbox_management_requests").update({
           status: uncertain ? "unknown" : "failed",
-          provider_result: { operation: providerResult.operation, state: providerResult.state, providerCode: providerResult.providerCode },
+          admin_note: parsed.data.adminNote?.trim() || (uncertain ? null : failureMessage),
+          provider_result: {
+            operation: providerResult.operation,
+            state: providerResult.state,
+            providerCode: providerResult.providerCode,
+            message: failureMessage,
+          },
         }).eq("id", row.id).eq("status", "processing")
-        return json({ error: providerResult.state === "ambiguous" ? "OTE returned an ambiguous outcome. Reconcile before any further action." : "OTE did not apply the requested change.", providerState: providerResult.state, reconciliationRequired: uncertain }, uncertain ? 202 : 409)
+        return json({
+          error: failureMessage,
+          providerState: providerResult.state,
+          reconciliationRequired: uncertain,
+        }, uncertain ? 202 : 409)
       }
     } else {
       providerResult = row.provider_result?.operation
@@ -112,22 +156,34 @@ export async function POST(request: Request) {
 
     const after = await operations.getDomainInfo(order.domain_name)
     if (after.state !== "found" || after.providerStatus?.toLowerCase() !== "active") {
-      await db.from("domain_sandbox_management_requests").update({ status: "unknown", provider_result: { operation: providerResult.operation, state: "unknown", providerCode: providerResult.providerCode } }).eq("id", row.id)
-      return json({ error: "The registrar response is not yet confirmed. Request is held for read-only reconciliation; do not retry.", reconciliationRequired: true }, 202)
+      const unconfirmedMessage = "The registrar response is not yet confirmed. Request is held for read-only reconciliation; do not retry."
+      await db.from("domain_sandbox_management_requests").update({
+        status: "unknown",
+        provider_result: { operation: providerResult.operation, state: "unknown", providerCode: providerResult.providerCode, message: unconfirmedMessage },
+      }).eq("id", row.id)
+      return json({ error: unconfirmedMessage, reconciliationRequired: true }, 202)
     }
     if (row.request_type === "renewal") {
       const expiry = after.expiresAt ? Date.parse(after.expiresAt) : Number.NaN
       const oldExpiry = row.previous_expires_at ? Date.parse(row.previous_expires_at) : Number.NaN
       if (!Number.isFinite(expiry) || !Number.isFinite(oldExpiry) || expiry <= oldExpiry) {
-        await db.from("domain_sandbox_management_requests").update({ status: "unknown", provider_result: { operation: providerResult.operation, state: "unconfirmed", providerCode: providerResult.providerCode } }).eq("id", row.id)
-        return json({ error: "A later expiry has not been confirmed. Request is held for read-only reconciliation; do not retry.", reconciliationRequired: true }, 202)
+        const unconfirmedExpiryMessage = "A later expiry has not been confirmed. Request is held for read-only reconciliation; do not retry."
+        await db.from("domain_sandbox_management_requests").update({
+          status: "unknown",
+          provider_result: { operation: providerResult.operation, state: "unconfirmed", providerCode: providerResult.providerCode, message: unconfirmedExpiryMessage },
+        }).eq("id", row.id)
+        return json({ error: unconfirmedExpiryMessage, reconciliationRequired: true }, 202)
       }
       newExpiresAt = new Date(expiry).toISOString()
     } else {
       const requested = row.requested_nameservers as string[]
       if (!requested.every((server) => after.nameservers.includes(server))) {
-        await db.from("domain_sandbox_management_requests").update({ status: "unknown", provider_result: { operation: providerResult.operation, state: "unconfirmed", providerCode: providerResult.providerCode } }).eq("id", row.id)
-        return json({ error: "The requested nameservers are not confirmed. Request is held for read-only reconciliation; do not retry.", reconciliationRequired: true }, 202)
+        const unconfirmedNsMessage = "The requested nameservers are not confirmed. Request is held for read-only reconciliation; do not retry."
+        await db.from("domain_sandbox_management_requests").update({
+          status: "unknown",
+          provider_result: { operation: providerResult.operation, state: "unconfirmed", providerCode: providerResult.providerCode, message: unconfirmedNsMessage },
+        }).eq("id", row.id)
+        return json({ error: unconfirmedNsMessage, reconciliationRequired: true }, 202)
       }
       confirmedNameservers = after.nameservers
     }
