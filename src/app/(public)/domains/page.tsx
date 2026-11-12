@@ -1,12 +1,14 @@
 "use client"
 
-import { useEffect, useRef, useState } from "react"
+import { useEffect, useState } from "react"
 import type { FormEvent } from "react"
 import Link from "next/link"
+import { useRouter } from "next/navigation"
 import { BRAND_NAME } from "@/lib/brand"
 import {
   ArrowRight,
   CheckCircle2,
+  CircleAlert,
   Globe2,
   Loader2,
   LockKeyhole,
@@ -45,17 +47,17 @@ const benefits = [
   {
     icon: ShieldCheck,
     title: "Clear pricing",
-    description: "We confirm registration and renewal costs before you commit.",
+    description: "We confirm registration and renewal costs upfront before you pay.",
   },
   {
     icon: RefreshCw,
-    title: "Renewal reminders",
-    description: "Know when your domain is due for renewal, with no surprise claims.",
+    title: "Automatic renewal reminders",
+    description: "Know exactly when your domain is due for renewal with zero surprise price jumps.",
   },
   {
     icon: LockKeyhole,
-    title: "Your domain, your control",
-    description: "We’re building a secure place to track your domain and its status.",
+    title: "Your domain, your ownership",
+    description: "Manage DNS, renewals, and domain settings directly from your Hembox client portal.",
   },
 ]
 
@@ -73,16 +75,22 @@ function isValidDomain(value: string) {
   )
 }
 
+type SearchResultState = {
+  domain: string
+  availability: "available" | "unavailable" | "unknown"
+  message?: string
+  registrationPriceMinor?: number | null
+  renewalPriceMinor?: number | null
+}
+
 export default function DomainsPage() {
+  const router = useRouter()
   const [domain, setDomain] = useState("")
-  const [contact, setContact] = useState("")
-  const [name, setName] = useState("")
   const [error, setError] = useState("")
-  const [success, setSuccess] = useState(false)
-  const [isSubmitting, setIsSubmitting] = useState(false)
+  const [isSearching, setIsSearching] = useState(false)
+  const [searchResult, setSearchResult] = useState<SearchResultState | null>(null)
   const [catalog, setCatalog] = useState<CatalogItem[]>([])
   const [catalogLoading, setCatalogLoading] = useState(true)
-  const idempotencyKey = useRef<string | null>(null)
 
   useEffect(() => {
     let active = true
@@ -104,190 +112,255 @@ export default function DomainsPage() {
     const base = selectedDomain.split(".")[0] || ""
     setDomain(base ? `${base}${extension}` : `yourbrand${extension}`)
     setError("")
-    setSuccess(false)
+    setSearchResult(null)
   }
 
-  async function handleSubmit(event: FormEvent<HTMLFormElement>) {
+  async function handleSearch(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
     setError("")
-    setSuccess(false)
+    setSearchResult(null)
 
-    if (!isValidDomain(selectedDomain)) {
-      setError("Enter a complete domain, such as yourbusiness.com.")
+    let domainToQuery = selectedDomain
+    if (!domainToQuery.includes(".")) {
+      domainToQuery = `${domainToQuery}.com`
+      setDomain(domainToQuery)
+    }
+
+    if (!isValidDomain(domainToQuery)) {
+      setError("Please enter a valid domain name (e.g. yourbusiness.com).")
       return
     }
 
-    if (!contact.trim()) {
-      setError("Enter an email address or WhatsApp number so we can reply.")
-      return
-    }
-
-    setIsSubmitting(true)
-    if (!idempotencyKey.current) idempotencyKey.current = crypto.randomUUID()
+    setIsSearching(true)
     try {
-      const response = await fetch("/api/inquiries", {
+      const response = await fetch("/api/domains/search", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          type: "contact",
-          contact: contact.trim(),
-          name: name.trim(),
-          source: "domain-storefront",
-          domain: selectedDomain,
-          idempotencyKey: idempotencyKey.current,
-          message: `Domain availability request: ${selectedDomain}\n\nPlease check availability with the registrar and confirm registration price, renewal price, and next steps before any payment is requested.`,
-        }),
+        body: JSON.stringify({ domains: [domainToQuery] }),
       })
       const result = await response.json()
-
       if (!response.ok) {
-        throw new Error(result.error || "We couldn't send your request. Please try again.")
+        throw new Error(result.error || "Could not check availability. Please try again.")
       }
 
-      setSuccess(true)
-      idempotencyKey.current = null
-    } catch (submissionError) {
-      setError(submissionError instanceof Error ? submissionError.message : "We couldn't send your request. Please try again.")
+      const item = Array.isArray(result.results) ? result.results[0] : null
+      if (!item) {
+        throw new Error("No availability result returned from registrar.")
+      }
+
+      const ext = "." + domainToQuery.split(".").at(-1)
+      const catalogEntry = catalog.find((c) => c.tld === ext)
+
+      setSearchResult({
+        domain: domainToQuery,
+        availability: item.availability,
+        message: item.message,
+        registrationPriceMinor: catalogEntry?.registrationPriceMinor ?? null,
+        renewalPriceMinor: catalogEntry?.renewalPriceMinor ?? null,
+      })
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Availability check failed.")
     } finally {
-      setIsSubmitting(false)
+      setIsSearching(false)
     }
+  }
+
+  function handleClaimDomain() {
+    if (!searchResult || searchResult.availability !== "available") return
+    const targetUrl = `/portal/domains?claim=${encodeURIComponent(searchResult.domain)}`
+    router.push(`/register?next=${encodeURIComponent(targetUrl)}`)
   }
 
   return (
-    <div className="relative min-h-screen overflow-hidden bg-white text-navy">
-      <div className="pointer-events-none absolute inset-x-0 top-0 -z-0 h-[620px] bg-[radial-gradient(ellipse_at_top,rgba(45,212,191,0.15),transparent_65%)]" />
+    <div className="min-h-screen bg-white text-navy selection:bg-teal selection:text-white">
       <Navbar />
 
-      <main className="relative pt-32 sm:pt-36">
-        <section className="mx-auto max-w-[1120px] px-5 pb-16 sm:px-8 sm:pb-24">
-          <div className="mx-auto max-w-3xl text-center">
-            <div className="mb-6 inline-flex items-center gap-2 rounded-full border border-teal/20 bg-white/80 px-4 py-2 text-xs font-bold uppercase tracking-[0.14em] text-navy shadow-sm">
-              <Sparkles className="h-4 w-4 text-teal" />
-              Domains by {BRAND_NAME}
-            </div>
-            <h1 className="text-balance text-4xl font-black leading-[1.06] tracking-[-0.045em] sm:text-6xl lg:text-7xl">
-              Your next big idea
-              <span className="mt-2 block text-teal">needs a name.</span>
-            </h1>
-            <p className="mx-auto mt-6 max-w-2xl text-base leading-7 text-slate-600 sm:text-lg sm:leading-8">
-              Find a home for your brand. Tell us the domain you want and we’ll check availability and confirm registration and renewal pricing before you commit.
-            </p>
-            <Link href="/domains/sandbox" className="mt-5 inline-flex items-center gap-2 rounded-xl border border-teal/30 bg-teal/5 px-4 py-2.5 text-sm font-bold text-teal transition hover:bg-teal/10">
-              Try the NameSilo sandbox journey <ArrowRight className="h-4 w-4" />
-            </Link>
+      <main className="relative pt-24">
+        <section className="relative overflow-hidden px-5 pb-20 pt-12 sm:px-8 sm:pb-24 sm:pt-16">
+          <div className="pointer-events-none absolute left-1/2 top-0 -translate-x-1/2 select-none">
+            <div className="h-[400px] w-[900px] rounded-full bg-gradient-to-tr from-teal/15 via-blue-50/30 to-transparent blur-[110px]" />
           </div>
 
-          <div className="mx-auto mt-10 max-w-3xl rounded-[28px] border border-slate-200 bg-white p-3 shadow-[0_24px_80px_-32px_rgba(15,23,42,0.25)] sm:mt-12 sm:rounded-[32px] sm:p-5">
-            <form onSubmit={handleSubmit} className="space-y-4">
-              <label htmlFor="domain-name" className="block px-1 text-left text-sm font-bold text-slate-800">
-                What domain would you like?
-              </label>
-              <div className="flex flex-col gap-3 sm:flex-row">
-                <div className="flex min-w-0 flex-1 items-center gap-3 rounded-2xl border border-slate-200 bg-slate-50 px-4 focus-within:border-teal focus-within:bg-white focus-within:ring-4 focus-within:ring-teal/10">
-                  <Search className="h-5 w-5 shrink-0 text-slate-400" />
+          <div className="relative mx-auto max-w-[840px] text-center">
+            <div className="inline-flex items-center gap-2 rounded-full border border-teal/20 bg-teal/5 px-4 py-1.5 text-xs font-bold text-teal">
+              <Sparkles className="h-3.5 w-3.5" />
+              Live Registrar Search · Instant Verification
+            </div>
+
+            <h1 className="mt-6 text-4xl font-black tracking-tight sm:text-6xl sm:leading-[1.1]">
+              Find your ideal domain in <span className="text-teal">seconds</span>.
+            </h1>
+
+            <p className="mt-5 text-base leading-7 text-slate-600 sm:text-lg">
+              Search real-time availability directly with our registrar. Claim your domain name, set up your account, and manage your brand all from the {BRAND_NAME} portal.
+            </p>
+
+            <form onSubmit={handleSearch} className="mx-auto mt-8 max-w-2xl text-left">
+              <div className="relative flex flex-col gap-2 rounded-2xl border border-slate-200 bg-white p-2 shadow-xl shadow-slate-900/5 sm:flex-row sm:items-center sm:gap-0 sm:rounded-full">
+                <div className="flex flex-1 items-center px-4">
+                  <Search className="h-5 w-5 text-slate-400" />
                   <input
-                    id="domain-name"
-                    name="domain"
                     type="text"
-                    autoCapitalize="none"
-                    autoCorrect="off"
-                    spellCheck={false}
                     value={domain}
-                    onChange={(event) => {
-                      setDomain(event.target.value)
+                    onChange={(e) => {
+                      setDomain(e.target.value)
                       setError("")
-                      setSuccess(false)
+                      setSearchResult(null)
                     }}
                     placeholder="Search for a domain (e.g. yourbusiness.com)"
-                    className="h-14 min-w-0 w-full bg-transparent text-base font-semibold outline-none placeholder:font-normal placeholder:text-slate-400"
-                    aria-describedby="domain-note"
+                    className="h-12 w-full bg-transparent px-3 text-sm font-medium text-navy placeholder:text-slate-400 focus:outline-none sm:text-base"
+                    required
                   />
                 </div>
+
                 <button
                   type="submit"
-                  disabled={isSubmitting}
-                  className="inline-flex h-14 shrink-0 items-center justify-center gap-2 rounded-2xl bg-navy px-6 text-sm font-bold text-white transition hover:bg-slate-800 focus:outline-none focus:ring-4 focus:ring-navy/15 disabled:cursor-not-allowed disabled:opacity-60 sm:px-7"
+                  disabled={isSearching}
+                  className="inline-flex h-12 items-center justify-center gap-2 rounded-xl bg-navy px-6 text-sm font-bold text-white transition hover:bg-navy/90 disabled:opacity-70 sm:rounded-full"
                 >
-                  {isSubmitting ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
-                  {isSubmitting ? "Sending request" : "Request availability"}
-                  {!isSubmitting ? <ArrowRight className="h-4 w-4" /> : null}
+                  {isSearching ? (
+                    <>
+                      <Loader2 className="h-4 w-4 animate-spin text-teal" />
+                      Checking...
+                    </>
+                  ) : (
+                    <>
+                      Check availability
+                      <ArrowRight className="h-4 w-4 text-teal" />
+                    </>
+                  )}
                 </button>
               </div>
-              <p id="domain-note" className="px-1 text-left text-xs leading-5 text-slate-500">
-                This sends an enquiry to {BRAND_NAME}; it does not reserve or register a domain.
-              </p>
 
-              <div className="grid gap-3 border-t border-slate-100 pt-4 sm:grid-cols-2">
-                <div>
-                  <label htmlFor="domain-contact" className="mb-1.5 block px-1 text-left text-xs font-semibold text-slate-600">
-                    Email or WhatsApp number
-                  </label>
-                  <input
-                    id="domain-contact"
-                    name="contact"
-                    value={contact}
-                    onChange={(event) => setContact(event.target.value)}
-                    placeholder="you@example.com"
-                    autoComplete="email"
-                    className="h-12 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm outline-none transition placeholder:text-slate-400 focus:border-teal focus:ring-4 focus:ring-teal/10"
-                  />
+              {error && (
+                <div className="mt-4 flex items-center gap-2 rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm font-medium text-rose-800">
+                  <CircleAlert className="h-4 w-4 shrink-0 text-rose-600" />
+                  {error}
                 </div>
-                <div>
-                  <label htmlFor="domain-name-contact" className="mb-1.5 block px-1 text-left text-xs font-semibold text-slate-600">
-                    Your name <span className="font-normal text-slate-400">(optional)</span>
-                  </label>
-                  <input
-                    id="domain-name-contact"
-                    name="name"
-                    value={name}
-                    onChange={(event) => setName(event.target.value)}
-                    placeholder="How should we address you?"
-                    autoComplete="name"
-                    className="h-12 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm outline-none transition placeholder:text-slate-400 focus:border-teal focus:ring-4 focus:ring-teal/10"
-                  />
-                </div>
-              </div>
-
-              {error ? (
-                <p role="alert" className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-left text-sm text-red-700">{error}</p>
-              ) : null}
-              {success ? (
-                <div role="status" className="flex items-start gap-3 rounded-xl border border-teal/30 bg-teal/10 px-4 py-3 text-left text-sm text-slate-800">
-                  <CheckCircle2 className="mt-0.5 h-5 w-5 shrink-0 text-teal" />
-                  <span><strong>Request sent.</strong> We’ve received your enquiry for {selectedDomain}. The domain is not registered or reserved yet; we’ll confirm availability and pricing before you decide.</span>
-                </div>
-              ) : null}
+              )}
             </form>
+
+            {searchResult && (
+              <div className="mx-auto mt-8 max-w-2xl text-left animate-in fade-in slide-in-from-bottom-2 duration-300">
+                {searchResult.availability === "available" ? (
+                  <div className="rounded-3xl border border-teal/40 bg-teal/5 p-6 shadow-lg shadow-teal/5 sm:p-7">
+                    <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+                      <div>
+                        <div className="inline-flex items-center gap-1.5 rounded-full bg-teal/20 px-3 py-1 text-xs font-extrabold uppercase tracking-wider text-teal">
+                          <CheckCircle2 className="h-4 w-4 text-teal" />
+                          Available to Register
+                        </div>
+                        <h3 className="mt-2 text-2xl font-black text-navy">{searchResult.domain}</h3>
+                        <p className="mt-1 text-sm text-slate-500">
+                          Verified live in NameSilo registry.
+                        </p>
+                      </div>
+
+                      <div className="text-left sm:text-right">
+                        <p className="text-xs uppercase tracking-wider text-slate-400">Annual Rate</p>
+                        <p className="text-2xl font-black text-navy">
+                          {formatCatalogPrice(searchResult.registrationPriceMinor)}
+                        </p>
+                        <p className="text-xs text-slate-500">per year</p>
+                      </div>
+                    </div>
+
+                    <div className="mt-6 flex flex-col gap-3 border-t border-teal/15 pt-5 sm:flex-row sm:items-center sm:justify-between">
+                      <p className="text-xs text-slate-600">
+                        Includes WHOIS privacy protection, free DNS management, and renewal protection.
+                      </p>
+                      <button
+                        type="button"
+                        onClick={handleClaimDomain}
+                        className="inline-flex h-11 shrink-0 items-center justify-center gap-2 rounded-xl bg-teal px-5 text-sm font-black text-navy transition hover:bg-teal/90 shadow-md shadow-teal/20"
+                      >
+                        Claim domain & sign up
+                        <ArrowRight className="h-4 w-4" />
+                      </button>
+                    </div>
+                  </div>
+                ) : searchResult.availability === "unavailable" ? (
+                  <div className="rounded-3xl border border-slate-200 bg-slate-50 p-6 sm:p-7">
+                    <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                      <div>
+                        <span className="inline-flex items-center rounded-full bg-slate-200 px-3 py-1 text-xs font-bold text-slate-700">
+                          Already Taken
+                        </span>
+                        <h3 className="mt-2 text-xl font-black text-navy">{searchResult.domain}</h3>
+                        <p className="mt-1 text-sm text-slate-500">
+                          This domain is already registered. Try searching another name or extension below.
+                        </p>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => { setDomain(""); setSearchResult(null); }}
+                        className="inline-flex h-10 items-center justify-center gap-2 rounded-xl border border-slate-300 bg-white px-4 text-xs font-bold text-slate-700 hover:bg-slate-50"
+                      >
+                        Try another name
+                      </button>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="rounded-3xl border border-amber-200 bg-amber-50 p-6 sm:p-7">
+                    <span className="inline-flex items-center rounded-full bg-amber-200 px-3 py-1 text-xs font-bold text-amber-900">
+                      Status Unconfirmed
+                    </span>
+                    <h3 className="mt-2 text-xl font-black text-navy">{searchResult.domain}</h3>
+                    <p className="mt-1 text-sm text-amber-900">
+                      {searchResult.message || "The registrar could not return a conclusive status right now. Please try again in a moment."}
+                    </p>
+                  </div>
+                )}
+              </div>
+            )}
           </div>
 
-          <div className="mx-auto mt-10 max-w-3xl rounded-2xl border border-slate-200 bg-white p-5 sm:p-6">
-            <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
+          <div className="mx-auto mt-14 max-w-4xl">
+            <div className="mb-4 flex items-center justify-between">
               <div>
-                <p className="text-xs font-bold uppercase tracking-[0.16em] text-teal">Published domain prices</p>
-                <h2 className="mt-2 text-xl font-black text-navy">Registration and renewal</h2>
+                <p className="text-xs font-bold uppercase tracking-[0.16em] text-teal">TLD Catalogue</p>
+                <h2 className="mt-1 text-2xl font-black">Supported domain extensions</h2>
               </div>
-              <p className="text-xs text-slate-500">ZMW · availability is checked separately</p>
+              <p className="text-xs text-slate-500">All prices in Zambian Kwacha (ZMW)</p>
             </div>
+
             {catalogLoading ? (
-              <p className="mt-4 text-sm text-slate-500">Loading current catalogue…</p>
+              <div className="flex items-center justify-center rounded-3xl border border-slate-200 bg-slate-50/50 p-8 text-sm text-slate-500">
+                <Loader2 className="mr-2 h-4 w-4 animate-spin text-teal" />
+                Loading supported extensions...
+              </div>
             ) : catalog.length === 0 ? (
-              <p className="mt-4 rounded-xl bg-slate-50 p-4 text-sm leading-6 text-slate-600">No current TLD prices are published yet. You can still send an enquiry and we’ll confirm real availability and pricing before any payment.</p>
+              <div className="rounded-3xl border border-slate-200 bg-slate-50/50 p-8 text-center text-sm text-slate-500">
+                Live catalogue pricing is being refreshed.
+              </div>
             ) : (
-              <div className="mt-4 divide-y divide-slate-100">
+              <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
                 {catalog.map((item) => (
-                  <div key={item.tld} className="flex flex-col gap-2 py-3 sm:flex-row sm:items-center sm:justify-between">
-                    <div><p className="font-bold text-navy">{item.tld}</p><p className="text-xs text-slate-500">{item.pricingStatus === "current" ? "Current pricing snapshot" : "Price requires re-verification"}</p></div>
-                    <div className="grid grid-cols-2 gap-5 text-sm">
-                      <div><p className="text-xs text-slate-500">Registration</p><p className="font-bold">{formatCatalogPrice(item.registrationPriceMinor)}</p></div>
-                      <div><p className="text-xs text-slate-500">Renewal / year</p><p className="font-bold">{formatCatalogPrice(item.renewalPriceMinor)}</p></div>
+                  <div key={item.tld} className="flex flex-col justify-between rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+                    <div>
+                      <p className="text-lg font-black text-navy">{item.tld}</p>
+                      <p className="text-xs text-slate-500">
+                        {item.pricingStatus === "current" ? "Active retail rate" : "Price verification pending"}
+                      </p>
+                    </div>
+                    <div className="mt-4 grid grid-cols-2 gap-4 border-t border-slate-100 pt-3 text-sm">
+                      <div>
+                        <p className="text-xs text-slate-400">Registration</p>
+                        <p className="font-bold text-navy">{formatCatalogPrice(item.registrationPriceMinor)}</p>
+                      </div>
+                      <div>
+                        <p className="text-xs text-slate-400">Renewal / yr</p>
+                        <p className="font-bold text-navy">{formatCatalogPrice(item.renewalPriceMinor)}</p>
+                      </div>
                     </div>
                   </div>
                 ))}
               </div>
             )}
           </div>
-          <div className="mx-auto mt-8 max-w-3xl">
-            <p className="mb-3 text-center text-xs font-bold uppercase tracking-[0.16em] text-slate-400">Popular domain endings</p>
+
+          <div className="mx-auto mt-10 max-w-3xl">
+            <p className="mb-3 text-center text-xs font-bold uppercase tracking-[0.16em] text-slate-400">Quick select an extension</p>
             <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
               {extensions.map((item) => (
                 <button
@@ -313,7 +386,9 @@ export default function DomainsPage() {
             <div className="mx-auto mb-10 max-w-2xl text-center">
               <p className="text-xs font-bold uppercase tracking-[0.18em] text-coral">Straightforward by design</p>
               <h2 className="mt-3 text-3xl font-black tracking-tight sm:text-4xl">No guesswork. No hidden surprises.</h2>
-              <p className="mt-4 text-base leading-7 text-slate-600">Domain pricing and registration are being connected to our provider. We’ll confirm the real details before asking you to pay.</p>
+              <p className="mt-4 text-base leading-7 text-slate-600">
+                Domain pricing and availability are verified directly with NameSilo. You see transparent pricing before you commit.
+              </p>
             </div>
             <div className="grid gap-4 md:grid-cols-3">
               {benefits.map(({ icon: Icon, title, description }) => (
@@ -332,7 +407,9 @@ export default function DomainsPage() {
             <div className="max-w-2xl">
               <p className="text-xs font-bold uppercase tracking-[0.18em] text-teal">More than a domain</p>
               <h2 className="mt-3 text-3xl font-black tracking-tight sm:text-4xl">Need a website to go with it?</h2>
-              <p className="mt-4 max-w-xl text-sm leading-6 text-slate-300 sm:text-base sm:leading-7">Start with your domain, then build a website that gives your business a home online. Domain purchase and website development remain separate choices.</p>
+              <p className="mt-4 max-w-xl text-sm leading-6 text-slate-300 sm:text-base sm:leading-7">
+                Start with your domain, then build a website that gives your business a home online. Domain purchase and website development remain separate choices.
+              </p>
             </div>
             <Link href="/pricing" className="inline-flex h-12 shrink-0 items-center gap-2 rounded-xl bg-teal px-5 text-sm font-extrabold text-navy transition hover:bg-teal/90">
               Explore website services <ArrowRight className="h-4 w-4" />
@@ -340,7 +417,7 @@ export default function DomainsPage() {
           </div>
           <p className="mx-auto mt-6 flex max-w-3xl items-start justify-center gap-2 text-center text-xs leading-5 text-slate-500">
             <Globe2 className="mt-0.5 h-4 w-4 shrink-0" />
-            Domain availability, final prices, supported extensions, and registration terms must be confirmed before checkout. No registration or payment is performed on this page yet.
+            Registration and renewals are powered by verified provider pricing and backed by Hembox Tech support.
           </p>
         </section>
       </main>
