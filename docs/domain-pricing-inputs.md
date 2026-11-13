@@ -19,21 +19,32 @@ A TLD may be enabled only when **all** of these are recorded:
 
 Until then the TLD stays `enabled = false`. The public catalogue shows nothing, and `/api/domains/quotes` refuses to quote (`price_unavailable`).
 
-## 1. Retrieve provider costs — sandbox first
+## 1. Retrieve provider costs — sandbox first, then production
 
-The price reader now follows `DOMAIN_PROVIDER_MODE`; it no longer forces the production endpoint.
+The price reader follows `DOMAIN_PROVIDER_MODE`:
 
-1. In the Vercel environment (server-side only, never `NEXT_PUBLIC_*`):
-   - `DOMAIN_PROVIDER_MODE=namesilo-sandbox`
-   - `NAMESILO_SANDBOX_API_KEY=<OTE key>`
-2. Sign in as an administrator and open **Admin → Domains → Wholesale price reference** (`/admin/domains/provider-prices`).
-3. Press **Retrieve rates**. The endpoint is read-only: it persists nothing, enables nothing and never logs the key.
-4. The response is labelled `environment: test`, and the screen shows a sandbox warning. Record every value you plan to use:
+| `DOMAIN_PROVIDER_MODE` | Host | Credential |
+|---|---|---|
+| `namesilo-sandbox` | `ote.namesilo.com` | `NAMESILO_SANDBOX_API_KEY` |
+| `namesilo` | production API | `NAMESILO_API_KEY` |
+
+1. **Sandbox first (recommended):** Set `DOMAIN_PROVIDER_MODE=namesilo-sandbox` and
+   `NAMESILO_SANDBOX_API_KEY=<OTE key>` in the Vercel environment (server-side only, never
+   `NEXT_PUBLIC_*`). Sign in as an administrator and open **Admin → Domains → Wholesale price
+   reference** (`/admin/domains/provider-prices`). Press **Retrieve rates**. The endpoint is
+   read-only: it persists nothing, enables nothing and never logs the key. The response is
+   labelled `environment: test`, and the screen shows a sandbox warning.
+
+   **Sandbox caveat:** OTE is for rehearsing the flow. NameSilo sandbox pricing is not guaranteed
+   to match production pricing. Repeat against the production account **before** approving any
+   customer-facing price.
+
+2. **Production:** Set `DOMAIN_PROVIDER_MODE=namesilo` and `NAMESILO_API_KEY=<production key>`
+   in the Vercel environment. Repeat step 1 against production. The response is labelled
+   `environment: live`. Record every value you plan to use:
 
 | TLD | Registration (USD) | Renewal / year (USD) | Environment | Retrieved at | API key used |
 |---|---|---|---|---|---|
-
-**Sandbox caveat:** OTE is for rehearsing the flow. NameSilo sandbox pricing is not guaranteed to match production pricing. Repeat step 1–4 against the production account **before** approving any customer-facing price, and record both retrievals.
 
 **Provider caveat:** NameSilo's `getPrices` returns the schedule for the account making the call. The reader sends `retail_prices=1` to ask for public retail rates; that query parameter is **not confirmed** in NameSilo's published API reference, so treat the numbers as account pricing and verify them against the NameSilo control panel when you switch to the production key. Do not assume Discount Program rates — quote from standard pay-as-you-go.
 

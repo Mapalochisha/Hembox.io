@@ -117,29 +117,21 @@ functions present; `record_domain_manual_registration()` references the registra
 
 ## 4. Configuration truth — read this before testing
 
-**The domain provider is not configured on production.** In Vercel project `hembox-io`,
-`DOMAIN_PROVIDER_MODE`, `NAMESILO_SANDBOX_API_KEY` and `NAMESILO_API_KEY` exist only with target
-`preview`, scoped to the branch `feature/domain-reselling-platform`. Production carries only the
-six original Supabase/Cloudinary variables.
+**The domain provider is configured on production.** In Vercel project `hembox-io`, `DOMAIN_PROVIDER_MODE=namesilo` and `NAMESILO_API_KEY` are set on Production with target `all`. The live NameSilo endpoint is reachable but remains gated behind approved pricing before any TLD is enabled. `registerDomain` exists in live mode only; no customer-facing live registration is active until a TLD is approved and priced.
 
-Consequences on `hembox.tech` today: the price reader refuses by design, availability search
-cannot reach NameSilo, and no catalogue row exists (every domain table is empty). Public pages
-load correctly and `/api/domains/catalog` returns an empty catalogue — the intended state until a
-TLD is approved.
+Consequences on `hembox.tech` today: the price reader and availability search work against NameSilo production, but `/api/domains/catalog` returns an empty catalogue until a TLD is approved (every domain table is empty). Public pages load correctly. `/api/admin/domains/registration` is available for recording manual registrations completed externally at NameSilo.
 
-Test accounts exist and are email-confirmed: `admin@disposable.com` (`role = admin`) and
-`client@disposable.com` (`role = user`); neither has a `profiles` row. Passwords are held by the
-owner and must never be committed.
+Test accounts exist and are email-confirmed: `admin@disposable.com` (`role = admin`) and `client@disposable.com` (`role = user`); neither has a `profiles` row. Passwords are held by the owner and must never be committed.
 
-See [`vercel-reconfiguration.md`](./vercel-reconfiguration.md) for the exact fix.
+See [`vercel-reconfiguration.md`](./vercel-reconfiguration.md) for the exact configuration.
 
 ## 5. Milestone status
 
 | Milestone | State | Notes |
 |---|---|---|
 | M0 Foundation | done | |
-| M1 Registrar selection and commercial verification | partial | NameSilo chosen; **production key and funding still outstanding** |
-| M2 NameSilo read-only adapter | partial | adapter and OTE path work; production key never used; OTE returns `114` for out-of-account names |
+| M1 Registrar selection and commercial verification | partial | NameSilo chosen; **production key configured on Vercel Production; funding economics still outstanding** |
+| M2 NameSilo read-only adapter | partial | adapter and OTE path work; `registerDomain` implemented in live mode; production key configured but never used for registration; OTE returns `114` for out-of-account names |
 | M3 Pricing policy and TLD catalogue | partial | schema, server recalculation, staleness rules and the price-reference → catalogue handoff exist; **no cost, FX or markup input approved; no TLD enabled** |
 | M4 Cart, checkout and durable orders | partial (merged) | registrant capture, consent and fail-closed gate done; full purchase path not rehearsed |
 | M5 Manual payment workflow | partial | claims, evidence reconciliation and admin verification exist |
@@ -150,28 +142,25 @@ See [`vercel-reconfiguration.md`](./vercel-reconfiguration.md) for the exact fix
 
 ## 6. Pending work, in recommended order
 
-1. **Configure production** — add `DOMAIN_PROVIDER_MODE=namesilo-sandbox` and
-   `NAMESILO_SANDBOX_API_KEY` (Sensitive) to Vercel **Production**, all branches, then redeploy.
-   Verify `/admin/domains/provider-prices` reports `Environment: test`.
-2. **Obtain the pricing gate inputs** — registration *and* renewal cost from the provider for the
+1. **Obtain the pricing gate inputs** — registration *and* renewal cost from the provider for the
    same term basis, recorded with environment, timestamp and key used. OTE values are indicative
-   and cannot authorise a published price.
-3. **Approve commercial inputs** — FX source and rate, markup in basis points, ZMW minimum margin
+   and cannot authorise a published price. Production `NAMESILO_API_KEY` is configured; retrieve
+   production prices and record them before enabling any TLD.
+2. **Approve commercial inputs** — FX source and rate, markup in basis points, ZMW minimum margin
    floor, launch TLD set (`.com` recommended), daily refresh owner.
-4. **Seed the catalogue disabled** — enter approved values, let the server recompute the ZMW
+3. **Seed the catalogue disabled** — enter approved values, let the server recompute the ZMW
    retail price, review, then enable.
-5. ~~**Price reference → catalogue handoff**~~ — **done** in the same commit as this document:
+4. ~~**Price reference → catalogue handoff**~~ — **done** in the same commit as this document:
    `src/lib/domains/admin-catalogue-prefill.ts` plus **Use in catalogue** on the wholesale
    reference. Verified costs arrive with their environment and retrieval timestamp, `enabled`
    stays false, and FX/markup stay blank by design.
-6. **Authenticated E2E on `hembox.tech`** — price reader, registrant capture, manual claim,
+5. **Authenticated E2E on `hembox.tech`** — price reader, registrant capture, manual claim,
    guarded fulfilment. Requires a signed-in session.
-7. **M10a rate limiting** — the next unstarted milestone.
+6. **M10a rate limiting** — the next unstarted milestone.
 
 ## 7. Blockers and external dependencies
 
-- Production NameSilo credential and account funding — **owner has explicitly deferred** until the
-  sandbox flow is proven. Do not switch.
+- Production NameSilo credential is configured on Vercel Production (`NAMESILO_API_KEY` + `DOMAIN_PROVIDER_MODE=namesilo`); account funding route remains an owner decision. Live registration remains gated behind approved pricing and explicit authorization.
 - Zambian funding route — provider access expected 2026-11-02. Not blocking.
 - Real payments and live registration — sandbox only, by standing instruction.
 - `DOMAIN_MANUAL_PAYMENT_INSTRUCTIONS` is read by `src/app/api/domains/manual-payment/route.ts`
@@ -191,8 +180,7 @@ See [`vercel-reconfiguration.md`](./vercel-reconfiguration.md) for the exact fix
 
 ## 9. Constraints that must survive this handover
 
-- Sandbox key only. No production registrar credential, and no registrar mutation, without an
-  explicit owner decision.
+- Production NameSilo credential is configured (`NAMESILO_API_KEY`); no registrar mutation without an explicit owner decision and approved pricing.
 - Never register a domain merely because an order is paid.
 - Never fabricate availability, pricing, registration status or provider capability.
 - A payment receipt or transaction reference is never proof of settlement.

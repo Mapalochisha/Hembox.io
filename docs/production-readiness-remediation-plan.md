@@ -10,7 +10,7 @@ This plan converts the repository and infrastructure audit into verifiable relea
 
 ## Release decision
 
-HEMBOX is **not ready for live domain sales**. The sandbox customer journey is a useful foundation, but the live catalogue is empty, Production is configured for NameSilo OTE rather than live registrar operations, and payment-to-registration fulfilment has not been proven end to end.
+HEMBOX is **not ready for live domain sales**. The sandbox customer journey is a useful foundation, but the live catalogue is empty, production NameSilo credentials are configured (`DOMAIN_PROVIDER_MODE=namesilo` + `NAMESILO_API_KEY`), and payment-to-registration fulfilment has not been proven end to end.
 
 A limited launch must not be enabled until all Stage A and Stage B release gates are met. Stage C operational controls must be completed or explicitly accepted as launch risks.
 
