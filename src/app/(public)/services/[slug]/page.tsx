@@ -11,9 +11,21 @@ interface GalleryImage { url?: string; title?: string; caption?: string }
 interface FAQ { question?: string; answer?: string }
 const asArray = <T,>(value: unknown): T[] => Array.isArray(value) ? value as T[] : []
 
-export default async function ServicePage({ params }: { params: { slug: string } }) {
+export default async function ServicePage({ params }: { params: Promise<{ slug: string }> }) {
+  const { slug } = await params
   const supabase = await createClient()
-  const { data } = await supabase.from("services").select("*").eq("slug", params.slug).eq("status", "active").maybeSingle()
+  const { data, error } = await supabase
+    .from("services")
+    .select("*")
+    .eq("slug", slug)
+    .eq("status", "active")
+    .maybeSingle()
+
+  if (error) {
+    console.error("Unable to load service detail:", { slug, error })
+    throw new Error("Unable to load this service. Please try again later.")
+  }
+
   const service = data as any
 
   if (!service) {
