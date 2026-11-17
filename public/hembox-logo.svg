@@ -1,12 +1,201 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<svg xmlns="http://www.w3.org/2000/svg" width="2823" height="500" viewBox="0 0 2823 500" role="img" aria-label="Hembox Tech logo">
-  <title>Hembox Tech logo</title>
-  <g fill="#10233F">
-    <g id="hem-mark">
-      <path id="top-band-and-H" fill-rule="evenodd" d="M 0 345 L 0 50 A 50 50 0 0 1 50 0 L 450 0 A 50 50 0 0 1 500 50 L 500 125 L 470 125 L 470 50 A 20 20 0 0 0 450 30 L 50 30 A 20 20 0 0 0 30 50 L 30 235 L 110 235 L 110 155 L 140 155 L 140 345 L 110 345 L 110 265 L 30 265 L 30 345 Z"/>
-      <path id="E" fill-rule="evenodd" d="M 170 155 L 290 155 L 290 185 L 200 185 L 200 235 L 280 235 L 280 265 L 200 265 L 200 315 L 290 315 L 290 345 L 170 345 Z"/>
-      <path id="M-and-bottom-band" fill-rule="evenodd" d="M 320 345 L 320 155 L 350 155 L 410 245 L 470 155 L 500 155 L 500 450 A 50 50 0 0 1 450 500 L 50 500 A 50 50 0 0 1 0 450 L 0 375 L 30 375 L 30 450 A 20 20 0 0 0 50 470 L 450 470 A 20 20 0 0 0 470 450 L 470 205 L 420 275 L 400 275 L 350 205 L 350 345 Z"/>
+<svg xmlns="http://www.w3.org/2000/svg" width="2248" height="500" viewBox="0 0 2248 500" role="img" aria-label="HEMBOX TECH logo">
+  <title>HEMBOX TECH logo</title>
+  <g fill="currentColor" fill-rule="evenodd">
+
+    <!-- ===== HEM BOX square mark, 500 x 500 (same as hem-box-logo-1x1.svg) ===== -->
+    <!-- Top frame band merged with the letter H. Right cap at y=90. -->
+    <path id="top-band-and-H" d="
+      M 0 310
+      L 0 50
+      A 50 50 0 0 1 50 0
+      L 450 0
+      A 50 50 0 0 1 500 50
+      L 500 90
+      L 470 90
+      L 470 50
+      A 20 20 0 0 0 450 30
+      L 50 30
+      A 20 20 0 0 0 30 50
+      L 30 200
+      L 110 200
+      L 110 120
+      L 140 120
+      L 140 310
+      L 110 310
+      L 110 230
+      L 30 230
+      L 30 310
+      Z"/>
+
+    <!-- Letter E -->
+    <path id="E" d="
+      M 170 120
+      L 290 120
+      L 290 150
+      L 200 150
+      L 200 200
+      L 280 200
+      L 280 230
+      L 200 230
+      L 200 280
+      L 290 280
+      L 290 310
+      L 170 310
+      Z"/>
+
+    <!-- Letter M merged with the bottom frame band. Left cap at y=340. -->
+    <path id="M-and-bottom-band" d="
+      M 320 310
+      L 320 120
+      L 350 120
+      L 410 210
+      L 470 120
+      L 500 120
+      L 500 450
+      A 50 50 0 0 1 450 500
+      L 50 500
+      A 50 50 0 0 1 0 450
+      L 0 340
+      L 30 340
+      L 30 450
+      A 20 20 0 0 0 50 470
+      L 450 470
+      A 20 20 0 0 0 470 450
+      L 470 170
+      L 420 240
+      L 400 240
+      L 350 170
+      L 350 310
+      Z"/>
+
+    <!-- Small letter B -->
+    <path id="B" d="
+      M 165 350
+      L 213.61 350
+      A 6.94 5.71 0 0 1 220.56 355.71
+      L 220.56 384.29
+      A 6.94 5.71 0 0 1 213.61 390
+      A 6.94 5.71 0 0 1 220.56 395.71
+      L 220.56 424.29
+      A 6.94 5.71 0 0 1 213.61 430
+      L 165 430
+      Z
+      M 178.89 361.43
+      L 199.72 361.43
+      A 6.94 5.71 0 0 1 206.67 367.14
+      L 206.67 378.57
+      A 6.94 5.71 0 0 1 199.72 384.29
+      L 178.89 384.29
+      Z
+      M 178.89 395.71
+      L 199.72 395.71
+      A 6.94 5.71 0 0 1 206.67 401.43
+      L 206.67 412.86
+      A 6.94 5.71 0 0 1 199.72 418.57
+      L 178.89 418.57
+      Z"/>
+
+    <!-- Small letter O -->
+    <path id="O" d="
+      M 234.44 360
+      Q 234.44 350 244.44 350
+      L 280 350
+      Q 290 350 290 360
+      L 290 420
+      Q 290 430 280 430
+      L 244.44 430
+      Q 234.44 430 234.44 420
+      Z
+      M 248.33 371.43
+      Q 248.33 361.43 258.33 361.43
+      L 267.22 361.43
+      Q 276.11 361.43 276.11 371.43
+      L 276.11 408.57
+      Q 276.11 418.57 267.22 418.57
+      L 258.33 418.57
+      Q 248.33 418.57 248.33 408.57
+      Z"/>
+
+    <!-- Small letter X -->
+    <path id="X" d="
+      M 332.5 400
+      L 313 430
+      L 300 430
+      L 326 390
+      L 300 350
+      L 313 350
+      L 332.5 380
+      L 352 350
+      L 365 350
+      L 339 390
+      L 365 430
+      L 352 430
+      Z"/>
+
+    <!-- ===== TECH wordmark, cap height 500 = height of the square ===== -->
+    <g id="wordmark" transform="translate(552 0)">
+      <path id="wm-1-T" transform="translate(0 0)" d="
+        M 0 0
+        L 380 0
+        L 380 72
+        L 230 72
+        L 230 500
+        L 150 500
+        L 150 72
+        L 0 72
+        Z"/>
+      <path id="wm-2-E" transform="translate(424 0)" d="
+        M 0 0
+        L 330 0
+        L 330 72
+        L 80 72
+        L 80 214
+        L 300 214
+        L 300 286
+        L 80 286
+        L 80 428
+        L 330 428
+        L 330 500
+        L 0 500
+        Z"/>
+      <path id="wm-3-C" transform="translate(810 0)" d="
+        M 160 0
+        L 270 0
+        C 390 0 430 40 430 160
+        L 430 170
+        L 344 170
+        L 344 170
+        C 344 99.5 320.5 76 250 76
+        L 186 76
+        C 111 76 86 101 86 176
+        L 86 324
+        C 86 399 111 424 186 424
+        L 250 424
+        C 320.5 424 344 400.5 344 330
+        L 344 330
+        L 430 330
+        L 430 340
+        C 430 460 390 500 270 500
+        L 160 500
+        C 40 500 0 460 0 340
+        L 0 160
+        C 0 40 40 0 160 0
+        Z"/>
+      <path id="wm-4-H" transform="translate(1296 0)" d="
+        M 0 0
+        L 80 0
+        L 80 214
+        L 320 214
+        L 320 0
+        L 400 0
+        L 400 500
+        L 320 500
+        L 320 286
+        L 80 286
+        L 80 500
+        L 0 500
+        Z"/>
     </g>
-    <text x="570" y="335" font-family="Arial, Helvetica, sans-serif" font-size="250" font-weight="800" letter-spacing="30">HEMBOX TECH</text>
   </g>
 </svg>
