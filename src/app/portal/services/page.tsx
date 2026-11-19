@@ -5,7 +5,7 @@ import { BRAND_NAME } from "@/lib/brand"
 import Link from "next/link"
 import { useEffect, useState } from "react"
 import { PortalShell } from "@/components/portal/portal-shell"
-import { ArrowRight, BriefcaseBusiness, CalendarClock, CircleHelp, RefreshCw, BriefcaseBusiness } from "lucide-react"
+import { ArrowRight, BriefcaseBusiness, CalendarClock, CircleHelp, RefreshCw } from "lucide-react"
 
 type Service = { id:string; project_id:string|null; service_type:string; name:string; description:string|null; status:string; starts_at:string|null; renews_at:string|null; currency:string|null }
 function date(value:string|null){if(!value)return "Not scheduled";const parsed=new Date(value);return Number.isNaN(parsed.getTime())?"Not scheduled":parsed.toLocaleDateString("en-ZM",{dateStyle:"medium"})}
