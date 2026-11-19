@@ -31,7 +31,8 @@ function formatPrice(amount: number | null | undefined, currency = "ZMW", suffix
 }
 
 function Price({ service }: { service: any }) {
-  return <p className="text-3xl sm:text-4xl font-black tracking-tight text-navy">{formatPrice(service.price_amount, service.price_currency, service.price_suffix, service.pricing_model)}</p>
+  const label = service.pricing_model === "packages" ? "Choose a package" : formatPrice(service.price_amount, service.price_currency, service.price_suffix, service.pricing_model)
+  return <p className="text-3xl sm:text-4xl font-black tracking-tight text-navy">{label}</p>
 }
 
 function FamilyPage({ service, children }: { service: any; children: any[] }) {
