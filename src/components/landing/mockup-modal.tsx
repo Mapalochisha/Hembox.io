@@ -71,6 +71,10 @@ export function MockupModal() {
           message,
           product: context.product,
           service: context.service,
+          serviceId: context.serviceId,
+          packageId: context.packageId,
+          packageName: context.packageName,
+          priceSnapshot: context.priceSnapshot,
           source: typeof window !== "undefined" ? window.location.pathname : "website",
           honeypot,
         }),
@@ -139,7 +143,9 @@ export function MockupModal() {
                 <div className="mb-5 rounded-2xl bg-gray-50 border border-gray-100 p-4">
                   <p className="text-[11px] font-bold uppercase tracking-[0.16em] text-gray-400 mb-2">Project details</p>
                   {context.product && <p className="text-sm font-semibold text-navy">Plan: {context.product}</p>}
-                  {context.service && <p className="text-sm font-semibold text-navy">Service: {context.service}</p>}\n                  {context.packageName && <p className="text-sm font-semibold text-navy">Package: {context.packageName}</p>}\n                  {context.priceSnapshot && <p className="text-sm text-gray-600 mt-1">Price shown: {context.priceSnapshot}</p>}
+                  {context.service && <p className="text-sm font-semibold text-navy">Service: {context.service}</p>}
+                  {context.packageName && <p className="text-sm font-semibold text-navy">Package: {context.packageName}</p>}
+                  {context.priceSnapshot && <p className="text-sm text-gray-600 mt-1">Price shown: {context.priceSnapshot}</p>}
                 </div>
               )}
 
