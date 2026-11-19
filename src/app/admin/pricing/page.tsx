@@ -23,10 +23,13 @@ interface PricingPackage {
   status: 'active' | 'inactive'
   is_popular: boolean
   sort_order: number
+  service_id?: string | null
+  price_currency?: string | null
 }
 
 export default function AdminPricingPage() {
   const [packages, setPackages] = useState<PricingPackage[]>([])
+  const [serviceOptions, setServiceOptions] = useState<{ id: string; title: string }[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [isSaving, setIsSaving] = useState(false)
   const [showForm, setShowForm] = useState(false)
@@ -37,8 +40,10 @@ export default function AdminPricingPage() {
     description: "",
     price_amount: 0,
     price_suffix: "/project",
+    price_currency: "ZMW",
     features: [""] as string[],
-    is_popular: false
+    is_popular: false,
+    service_id: ""
   })
 
   const { toast } = useToast()
@@ -57,6 +62,8 @@ export default function AdminPricingPage() {
 
       if (error) throw error
       setPackages(data || [])
+      const { data: services } = await supabase.from("services").select("id,title").eq("status", "active").eq("page_type", "product").order("sort_order", { ascending: true })
+      setServiceOptions((services || []) as { id: string; title: string }[])
     } catch (error: any) {
       toast({
         title: "Error",
@@ -75,8 +82,10 @@ export default function AdminPricingPage() {
       description: pkg.description || "",
       price_amount: pkg.price_amount,
       price_suffix: pkg.price_suffix || "/project",
+      price_currency: pkg.price_currency || "ZMW",
       features: pkg.features && pkg.features.length > 0 ? pkg.features : [""],
-      is_popular: pkg.is_popular
+      is_popular: pkg.is_popular,
+      service_id: pkg.service_id || ""
     })
     setShowForm(true)
     window.scrollTo({ top: 0, behavior: 'smooth' })
@@ -93,7 +102,7 @@ export default function AdminPricingPage() {
       if (editingId) {
         const { data, error } = await supabase
           .from('pricing_packages')
-          .update({ ...formData, features: cleanFeatures })
+          .update({ ...formData, service_id: formData.service_id || null, features: cleanFeatures })
           .eq('id', editingId)
           .select()
 
@@ -106,7 +115,8 @@ export default function AdminPricingPage() {
         const { data, error } = await supabase
           .from('pricing_packages')
           .insert([{ 
-            ...formData, 
+            ...formData,
+            service_id: formData.service_id || null,
             features: cleanFeatures,
             status: 'active', 
             sort_order: packages.length 
@@ -139,9 +149,11 @@ export default function AdminPricingPage() {
       name: "", 
       description: "", 
       price_amount: 0, 
-      price_suffix: "/project", 
+      price_suffix: "/project",
+      price_currency: "ZMW",
       features: [""],
-      is_popular: false 
+      is_popular: false,
+      service_id: ""
     })
   }
 
@@ -266,6 +278,18 @@ export default function AdminPricingPage() {
                         className="h-12 rounded-xl"
                       />
                     </div>
+                  </div>
+                  <div className="space-y-2">
+                    <Label className="text-[13px] font-bold uppercase tracking-wider text-gray-500">Currency</Label>
+                    <select value={formData.price_currency} onChange={e => setFormData({ ...formData, price_currency: e.target.value })} className="w-full h-12 rounded-xl border border-input bg-white px-3 text-sm"><option value="ZMW">ZMW (K)</option><option value="USD">USD ($)</option><option value="ZAR">ZAR (R)</option></select>
+                  </div>
+                  <div className="space-y-2">
+                    <Label className="text-[13px] font-bold uppercase tracking-wider text-gray-500">Attach to product</Label>
+                    <select value={formData.service_id} onChange={e => setFormData({ ...formData, service_id: e.target.value })} className="w-full h-12 rounded-xl border border-input bg-white px-3 text-sm">
+                      <option value="">Unassigned / legacy package</option>
+                      {serviceOptions.map(service => <option key={service.id} value={service.id}>{service.title}</option>)}
+                    </select>
+                    <p className="text-xs text-gray-500">Packages attached to a product appear on that product&apos;s page. Unassigned packages are not shown in the public catalogue.</p>
                   </div>
                   <div className="space-y-2">
                     <Label className="text-[13px] font-bold uppercase tracking-wider text-gray-500">Description</Label>

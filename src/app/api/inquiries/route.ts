@@ -16,6 +16,10 @@ const inquirySchema = z.object({
   name: z.string().trim().max(120).optional().default(""),
   product: z.string().trim().max(120).optional(),
   service: z.string().trim().max(120).optional(),
+  serviceId: z.string().uuid().optional(),
+  packageId: z.string().uuid().optional(),
+  packageName: z.string().trim().max(120).optional(),
+  priceSnapshot: z.string().trim().max(160).optional(),
   source: z.string().trim().max(120).optional().default("website"),
   domain: z.string().trim().max(253).optional(),
   idempotencyKey: z.string().uuid().optional(),
@@ -48,6 +52,8 @@ export async function POST(request: Request) {
     const contextLines = [
       parsed.data.product ? `Selected plan: ${parsed.data.product}` : null,
       parsed.data.service ? `Selected service: ${parsed.data.service}` : null,
+      parsed.data.packageName ? `Selected package: ${parsed.data.packageName}` : null,
+      parsed.data.priceSnapshot ? `Price shown at enquiry: ${parsed.data.priceSnapshot}` : null,
     ].filter(Boolean)
     const storedMessage = contextLines.length > 0
       ? `${contextLines.join("\n")}\n\nMessage:\n${parsed.data.message}`
@@ -63,6 +69,15 @@ export async function POST(request: Request) {
       website: null,
       message: storedMessage,
       source: parsed.data.source || "website",
+      service_id: parsed.data.serviceId || null,
+      pricing_package_id: parsed.data.packageId || null,
+      product_snapshot: parsed.data.serviceId || parsed.data.packageId ? {
+        service_name: parsed.data.service || null,
+        service_id: parsed.data.serviceId || null,
+        package_name: parsed.data.packageName || null,
+        package_id: parsed.data.packageId || null,
+        displayed_price: parsed.data.priceSnapshot || null,
+      } : null,
     }
 
     const { data, error } = await supabase
