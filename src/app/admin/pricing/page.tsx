@@ -99,7 +99,7 @@ export default function AdminPricingPage() {
       if (editingId) {
         const { data, error } = await supabase
           .from('pricing_packages')
-          .update({ ...formData, features: cleanFeatures })
+          .update({ ...formData, service_id: formData.service_id || null, features: cleanFeatures })
           .eq('id', editingId)
           .select()
 
@@ -112,7 +112,8 @@ export default function AdminPricingPage() {
         const { data, error } = await supabase
           .from('pricing_packages')
           .insert([{ 
-            ...formData, 
+            ...formData,
+            service_id: formData.service_id || null,
             features: cleanFeatures,
             status: 'active', 
             sort_order: packages.length 
