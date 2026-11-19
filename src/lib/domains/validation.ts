@@ -67,7 +67,7 @@ export function buildDomainSearchCandidates(
   const tlds = Array.from(new Set(
     supportedTlds
       .map((tld) => tld.trim().toLowerCase())
-      .filter((tld) => /^\.[a-z0-9](?:[a-z0-9-]*[a-z0-9])?$/.test(tld)),
+      .filter((tld) => /^\\.[a-z0-9](?:[a-z0-9-]*[a-z0-9])?(?:\\.[a-z0-9](?:[a-z0-9-]*[a-z0-9])?)*$/.test(tld)),
   ))
   const exactTld = query.exactDomain
     ? query.exactDomain.slice(query.baseName.length)
