@@ -45,10 +45,8 @@ function FamilyPage({ service, solutions }: { service: any; solutions: any[] }) 
           <div className="max-w-[1200px] mx-auto px-6 lg:px-8 relative">
             <Link href="/#services" className="inline-flex items-center gap-2 text-sm font-semibold text-gray-500 hover:text-navy transition mb-10"><ArrowLeft className="w-4 h-4" /> All solutions</Link>
             <div className="max-w-3xl">
-              <p className="text-[13px] font-bold tracking-[0.2em] text-coral uppercase mb-4">Solution family</p>
               <h1 className="text-[42px] sm:text-[60px] font-black tracking-tight leading-[1.02]">{service.title}</h1>
               <p className="mt-6 text-lg sm:text-xl text-gray-600 leading-relaxed">{service.long_description || service.description}</p>
-              <div className="mt-8"><ServiceProjectCTA serviceName={service.title} context={{ service: service.title, serviceId: service.id }} /></div>
             </div>
           </div>
         </section>
@@ -56,7 +54,6 @@ function FamilyPage({ service, solutions }: { service: any; solutions: any[] }) 
         <section className="py-20 bg-gray-50/70">
           <div className="max-w-[1200px] mx-auto px-6 lg:px-8">
             <div className="max-w-2xl mb-12">
-              <p className="text-[13px] font-bold tracking-[0.2em] text-coral uppercase mb-3">Explore the solutions</p>
               <h2 className="text-[32px] sm:text-[42px] font-black tracking-tight">Choose the right starting point.</h2>
               <p className="text-gray-600 mt-4">Each solution has its own dedicated page, scope and pricing. Open an offering to see exactly what is included.</p>
             </div>
