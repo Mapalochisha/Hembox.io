@@ -44,6 +44,16 @@ test("builds candidates from enabled catalogue TLDs for a bare name", () => {
   )
 })
 
+test("supports multi-label TLDs in generated alternatives", () => {
+  const parsed = parseDomainSearchQuery({ query: "hembox" })
+  assert.equal(parsed.success, true)
+  if (!parsed.success) return
+  assert.deepEqual(buildDomainSearchCandidates(parsed.data, [".com", ".co.zm"]), {
+    exactSupported: null,
+    candidates: ["hembox.com", "hembox.co.zm"],
+  })
+})
+
 test("puts the exact supported domain first before alternatives", () => {
   const parsed = parseDomainSearchQuery({ query: "hembox.tech" })
   assert.equal(parsed.success, true)
