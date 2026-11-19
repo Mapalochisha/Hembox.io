@@ -272,7 +272,7 @@ export default function DomainsPage() {
                     {alternatives.length > 0 && (
                       <div className={exactResult ? "mt-8" : ""}>
                         <h2 className="mb-3 text-sm font-bold uppercase tracking-[0.14em] text-slate-500">
-                          {exactResult ? "Other extensions to consider" : "Available domain extensions"}
+                          {exactResult ? "Other extensions to consider" : "Matching domain extensions"}
                         </h2>
                         <div className="space-y-3">
                           {alternatives.map((result) => <ResultCard key={result.domain} result={result} />)}
