@@ -24,6 +24,7 @@ interface PricingPackage {
   is_popular: boolean
   sort_order: number
   service_id?: string | null
+  price_currency?: string | null
 }
 
 export default function AdminPricingPage() {
@@ -39,6 +40,7 @@ export default function AdminPricingPage() {
     description: "",
     price_amount: 0,
     price_suffix: "/project",
+    price_currency: "ZMW",
     features: [""] as string[],
     is_popular: false,
     service_id: ""
@@ -80,6 +82,7 @@ export default function AdminPricingPage() {
       description: pkg.description || "",
       price_amount: pkg.price_amount,
       price_suffix: pkg.price_suffix || "/project",
+      price_currency: pkg.price_currency || "ZMW",
       features: pkg.features && pkg.features.length > 0 ? pkg.features : [""],
       is_popular: pkg.is_popular,
       service_id: pkg.service_id || ""
@@ -146,7 +149,8 @@ export default function AdminPricingPage() {
       name: "", 
       description: "", 
       price_amount: 0, 
-      price_suffix: "/project", 
+      price_suffix: "/project",
+      price_currency: "ZMW",
       features: [""],
       is_popular: false,
       service_id: ""
@@ -274,6 +278,10 @@ export default function AdminPricingPage() {
                         className="h-12 rounded-xl"
                       />
                     </div>
+                  </div>
+                  <div className="space-y-2">
+                    <Label className="text-[13px] font-bold uppercase tracking-wider text-gray-500">Currency</Label>
+                    <select value={formData.price_currency} onChange={e => setFormData({ ...formData, price_currency: e.target.value })} className="w-full h-12 rounded-xl border border-input bg-white px-3 text-sm"><option value="ZMW">ZMW (K)</option><option value="USD">USD ($)</option><option value="ZAR">ZAR (R)</option></select>
                   </div>
                   <div className="space-y-2">
                     <Label className="text-[13px] font-bold uppercase tracking-wider text-gray-500">Attach to product</Label>
