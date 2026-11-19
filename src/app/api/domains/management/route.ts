@@ -31,7 +31,7 @@ export async function GET(request: Request) {
   try {
     const db = createServiceClient() as unknown as SupabaseClient
     const { data: order, error: orderError } = await db.from("domain_orders")
-      .select("id,customer_id,status,domain_name,expires_at,nameservers,nameservers_updated_at")
+      .select("id,customer_id,status,domain_name,expires_at,registered_at,nameservers,nameservers_updated_at,retail_currency,renewal_retail_minor")
       .eq("id", orderId).eq("customer_id", user.id).maybeSingle()
     if (orderError) throw orderError
     if (!order) return json({ error: "Domain order not found." }, 404)
