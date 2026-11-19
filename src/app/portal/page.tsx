@@ -5,9 +5,10 @@ import { useEffect, useState } from "react"
 import { PortalShell } from "@/components/portal/portal-shell"
 import { createClient, isSupabaseConfigured } from "@/lib/supabase/client"
 import {
-  ArrowRight, ArrowUpRight, BriefcaseBusiness, CheckCircle2,
-  CircleDollarSign, Clock3, FileText, FolderKanban, Globe2, MessageSquare,
-  Plus, RefreshCw, Sparkles, Wallet
+  ArrowRight, ArrowUpRight, BarChart, BriefcaseBusiness, Camera, CheckCircle2, Cloud, Code, Cpu, Database,
+  CircleDollarSign, Clock3, FileText, FolderKanban, Globe2, GraduationCap, Heart, Layers, Layout, LifeBuoy,
+  Lock, Megaphone, MessageSquare, MousePointer2, Palette, PenTool, Plus, RefreshCw, Rocket, School, Search,
+  Shield, ShoppingCart, Smartphone, Target, Zap, Wallet
 } from "lucide-react"
 
 type Summary = {
@@ -174,7 +175,12 @@ function SummaryCard({ title, value, note, href, icon: Icon, accent }: { title: 
 }
 function ActivityIcon() { return <Clock3 className="h-4 w-4"/> }
 function CatalogueIcon({name}:{name:string|null}) {
-  const icons:Record<string,typeof Globe2>={Globe:Globe2,Search:Globe2,Palette:Sparkles,ShoppingCart:CircleDollarSign,Megaphone:Sparkles,LifeBuoy:MessageSquare,Code:BriefcaseBusiness,Smartphone:BriefcaseBusiness,Rocket:Sparkles,Layers:BriefcaseBusiness}
-  const Icon=icons[name||""]||Sparkles
+  const icons:Record<string,typeof Globe2>={
+    Globe:Globe2,Search:Search,Palette:Palette,ShoppingCart:ShoppingCart,Megaphone:Megaphone,LifeBuoy:LifeBuoy,
+    Code:Code,Smartphone:Smartphone,Rocket:Rocket,Shield:Shield,Zap:Zap,Layout:Layout,Cpu:Cpu,Heart:Heart,
+    Layers:Layers,MessageSquare:MessageSquare,Database:Database,Cloud:Cloud,Lock:Lock,BarChart:BarChart,
+    Target:Target,PenTool:PenTool,MousePointer2:MousePointer2,Camera:Camera,GraduationCap:GraduationCap,School:School
+  }
+  const Icon=icons[name||""]||BriefcaseBusiness
   return <Icon className="h-[18px] w-[18px]"/>
 }
