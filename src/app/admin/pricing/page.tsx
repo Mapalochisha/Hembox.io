@@ -281,7 +281,7 @@ export default function AdminPricingPage() {
                       <option value="">Unassigned / legacy package</option>
                       {serviceOptions.map(service => <option key={service.id} value={service.id}>{service.title}</option>)}
                     </select>
-                    <p className="text-xs text-gray-500">Packages attached to a product appear on that product's page. Unassigned packages are not shown in the public catalogue.</p>
+                    <p className="text-xs text-gray-500">Packages attached to a product appear on that product&apos;s page. Unassigned packages are not shown in the public catalogue.</p>
                   </div>
                   <div className="space-y-2">
                     <Label className="text-[13px] font-bold uppercase tracking-wider text-gray-500">Description</Label>
