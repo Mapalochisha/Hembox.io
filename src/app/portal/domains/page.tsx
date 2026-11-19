@@ -490,7 +490,7 @@ type RegistrantPanelProps = {
   onSubmit: (event: FormEvent<HTMLFormElement>) => void
 }
 function RegistrantPanel({ order, details, locked, editing, busy, onToggle, onSubmit }: RegistrantPanelProps) {
-  const showForm = !details || editing
+  const showForm = !details && editing
   return (
     <section className="mt-4 rounded-xl border border-slate-200 bg-slate-50 p-4">
       <div className="flex flex-wrap items-start justify-between gap-3">
@@ -498,13 +498,13 @@ function RegistrantPanel({ order, details, locked, editing, busy, onToggle, onSu
           <h3 className="text-sm font-bold text-navy">Registrant details</h3>
           <p className="mt-1 text-xs leading-5 text-slate-600">
             {details
-              ? "Saved for " + details.first_name + " " + details.last_name + (details.organisation_name ? " · " + details.organisation_name : "") + " · updated " + dateLabel(details.updated_at)
-              : "The legal registrant's contact details are required before payment and registration can proceed."}
+              ? "Registrant details are saved for this order and are hidden here."
+              : "Required before payment and registration. You can reveal the form when needed."}
           </p>
         </div>
-        {!locked ? (
+        {!locked && !details ? (
           <button type="button" onClick={onToggle} className="h-9 rounded-lg border border-slate-200 bg-white px-3 text-xs font-bold">
-            {editing ? "Cancel" : details ? "Update details" : "Add details"}
+            {editing ? "Hide registrant details" : "Show registrant details"}
           </button>
         ) : null}
       </div>

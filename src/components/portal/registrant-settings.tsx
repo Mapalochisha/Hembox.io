@@ -1,0 +1,33 @@
+"use client"
+import { useEffect, useState } from "react"
+import type { FormEvent } from "react"
+import { Globe2, Save } from "lucide-react"
+type Profile={registrant_type:"individual"|"organisation";first_name:string;last_name:string;organisation_name:string|null;email:string;phone:string;address_line1:string;address_line2:string|null;city:string;region:string;postal_code:string|null;country_code:string}
+const empty:Profile={registrant_type:"individual",first_name:"",last_name:"",organisation_name:null,email:"",phone:"",address_line1:"",address_line2:null,city:"",region:"",postal_code:null,country_code:"ZM"}
+const input="mt-1 h-11 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm"
+export function RegistrantSettings(){
+ const [profile,setProfile]=useState<Profile>(empty),[loading,setLoading]=useState(true),[available,setAvailable]=useState(true),[saved,setSaved]=useState(false),[saving,setSaving]=useState(false),[error,setError]=useState(""),[notice,setNotice]=useState("")
+ useEffect(()=>{let active=true;void(async()=>{try{const r=await fetch("/api/portal/settings/registrant",{cache:"no-store"});const x=await r.json();if(!r.ok)throw new Error(x.error||"Registrant settings unavailable.");if(active&&x.profile){setProfile({...empty,...x.profile});setSaved(true)}}catch(e){if(active){setAvailable(false);setError(e instanceof Error?e.message:"Registrant settings unavailable.")}}finally{if(active)setLoading(false)}})();return()=>{active=false}},[])
+ function update<K extends keyof Profile>(key:K,value:Profile[K]){setProfile(p=>({...p,[key]:value}));setSaved(false)}
+ async function save(e:FormEvent<HTMLFormElement>){e.preventDefault();setSaving(true);setError("");setNotice("");try{const r=await fetch("/api/portal/settings/registrant",{method:"PUT",headers:{"Content-Type":"application/json"},body:JSON.stringify(profile)});const x=await r.json();if(!r.ok)throw new Error(x.error||"Could not save details.");setProfile({...empty,...x.profile});setSaved(true);setNotice(x.message||"Registrant details saved.")}catch(e){setError(e instanceof Error?e.message:"Could not save details.")}finally{setSaving(false)}}
+ return <section className="mt-4 rounded-2xl border border-slate-200 bg-white p-5 sm:p-6">
+  <div className="flex items-center gap-3 border-b border-slate-100 pb-4"><span className="grid h-10 w-10 place-items-center rounded-xl bg-[#e9f8f5] text-[#16867b]"><Globe2 className="h-5 w-5"/></span><div><h3 className="text-sm font-bold text-slate-800">Domain registrant details</h3><p className="mt-1 text-xs text-slate-500">Reusable legal contact details for future domain orders.</p></div></div>
+  <p className="mt-4 rounded-xl bg-slate-50 p-3 text-xs leading-5 text-slate-600">These are account defaults. Each domain order still requires its own confirmation and consent before payment or registration. Updating this profile does not change details already attached to an order.</p>
+  {error&&<p role="alert" className="mt-4 rounded-xl bg-amber-50 p-3 text-xs text-amber-900">{error}</p>}{notice&&<p role="status" className="mt-4 rounded-xl bg-teal/5 p-3 text-xs text-teal-900">{notice}</p>}
+  {loading?<div className="mt-5 h-36 animate-pulse rounded-xl bg-slate-100"/>:!available?<p className="mt-4 text-xs text-slate-500">Registrant profile storage is unavailable until the database migration is applied.</p>:<form onSubmit={save} className="mt-5 grid gap-3 sm:grid-cols-2">
+   <label className="block text-xs font-bold text-slate-700 sm:col-span-2">Registrant type<select value={profile.registrant_type} onChange={e=>update("registrant_type",e.target.value as Profile["registrant_type"])} className={input}><option value="individual">Individual</option><option value="organisation">Organisation</option></select></label>
+   <label className="block text-xs font-bold text-slate-700">First name<input required maxLength={60} value={profile.first_name} onChange={e=>update("first_name",e.target.value)} className={input}/></label>
+   <label className="block text-xs font-bold text-slate-700">Last name<input required maxLength={60} value={profile.last_name} onChange={e=>update("last_name",e.target.value)} className={input}/></label>
+   {profile.registrant_type==="organisation"&&<label className="block text-xs font-bold text-slate-700 sm:col-span-2">Organisation name<input required maxLength={120} value={profile.organisation_name??""} onChange={e=>update("organisation_name",e.target.value)} className={input}/></label>}
+   <label className="block text-xs font-bold text-slate-700">Email<input type="email" required maxLength={254} value={profile.email} onChange={e=>update("email",e.target.value)} className={input}/></label>
+   <label className="block text-xs font-bold text-slate-700">Phone (international)<input required maxLength={20} value={profile.phone} onChange={e=>update("phone",e.target.value)} placeholder="+260970000000" className={input}/></label>
+   <label className="block text-xs font-bold text-slate-700 sm:col-span-2">Address line 1<input required minLength={3} maxLength={120} value={profile.address_line1} onChange={e=>update("address_line1",e.target.value)} className={input}/></label>
+   <label className="block text-xs font-bold text-slate-700 sm:col-span-2">Address line 2<input maxLength={120} value={profile.address_line2??""} onChange={e=>update("address_line2",e.target.value)} className={input}/></label>
+   <label className="block text-xs font-bold text-slate-700">City<input required minLength={2} maxLength={80} value={profile.city} onChange={e=>update("city",e.target.value)} className={input}/></label>
+   <label className="block text-xs font-bold text-slate-700">Province / region<input required minLength={2} maxLength={80} value={profile.region} onChange={e=>update("region",e.target.value)} className={input}/></label>
+   <label className="block text-xs font-bold text-slate-700">Postal code<input maxLength={20} value={profile.postal_code??""} onChange={e=>update("postal_code",e.target.value)} className={input}/></label>
+   <label className="block text-xs font-bold text-slate-700">Country code<input required pattern="[A-Za-z]{2}" maxLength={2} value={profile.country_code} onChange={e=>update("country_code",e.target.value.toUpperCase())} className={input}/></label>
+   <div className="flex flex-wrap items-center gap-3 sm:col-span-2"><button type="submit" disabled={saving} className="inline-flex h-10 items-center gap-2 rounded-xl bg-[#142239] px-4 text-xs font-semibold text-white disabled:opacity-50"><Save className="h-3.5 w-3.5"/>{saving?"Saving…":"Save registrant details"}</button>{saved&&<span className="text-[11px] font-semibold text-teal-700">Saved for future domain orders</span>}</div>
+  </form>}
+ </section>
+}
