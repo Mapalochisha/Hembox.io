@@ -5,10 +5,10 @@ import { BRAND_NAME } from "@/lib/brand"
 import Link from "next/link"
 import { useEffect, useState } from "react"
 import { PortalShell } from "@/components/portal/portal-shell"
-import { Bell, CheckCheck, CircleDollarSign, FolderKanban, Globe2, MessageSquare, RefreshCw, Sparkles } from "lucide-react"
+import { Bell, CheckCheck, CircleDollarSign, FolderKanban, Globe2, MessageSquare, RefreshCw, BriefcaseBusiness } from "lucide-react"
 
 type Notification = { id:string; category:string; title:string; body:string; href:string|null; read_at:string|null; created_at:string }
-const icons:Record<string,typeof Bell>={project:FolderKanban,service:Sparkles,billing:CircleDollarSign,domain:Globe2,message:MessageSquare,system:Bell}
+const icons:Record<string,typeof Bell>={project:FolderKanban,service:BriefcaseBusiness,billing:CircleDollarSign,domain:Globe2,message:MessageSquare,system:Bell}
 function date(value:string){const parsed=new Date(value);return Number.isNaN(parsed.getTime())?"Date unavailable":parsed.toLocaleString("en-ZM",{dateStyle:"medium",timeStyle:"short"})}
 
 export default function PortalNotificationsPage(){
