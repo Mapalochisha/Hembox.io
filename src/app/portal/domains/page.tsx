@@ -515,8 +515,10 @@ function RegistrantPanel({ order, details, profile, locked, editing, busy, onTog
           </button>
         ) : null}
       </div>
-      {!showForm ? (
+      {details ? (
         <p className="mt-3 text-xs text-slate-600">Registrant details are saved for this order and are not displayed here. <Link href="/portal/settings" className="font-bold text-teal hover:underline">Manage reusable details in Account settings</Link>.</p>
+      ) : !showForm ? (
+        <p className="mt-3 text-xs text-slate-600">{profile ? "Your saved account profile will prefill this form." : "No registrant details have been saved for this order yet."} <Link href="/portal/settings" className="font-bold text-teal hover:underline">Account settings</Link></p>
       ) : (
         <form onSubmit={onSubmit} className="mt-4 grid gap-3 sm:grid-cols-2">
           <div><label htmlFor={"registrant-type-" + order.id} className="block text-xs font-bold text-slate-700">Registrant type</label><select id={"registrant-type-" + order.id} name="registrantType" defaultValue={profile?.registrant_type ?? "individual"} className={fieldClass()}><option value="individual">Individual</option><option value="organisation">Organisation</option></select></div>
