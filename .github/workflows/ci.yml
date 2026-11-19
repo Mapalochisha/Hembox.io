@@ -215,6 +215,9 @@ jobs:
       - name: Apply manual registration registrant guard migration (production version)
         run: psql -v ON_ERROR_STOP=1 -f supabase/migrations/20261101142538_domain_manual_registration_requires_registrant.sql
 
+      - name: Apply reusable customer registrant profiles migration
+        run: psql -v ON_ERROR_STOP=1 -f supabase/migrations/20261119190000_customer_domain_registrant_profiles.sql
+
       - name: Revoke direct API execution of the auth signup trigger
         run: psql -v ON_ERROR_STOP=1 -f supabase/migrations/20261101170000_harden_auth_signup_trigger.sql
 
@@ -265,6 +268,9 @@ jobs:
 
       - name: Assert domain registrant details, consent and fulfilment guard
         run: psql -v ON_ERROR_STOP=1 -f supabase/tests/domain_registrant_details.test.sql
+
+      - name: Assert reusable registrant profile ownership and access controls
+        run: psql -v ON_ERROR_STOP=1 -f supabase/tests/domain_registrant_profiles.test.sql
 
       - name: Assert auth signup trigger cannot be called through PostgREST
         run: psql -v ON_ERROR_STOP=1 -f supabase/tests/auth_signup_trigger_privileges.test.sql

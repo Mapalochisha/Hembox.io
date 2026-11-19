@@ -19,6 +19,7 @@ type DomainOrder = {
   expires_at: string | null
   created_at: string
 }
+type RegistrantProfile = Pick<RegistrantDetails, "registrant_type" | "first_name" | "last_name" | "organisation_name" | "email" | "phone" | "address_line1" | "address_line2" | "city" | "region" | "postal_code" | "country_code">
 type ManualPaymentClaim = {
   id: string
   order_id: string
@@ -84,6 +85,7 @@ export default function CustomerDomainsPage() {
   const [orders, setOrders] = useState<DomainOrder[]>([])
   const [paymentClaims, setPaymentClaims] = useState<ManualPaymentClaim[]>([])
   const [registrantDetails, setRegistrantDetails] = useState<RegistrantDetails[]>([])
+  const [registrantProfile, setRegistrantProfile] = useState<RegistrantProfile | null>(null)
   const [registrantAvailable, setRegistrantAvailable] = useState(true)
   const [registrantEditing, setRegistrantEditing] = useState<Record<string, boolean>>({})
   const [registrantBusyOrder, setRegistrantBusyOrder] = useState("")
@@ -108,6 +110,9 @@ export default function CustomerDomainsPage() {
       setPaymentClaims(result.paymentClaims ?? [])
       setRegistrantDetails(result.registrantDetails ?? [])
       setRegistrantAvailable(result.registrantDetailsAvailable !== false)
+      const profileResponse = await fetch("/api/portal/settings/registrant", { cache: "no-store" })
+      const profileResult = await profileResponse.json().catch(() => ({}))
+      setRegistrantProfile(profileResponse.ok ? profileResult.profile ?? null : null)
     } catch (loadError) {
       setError(loadError instanceof Error ? loadError.message : "Unable to load your domains.")
     } finally {
@@ -370,6 +375,7 @@ export default function CustomerDomainsPage() {
                               <RegistrantPanel
                                 order={order}
                                 details={details}
+                                profile={registrantProfile}
                                 locked={["registration_pending", "registered"].includes(order.status)}
                                 editing={registrantEditing[order.id] === true}
                                 busy={registrantBusyOrder === order.id}
@@ -483,14 +489,15 @@ function EmptySection({ title, description, action }: { title: string; descripti
 type RegistrantPanelProps = {
   order: DomainOrder
   details: RegistrantDetails | null
+  profile: RegistrantProfile | null
   locked: boolean
   editing: boolean
   busy: boolean
   onToggle: () => void
   onSubmit: (event: FormEvent<HTMLFormElement>) => void
 }
-function RegistrantPanel({ order, details, locked, editing, busy, onToggle, onSubmit }: RegistrantPanelProps) {
-  const showForm = !details || editing
+function RegistrantPanel({ order, details, profile, locked, editing, busy, onToggle, onSubmit }: RegistrantPanelProps) {
+  const showForm = !details && editing
   return (
     <section className="mt-4 rounded-xl border border-slate-200 bg-slate-50 p-4">
       <div className="flex flex-wrap items-start justify-between gap-3">
@@ -498,36 +505,34 @@ function RegistrantPanel({ order, details, locked, editing, busy, onToggle, onSu
           <h3 className="text-sm font-bold text-navy">Registrant details</h3>
           <p className="mt-1 text-xs leading-5 text-slate-600">
             {details
-              ? "Saved for " + details.first_name + " " + details.last_name + (details.organisation_name ? " · " + details.organisation_name : "") + " · updated " + dateLabel(details.updated_at)
-              : "The legal registrant's contact details are required before payment and registration can proceed."}
+              ? "Registrant details are saved for this order and are hidden here."
+              : "Required before payment and registration. You can reveal the form when needed."}
           </p>
         </div>
-        {!locked ? (
+        {!locked && !details ? (
           <button type="button" onClick={onToggle} className="h-9 rounded-lg border border-slate-200 bg-white px-3 text-xs font-bold">
-            {editing ? "Cancel" : details ? "Update details" : "Add details"}
+            {editing ? "Hide registrant details" : "Show registrant details"}
           </button>
         ) : null}
       </div>
-      {!showForm ? (
-        <dl className="mt-3 grid gap-2 text-xs text-slate-600 sm:grid-cols-2">
-          <div><dt className="font-semibold text-slate-500">Contact</dt><dd>{details?.email} · {details?.phone}</dd></div>
-          <div><dt className="font-semibold text-slate-500">Country</dt><dd>{details?.country_code}</dd></div>
-          <div className="sm:col-span-2"><dt className="font-semibold text-slate-500">Postal address</dt><dd>{[details?.address_line1, details?.address_line2, details?.city, details?.region, details?.postal_code].filter(Boolean).join(", ")}</dd></div>
-        </dl>
+      {details ? (
+        <p className="mt-3 text-xs text-slate-600">Registrant details are saved for this order and are not displayed here. <Link href="/portal/settings" className="font-bold text-teal hover:underline">Manage reusable details in Account settings</Link>.</p>
+      ) : !showForm ? (
+        <p className="mt-3 text-xs text-slate-600">{profile ? "Your saved account profile will prefill this form." : "No registrant details have been saved for this order yet."} <Link href="/portal/settings" className="font-bold text-teal hover:underline">Account settings</Link></p>
       ) : (
         <form onSubmit={onSubmit} className="mt-4 grid gap-3 sm:grid-cols-2">
-          <input type="hidden" name="registrantType" value={details?.registrant_type ?? "individual"} />
-          <div><label htmlFor={"first-name-" + order.id} className="block text-xs font-bold text-slate-700">First name</label><input id={"first-name-" + order.id} name="firstName" required maxLength={60} defaultValue={details?.first_name ?? ""} className={fieldClass()} /></div>
-          <div><label htmlFor={"last-name-" + order.id} className="block text-xs font-bold text-slate-700">Last name</label><input id={"last-name-" + order.id} name="lastName" required maxLength={60} defaultValue={details?.last_name ?? ""} className={fieldClass()} /></div>
-          <div className="sm:col-span-2"><label htmlFor={"organisation-" + order.id} className="block text-xs font-bold text-slate-700">Organisation (optional)</label><input id={"organisation-" + order.id} name="organisationName" maxLength={120} defaultValue={details?.organisation_name ?? ""} className={fieldClass()} /></div>
-          <div><label htmlFor={"email-" + order.id} className="block text-xs font-bold text-slate-700">Email</label><input id={"email-" + order.id} name="email" type="email" required maxLength={254} defaultValue={details?.email ?? ""} className={fieldClass()} /></div>
-          <div><label htmlFor={"phone-" + order.id} className="block text-xs font-bold text-slate-700">Phone (international)</label><input id={"phone-" + order.id} name="phone" required maxLength={20} defaultValue={details?.phone ?? ""} className={fieldClass()} placeholder="+260970000000" /></div>
-          <div className="sm:col-span-2"><label htmlFor={"address-" + order.id} className="block text-xs font-bold text-slate-700">Address line 1</label><input id={"address-" + order.id} name="addressLine1" required minLength={3} maxLength={120} defaultValue={details?.address_line1 ?? ""} className={fieldClass()} /></div>
-          <div className="sm:col-span-2"><label htmlFor={"address2-" + order.id} className="block text-xs font-bold text-slate-700">Address line 2 (optional)</label><input id={"address2-" + order.id} name="addressLine2" maxLength={120} defaultValue={details?.address_line2 ?? ""} className={fieldClass()} /></div>
-          <div><label htmlFor={"city-" + order.id} className="block text-xs font-bold text-slate-700">City</label><input id={"city-" + order.id} name="city" required minLength={2} maxLength={80} defaultValue={details?.city ?? ""} className={fieldClass()} /></div>
-          <div><label htmlFor={"region-" + order.id} className="block text-xs font-bold text-slate-700">Province / region</label><input id={"region-" + order.id} name="region" required minLength={2} maxLength={80} defaultValue={details?.region ?? "Lusaka"} className={fieldClass()} /></div>
-          <div><label htmlFor={"postal-" + order.id} className="block text-xs font-bold text-slate-700">Postal code (optional)</label><input id={"postal-" + order.id} name="postalCode" maxLength={20} defaultValue={details?.postal_code ?? ""} className={fieldClass()} /></div>
-          <div><label htmlFor={"country-" + order.id} className="block text-xs font-bold text-slate-700">Country code</label><input id={"country-" + order.id} name="countryCode" required pattern="[A-Za-z]{2}" maxLength={2} defaultValue={details?.country_code ?? "ZM"} className={fieldClass()} placeholder="ZM" /></div>
+          <div><label htmlFor={"registrant-type-" + order.id} className="block text-xs font-bold text-slate-700">Registrant type</label><select id={"registrant-type-" + order.id} name="registrantType" defaultValue={profile?.registrant_type ?? "individual"} className={fieldClass()}><option value="individual">Individual</option><option value="organisation">Organisation</option></select></div>
+          <div><label htmlFor={"first-name-" + order.id} className="block text-xs font-bold text-slate-700">First name</label><input id={"first-name-" + order.id} name="firstName" required maxLength={60} defaultValue={profile?.first_name ?? ""} className={fieldClass()} /></div>
+          <div><label htmlFor={"last-name-" + order.id} className="block text-xs font-bold text-slate-700">Last name</label><input id={"last-name-" + order.id} name="lastName" required maxLength={60} defaultValue={profile?.last_name ?? ""} className={fieldClass()} /></div>
+          <div className="sm:col-span-2"><label htmlFor={"organisation-" + order.id} className="block text-xs font-bold text-slate-700">Organisation name</label><input id={"organisation-" + order.id} name="organisationName" maxLength={120} defaultValue={profile?.organisation_name ?? ""} className={fieldClass()} /></div>
+          <div><label htmlFor={"email-" + order.id} className="block text-xs font-bold text-slate-700">Email</label><input id={"email-" + order.id} name="email" type="email" required maxLength={254} defaultValue={profile?.email ?? ""} className={fieldClass()} /></div>
+          <div><label htmlFor={"phone-" + order.id} className="block text-xs font-bold text-slate-700">Phone (international)</label><input id={"phone-" + order.id} name="phone" required maxLength={20} defaultValue={profile?.phone ?? ""} className={fieldClass()} placeholder="+260970000000" /></div>
+          <div className="sm:col-span-2"><label htmlFor={"address-" + order.id} className="block text-xs font-bold text-slate-700">Address line 1</label><input id={"address-" + order.id} name="addressLine1" required minLength={3} maxLength={120} defaultValue={profile?.address_line1 ?? ""} className={fieldClass()} /></div>
+          <div className="sm:col-span-2"><label htmlFor={"address2-" + order.id} className="block text-xs font-bold text-slate-700">Address line 2 (optional)</label><input id={"address2-" + order.id} name="addressLine2" maxLength={120} defaultValue={profile?.address_line2 ?? ""} className={fieldClass()} /></div>
+          <div><label htmlFor={"city-" + order.id} className="block text-xs font-bold text-slate-700">City</label><input id={"city-" + order.id} name="city" required minLength={2} maxLength={80} defaultValue={profile?.city ?? ""} className={fieldClass()} /></div>
+          <div><label htmlFor={"region-" + order.id} className="block text-xs font-bold text-slate-700">Province / region</label><input id={"region-" + order.id} name="region" required minLength={2} maxLength={80} defaultValue={profile?.region ?? "Lusaka"} className={fieldClass()} /></div>
+          <div><label htmlFor={"postal-" + order.id} className="block text-xs font-bold text-slate-700">Postal code (optional)</label><input id={"postal-" + order.id} name="postalCode" maxLength={20} defaultValue={profile?.postal_code ?? ""} className={fieldClass()} /></div>
+          <div><label htmlFor={"country-" + order.id} className="block text-xs font-bold text-slate-700">Country code</label><input id={"country-" + order.id} name="countryCode" required pattern="[A-Za-z]{2}" maxLength={2} defaultValue={profile?.country_code ?? "ZM"} className={fieldClass()} placeholder="ZM" /></div>
           <label className="flex items-start gap-2 rounded-xl bg-white p-3 text-xs leading-5 text-slate-600 sm:col-span-2">
             <input name="consentAccepted" type="checkbox" required className="mt-0.5" defaultChecked={Boolean(details)} />
             <span>I confirm these details belong to the legal registrant, and consent to sharing them with the domain registrar and publication where registry policy requires it.</span>

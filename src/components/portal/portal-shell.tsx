@@ -1,14 +1,14 @@
 "use client"
 
 import Link from "next/link"
-import { usePathname } from "next/navigation"
+import { usePathname, useRouter } from "next/navigation"
 import { BRAND_NAME } from "@/lib/brand"
 import { useEffect, useRef, useState } from "react"
 import { useAuth } from "@/components/providers/auth-provider"
 import { cn } from "@/lib/utils"
 import {
   Bell, BriefcaseBusiness, ChevronDown, CreditCard, Files, FolderKanban,
-  Globe2, LayoutDashboard, LifeBuoy, Menu, MessageSquare, Settings2, Sparkles,
+  Globe2, LayoutDashboard, Menu, MessageSquare, Settings2, Sparkles,
   X, LogOut, ArrowUpRight
 } from "lucide-react"
 
@@ -32,11 +32,75 @@ export function PortalShell({ children, title, eyebrow = "CLIENT WORKSPACE" }: {
   eyebrow?: string
 }) {
   const pathname = usePathname()
+  const router = useRouter()
   const { user, isLoading, signOut } = useAuth()
   const [mobileOpen, setMobileOpen] = useState(false)
   const mobileMenuTriggerRef = useRef<HTMLButtonElement>(null)
   const wasMobileOpen = useRef(false)
   const [unreadNotifications, setUnreadNotifications] = useState(0)
+
+  const [activityOpen, setActivityOpen] = useState(false)
+  const [activityItems, setActivityItems] = useState<Array<{id:string;category:string;title:string;body:string;href:string|null;read_at:string|null;created_at:string}>>([])
+  const [activityLoading, setActivityLoading] = useState(false)
+  const [activityError, setActivityError] = useState("")
+  const activityPanelRef = useRef<HTMLDivElement>(null)
+
+  async function loadActivity() {
+    setActivityLoading(true)
+    setActivityError("")
+    try {
+      const response = await fetch("/api/portal/notifications", { cache: "no-store" })
+      const result = await response.json()
+      if (!response.ok) throw new Error(result.error || "Activity is temporarily unavailable.")
+      setActivityItems(result.notifications ?? [])
+      setUnreadNotifications(typeof result.unreadCount === "number" ? result.unreadCount : 0)
+    } catch (error) {
+      setActivityError(error instanceof Error ? error.message : "Activity is temporarily unavailable.")
+    } finally {
+      setActivityLoading(false)
+    }
+  }
+
+  async function toggleActivity() {
+    const next = !activityOpen
+    setActivityOpen(next)
+    if (next) await loadActivity()
+  }
+
+  function openActivityItem(item: {id:string;category:string;href:string|null;read_at:string|null}) {
+    if (!item.read_at) {
+      void fetch("/api/portal/notifications", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ notificationId: item.id }),
+      }).then((response) => {
+        if (response.ok) {
+          setActivityItems((rows) => rows.map((row) => row.id === item.id ? { ...row, read_at: new Date().toISOString() } : row))
+          setUnreadNotifications((count) => Math.max(0, count - 1))
+        }
+      }).catch(() => undefined)
+    }
+    const destination = item.href?.startsWith("/portal/") ? item.href : item.category === "message" ? "/portal/messages" : "/portal/notifications"
+    setActivityOpen(false)
+    router.push(destination)
+  }
+
+  useEffect(() => {
+    if (!activityOpen) return
+    const closeOnOutside = (event: MouseEvent) => {
+      if (activityPanelRef.current && !activityPanelRef.current.contains(event.target as Node)) setActivityOpen(false)
+    }
+    const closeOnEscape = (event: KeyboardEvent) => {
+      if (event.key === "Escape") setActivityOpen(false)
+    }
+    document.addEventListener("mousedown", closeOnOutside)
+    window.addEventListener("keydown", closeOnEscape)
+    return () => {
+      document.removeEventListener("mousedown", closeOnOutside)
+      window.removeEventListener("keydown", closeOnEscape)
+    }
+  }, [activityOpen])
+
 
   useEffect(() => {
     if (mobileOpen) {
@@ -62,7 +126,7 @@ export function PortalShell({ children, title, eyebrow = "CLIENT WORKSPACE" }: {
     let active = true
     void fetch("/api/portal/notifications", { cache: "no-store" })
       .then(async (response) => response.ok ? response.json() : null)
-      .then((result) => { if (active && result && typeof result.unreadCount === "number") setUnreadNotifications(result.unreadCount) })
+      .then((result) => { if (active && result && typeof result.unreadCount === "number") { setUnreadNotifications(result.unreadCount); setActivityItems(result.notifications ?? []) } })
       .catch(() => { if (active) setUnreadNotifications(0) })
     return () => { active = false }
   }, [user?.id])
@@ -167,8 +231,52 @@ export function PortalShell({ children, title, eyebrow = "CLIENT WORKSPACE" }: {
             </div>
           </div>
           <div className="flex items-center gap-2 sm:gap-3">
-            <Link href="/portal/notifications" aria-label={unreadNotifications ? "Notifications, " + unreadNotifications + " unread" : "Notifications"} className="relative grid h-9 w-9 place-items-center rounded-xl border border-slate-200 text-slate-600 transition hover:border-slate-300 hover:bg-slate-50"><Bell className="h-4 w-4"/>{unreadNotifications > 0 && <span className="absolute -right-1 -top-1 grid min-h-[17px] min-w-[17px] place-items-center rounded-full bg-rose-500 px-1 text-[9px] font-bold text-white ring-2 ring-white">{unreadNotifications > 9 ? "9+" : unreadNotifications}</span>}</Link>
-            <Link href="/portal/messages" aria-label="Messages and support" className="relative grid h-9 w-9 place-items-center rounded-xl border border-slate-200 text-slate-600 transition hover:border-slate-300 hover:bg-slate-50"><LifeBuoy className="h-4 w-4"/></Link>
+            <div className="relative" ref={activityPanelRef}>
+              <button type="button" onClick={() => void toggleActivity()} aria-label={unreadNotifications ? "Messages and notifications, " + unreadNotifications + " unread" : "Messages and notifications"} aria-expanded={activityOpen} aria-haspopup="dialog" className={"relative grid h-9 w-9 place-items-center rounded-xl border text-slate-600 transition hover:bg-slate-50 " + (activityOpen ? "border-teal bg-teal/5" : "border-slate-200 hover:border-slate-300")}>
+                <Bell className="h-4 w-4"/>
+                {unreadNotifications > 0 && <span className="absolute -right-1 -top-1 grid min-h-[17px] min-w-[17px] place-items-center rounded-full bg-rose-500 px-1 text-[9px] font-bold text-white ring-2 ring-white">{unreadNotifications > 9 ? "9+" : unreadNotifications}</span>}
+              </button>
+              {activityOpen && (
+                <div role="dialog" aria-label="Messages and notifications" className="absolute right-0 top-12 z-50 w-[min(92vw,390px)] overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-2xl shadow-slate-900/15">
+                  <div className="flex items-center justify-between border-b border-slate-100 px-4 py-3">
+                    <div><p className="text-sm font-bold text-slate-900">Activity</p><p className="mt-0.5 text-[10px] text-slate-500">{unreadNotifications ? unreadNotifications + " unread update(s)" : "Your latest messages and updates"}</p></div>
+                    <button type="button" onClick={() => void loadActivity()} aria-label="Refresh activity" className="rounded-lg p-2 text-xs font-semibold text-slate-500 hover:bg-slate-100">Refresh</button>
+                  </div>
+                  {activityError && <p role="alert" className="m-3 rounded-lg bg-amber-50 p-3 text-xs text-amber-900">{activityError}</p>}
+                  {activityLoading ? <div className="space-y-2 p-4"><div className="h-14 animate-pulse rounded-xl bg-slate-100"/><div className="h-14 animate-pulse rounded-xl bg-slate-100"/></div> : (
+                    <div className="max-h-[min(65vh,440px)] overflow-y-auto">
+                      {activityItems.some((item) => item.category === "message") && (
+                        <section className="border-b border-slate-100 p-3">
+                          <p className="px-1 pb-2 text-[10px] font-bold uppercase tracking-wider text-slate-400">Messages</p>
+                          {activityItems.filter((item) => item.category === "message").slice(0, 3).map((item) => (
+                            <button key={item.id} type="button" onClick={() => openActivityItem(item)} className="flex w-full items-start gap-3 rounded-xl p-2.5 text-left hover:bg-slate-50">
+                              <span className="grid h-8 w-8 shrink-0 place-items-center rounded-lg bg-teal/10 text-teal"><MessageSquare className="h-4 w-4"/></span>
+                              <span className="min-w-0 flex-1"><span className="flex items-center gap-2 text-xs font-bold text-slate-800">{item.title}{!item.read_at && <span className="h-1.5 w-1.5 rounded-full bg-rose-500"/>}</span><span className="mt-1 block line-clamp-2 text-[11px] leading-5 text-slate-500">{item.body}</span><span className="mt-1 block text-[9px] text-slate-400">{new Date(item.created_at).toLocaleString()}</span></span>
+                            </button>
+                          ))}
+                        </section>
+                      )}
+                      {activityItems.some((item) => item.category !== "message") && (
+                        <section className="p-3">
+                          <p className="px-1 pb-2 text-[10px] font-bold uppercase tracking-wider text-slate-400">Notifications</p>
+                          {activityItems.filter((item) => item.category !== "message").slice(0, 4).map((item) => (
+                            <button key={item.id} type="button" onClick={() => openActivityItem(item)} className="flex w-full items-start gap-3 rounded-xl p-2.5 text-left hover:bg-slate-50">
+                              <span className="grid h-8 w-8 shrink-0 place-items-center rounded-lg bg-slate-100 text-slate-600"><Bell className="h-4 w-4"/></span>
+                              <span className="min-w-0 flex-1"><span className="flex items-center gap-2 text-xs font-bold text-slate-800">{item.title}{!item.read_at && <span className="h-1.5 w-1.5 rounded-full bg-rose-500"/>}</span><span className="mt-1 block line-clamp-2 text-[11px] leading-5 text-slate-500">{item.body}</span><span className="mt-1 block text-[9px] text-slate-400">{new Date(item.created_at).toLocaleString()}</span></span>
+                            </button>
+                          ))}
+                        </section>
+                      )}
+                      {!activityItems.length && !activityError && <p className="px-5 py-8 text-center text-xs text-slate-500">No messages or notifications yet.</p>}
+                    </div>
+                  )}
+                  <div className="grid grid-cols-2 gap-2 border-t border-slate-100 bg-slate-50 p-3">
+                    <Link href="/portal/messages" onClick={() => setActivityOpen(false)} className="inline-flex h-9 items-center justify-center rounded-lg border border-slate-200 bg-white text-xs font-bold text-slate-700 hover:bg-slate-100">Open inbox</Link>
+                    <Link href="/portal/notifications" onClick={() => setActivityOpen(false)} className="inline-flex h-9 items-center justify-center rounded-lg bg-[#142239] text-xs font-bold text-white hover:bg-[#203653]">All notifications</Link>
+                  </div>
+                </div>
+              )}
+            </div>
             <div className="hidden h-8 w-px bg-slate-200 sm:block"/>
             <div className="hidden text-right sm:block"><p className="max-w-40 truncate text-xs font-semibold text-slate-800">{user.full_name || "Client"}</p><p className="text-[10px] text-slate-500">Client account</p></div>
             <div className="grid h-9 w-9 place-items-center rounded-xl bg-[#e7f8f5] text-xs font-bold text-[#147c73] ring-1 ring-inset ring-teal/15">{initials}</div>

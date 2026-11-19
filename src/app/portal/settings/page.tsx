@@ -4,6 +4,7 @@ import Link from "next/link"
 import { useEffect, useState } from "react"
 import { useAuth } from "@/components/providers/auth-provider"
 import { PortalShell } from "@/components/portal/portal-shell"
+import { RegistrantSettings } from "@/components/portal/registrant-settings"
 import { ArrowRight, Bell, LockKeyhole, Mail, Save, UserRound } from "lucide-react"
 
 type Preferences = { project_updates:boolean; service_updates:boolean; billing_updates:boolean; domain_updates:boolean; message_updates:boolean }
@@ -36,6 +37,7 @@ export default function PortalSettingsPage(){
     {!available&&<p className="mt-3 text-[10px] leading-5 text-slate-500">Preference storage will become available when the client portal schema migration is applied to this environment.</p>}
    </section>
   </div>
+  <RegistrantSettings />
   <div className="mt-4 grid gap-3 sm:grid-cols-2"><section className="rounded-2xl border border-slate-200 bg-white p-5"><span className="grid h-9 w-9 place-items-center rounded-xl bg-blue-50 text-blue-700"><LockKeyhole className="h-4 w-4"/></span><h3 className="mt-3 text-sm font-bold text-slate-800">Sign-in & security</h3><p className="mt-1 text-xs leading-5 text-slate-500">Authentication is managed by your HEMBOX TECH sign-in provider.</p><Link href="/login" className="mt-3 inline-flex items-center gap-1.5 text-xs font-bold text-[#16867b] hover:underline">Sign-in page <ArrowRight className="h-3.5 w-3.5"/></Link></section><section className="rounded-2xl border border-slate-200 bg-white p-5"><span className="grid h-9 w-9 place-items-center rounded-xl bg-amber-50 text-amber-700"><Mail className="h-4 w-4"/></span><h3 className="mt-3 text-sm font-bold text-slate-800">Need help?</h3><p className="mt-1 text-xs leading-5 text-slate-500">Contact HEMBOX TECH about your account or an existing service.</p><Link href="/portal/messages" className="mt-3 inline-flex items-center gap-1.5 text-xs font-bold text-[#16867b] hover:underline">Messages & support <ArrowRight className="h-3.5 w-3.5"/></Link></section></div>
  </PortalShell>
 }
