@@ -32,14 +32,14 @@ type SearchCatalogItem = {
   pricingCurrent: boolean
 }
 
-function unknownResult(domain: string, providerId: "mock" | "domainnameapi" | "namesilo", message: string): DomainAvailabilityResult {
+function unknownResult(domain: string, providerId: string, message: string): DomainAvailabilityResult {
   return {
     domain,
     availability: "unknown",
     registrationPrice: null,
     renewalPrice: null,
     checkedAt: new Date().toISOString(),
-    source: providerId,
+    source: providerId as DomainAvailabilityResult["source"],
     message,
   }
 }
