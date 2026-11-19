@@ -4,7 +4,7 @@ import type { SupabaseClient } from "@supabase/supabase-js"
 import { createClient } from "@/lib/supabase/server"
 
 export const dynamic = "force-dynamic"
-const columns = "registrant_type,first_name,last_name,organisation_name,email,phone,address_line1,address_line2,city,region,postal_code,country_code,created_at,updated_at"
+const columns = "registrant_type,first_name,last_name,organisation_name,email,phone,address_line1,address_line2,city,region,postal_code,country_code"
 const schema = z.object({
  registrant_type:z.enum(["individual","organisation"]), first_name:z.string().trim().min(1).max(60),
  last_name:z.string().trim().min(1).max(60), organisation_name:z.string().trim().max(120).nullable(),
