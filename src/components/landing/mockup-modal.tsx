@@ -10,7 +10,7 @@ import { BRAND_NAME } from "@/lib/brand"
 import { X, ArrowRight, Loader2, Mail, Phone, MessageCircle } from "lucide-react"
 
 type InquiryType = "mockup" | "quote" | "pricing" | "contact"
-type InquiryContext = { product?: string; service?: string }
+export type InquiryContext = { product?: string; service?: string; serviceId?: string; packageId?: string; packageName?: string; priceSnapshot?: string }
 
 let openModalFn: ((type?: InquiryType, context?: InquiryContext) => void) | null = null
 
@@ -139,7 +139,7 @@ export function MockupModal() {
                 <div className="mb-5 rounded-2xl bg-gray-50 border border-gray-100 p-4">
                   <p className="text-[11px] font-bold uppercase tracking-[0.16em] text-gray-400 mb-2">Project details</p>
                   {context.product && <p className="text-sm font-semibold text-navy">Plan: {context.product}</p>}
-                  {context.service && <p className="text-sm font-semibold text-navy">Service: {context.service}</p>}
+                  {context.service && <p className="text-sm font-semibold text-navy">Service: {context.service}</p>}\n                  {context.packageName && <p className="text-sm font-semibold text-navy">Package: {context.packageName}</p>}\n                  {context.priceSnapshot && <p className="text-sm text-gray-600 mt-1">Price shown: {context.priceSnapshot}</p>}
                 </div>
               )}
 
