@@ -15,7 +15,6 @@ import {
   RefreshCw,
   Search,
   ShieldCheck,
-  Sparkles,
 } from "lucide-react"
 import { Navbar } from "@/components/landing/navbar"
 import { Footer } from "@/components/landing/footer"
@@ -199,11 +198,6 @@ export default function DomainsPage() {
           </div>
 
           <div className="relative mx-auto max-w-[850px] text-center">
-            <div className="inline-flex items-center gap-2 rounded-full border border-teal/20 bg-teal/5 px-4 py-1.5 text-xs font-bold text-teal">
-              <Sparkles className="h-3.5 w-3.5" />
-              Search across supported extensions
-            </div>
-
             <h1 className="mt-6 text-4xl font-black tracking-tight sm:text-6xl sm:leading-[1.1]">
               Find a domain that <span className="text-teal">fits your name.</span>
             </h1>
