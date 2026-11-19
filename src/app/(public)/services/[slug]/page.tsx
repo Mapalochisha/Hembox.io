@@ -35,7 +35,7 @@ function Price({ service }: { service: any }) {
   return <p className="text-3xl sm:text-4xl font-black tracking-tight text-navy">{label}</p>
 }
 
-function FamilyPage({ service, children }: { service: any; children: any[] }) {
+function FamilyPage({ service, solutions }: { service: any; solutions: any[] }) {
   return (
     <div className="min-h-screen bg-white text-navy">
       <Navbar />
@@ -60,11 +60,11 @@ function FamilyPage({ service, children }: { service: any; children: any[] }) {
               <h2 className="text-[32px] sm:text-[42px] font-black tracking-tight">Choose the right starting point.</h2>
               <p className="text-gray-600 mt-4">Each solution has its own dedicated page, scope and pricing. Open an offering to see exactly what is included.</p>
             </div>
-            {children.length === 0 ? (
+            {solutions.length === 0 ? (
               <div className="rounded-3xl border border-dashed border-gray-300 bg-white p-10 text-center text-gray-500">Solutions are being added to this collection.</div>
             ) : (
               <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {children.map((child) => (
+                {solutions.map((child) => (
                   <Link key={child.id} href={`/services/${child.slug || child.id}`} className="group rounded-[28px] border border-black/5 bg-white p-7 hover:border-teal/30 hover:shadow-xl hover:shadow-navy/5 transition">
                     {child.hero_image_url && <img src={child.hero_image_url} alt="" className="w-full aspect-[16/9] object-cover rounded-2xl mb-6" />}
                     <div className="flex items-start justify-between gap-4">
@@ -116,7 +116,7 @@ export default async function ServicePage({ params }: { params: Promise<{ slug: 
   if (service.page_type === "family") {
     const { data: children, error: childError } = await supabase.from("services").select("*").eq("parent_service_id", service.id).eq("status", "active").order("sort_order", { ascending: true })
     if (childError) throw new Error("Unable to load this solution family.")
-    return <FamilyPage service={service} children={(children || []) as any[]} />
+    return <FamilyPage service={service} solutions={(children || []) as any[]} />
   }
 
   const [{ data: packages, error: packageError }, { data: parent }] = await Promise.all([
@@ -184,7 +184,7 @@ export default async function ServicePage({ params }: { params: Promise<{ slug: 
         {gallery.length > 0 && <section className="py-20 bg-navy text-white"><div className="max-w-[1200px] mx-auto px-6 lg:px-8"><p className="text-[13px] font-bold tracking-[0.2em] text-teal uppercase mb-3">Visual examples</p><h2 className="text-[32px] sm:text-[40px] font-black tracking-tight">See what this can look like.</h2><div className="grid md:grid-cols-2 gap-6 mt-10">{gallery.map((item, i) => { const image = typeof item === "string" ? { url: item } : item; return image.url ? <figure key={i} className="group overflow-hidden rounded-[28px] bg-white/5 border border-white/10"><img src={image.url} alt={image.title || service.title} className="w-full aspect-[4/3] object-cover group-hover:scale-[1.02] transition-transform duration-500" />{(image.title || image.caption) && <figcaption className="p-5">{image.title && <p className="font-bold">{image.title}</p>}{image.caption && <p className="text-white/60 text-sm mt-1">{image.caption}</p>}</figcaption>}</figure> : null })}</div></div></section>}
         {process.length > 0 && <section className="py-20"><div className="max-w-[1200px] mx-auto px-6 lg:px-8"><p className="text-[13px] font-bold tracking-[0.2em] text-coral uppercase mb-3">Our process</p><h2 className="text-[32px] sm:text-[40px] font-black tracking-tight">From idea to launch.</h2><div className="grid md:grid-cols-2 lg:grid-cols-4 gap-5 mt-10">{process.map((step, i) => <div key={i} className="rounded-[24px] bg-gray-50 border border-black/5 p-7"><div className="text-teal font-black text-sm mb-8">{String(i + 1).padStart(2, "0")}</div><h3 className="font-black text-xl">{step.title || "Step"}</h3>{step.description && <p className="text-gray-600 mt-3 leading-relaxed">{step.description}</p>}</div>)}</div></div></section>}
         {faqs.length > 0 && <section className="py-20 bg-gray-50/70"><div className="max-w-[900px] mx-auto px-6 lg:px-8"><p className="text-[13px] font-bold tracking-[0.2em] text-coral uppercase mb-3">FAQ</p><h2 className="text-[32px] sm:text-[40px] font-black tracking-tight mb-10">Questions, answered.</h2><div className="space-y-3">{faqs.map((faq, i) => <details key={i} className="group bg-white border border-black/5 rounded-[20px] p-6"><summary className="cursor-pointer list-none font-bold flex items-center justify-between gap-4">{faq.question}<ChevronDown className="w-5 h-5 shrink-0 text-gray-400 group-open:rotate-180 transition-transform" /></summary><p className="text-gray-600 leading-relaxed mt-4">{faq.answer}</p></details>)}</div></div></section>}
-        <section className="py-24"><div className="max-w-[900px] mx-auto px-6 lg:px-8 text-center"><p className="text-[13px] font-bold tracking-[0.2em] text-coral uppercase mb-3">Ready when you are</p><h2 className="text-[38px] sm:text-[52px] font-black tracking-tight leading-tight">Let's build something that moves your business forward.</h2><ServiceProjectCTASecondary serviceName={service.title} context={productContext} /></div></section>
+        <section className="py-24"><div className="max-w-[900px] mx-auto px-6 lg:px-8 text-center"><p className="text-[13px] font-bold tracking-[0.2em] text-coral uppercase mb-3">Ready when you are</p><h2 className="text-[38px] sm:text-[52px] font-black tracking-tight leading-tight">Let&apos;s build something that moves your business forward.</h2><ServiceProjectCTASecondary serviceName={service.title} context={productContext} /></div></section>
       </main>
       <Footer />
       <MockupModal />
