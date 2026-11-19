@@ -26,18 +26,24 @@ export default function AdminServiceDetailsPage() {
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [uploading, setUploading] = useState(false)
-  const [form, setForm] = useState({ title: "", description: "", slug: "", hero_image_url: "", long_description: "", benefits: "", deliverables: "", gallery_images: "", process_steps: "", faqs: "" })
+  const [parentOptions, setParentOptions] = useState<{ id: string; title: string }[]>([])
+  const [form, setForm] = useState({ title: "", description: "", slug: "", hero_image_url: "", long_description: "", benefits: "", deliverables: "", gallery_images: "", process_steps: "", faqs: "", page_type: "product", parent_service_id: "", pricing_model: "quote", price_amount: "", price_currency: "ZMW", price_suffix: "/project", pricing_note: "" })
 
   useEffect(() => {
     const load = async () => {
       const { data, error } = await supabase.from("services").select("*").eq("id", params.id).maybeSingle()
       if (error || !data) { toast({ title: "Service not found", variant: "destructive" }); setLoading(false); return }
       const service = data as any
+      const { data: parents } = await supabase.from("services").select("id,title").eq("page_type", "family").eq("status", "active").neq("id", params.id).order("sort_order", { ascending: true })
+      setParentOptions((parents || []) as { id: string; title: string }[])
       const gallery = Array.isArray(service.gallery_images) ? service.gallery_images : []
       const steps = Array.isArray(service.process_steps) ? service.process_steps : []
       const faqs = Array.isArray(service.faqs) ? service.faqs : []
       setForm({
         title: service.title || "", description: service.description || "", slug: service.slug || "",
+        page_type: service.page_type || "product", parent_service_id: service.parent_service_id || "",
+        pricing_model: service.pricing_model || "quote", price_amount: service.price_amount == null ? "" : String(service.price_amount),
+        price_currency: service.price_currency || "ZMW", price_suffix: service.price_suffix || "/project", pricing_note: service.pricing_note || "",
         hero_image_url: service.hero_image_url || "", long_description: service.long_description || "",
         benefits: Array.isArray(service.benefits) ? service.benefits.join("\n") : "",
         deliverables: Array.isArray(service.deliverables) ? service.deliverables.join("\n") : "",
@@ -68,7 +74,12 @@ export default function AdminServiceDetailsPage() {
     try {
       const gallery = splitLines(form.gallery_images).map(line => { const [url, title = "", caption = ""] = line.split("|"); return { url: url.trim(), title: title.trim(), caption: caption.trim() } }).filter(item => item.url)
       const { error } = await supabase.from("services").update({
-        title: form.title.trim(), description: form.description.trim(), slug: form.slug.trim(), hero_image_url: form.hero_image_url.trim() || null,
+        title: form.title.trim(), description: form.description.trim(), slug: form.slug.trim(),
+        page_type: form.page_type, parent_service_id: form.page_type === "family" || !form.parent_service_id ? null : form.parent_service_id,
+        pricing_model: form.page_type === "family" ? "quote" : form.pricing_model,
+        price_amount: form.page_type === "family" || form.pricing_model === "quote" || form.pricing_model === "packages" || !form.price_amount ? null : Number(form.price_amount),
+        price_currency: form.price_currency, price_suffix: form.price_suffix.trim() || null, pricing_note: form.pricing_note.trim() || null,
+        hero_image_url: form.hero_image_url.trim() || null,
         long_description: form.long_description.trim() || null, benefits: splitLines(form.benefits), deliverables: splitLines(form.deliverables),
         gallery_images: gallery, process_steps: parsePairs(form.process_steps), faqs: parsePairs(form.faqs).map(item => ({ question: item.title, answer: item.description }))
       } as any).eq("id", params.id)
@@ -89,6 +100,19 @@ export default function AdminServiceDetailsPage() {
           <div className="space-y-2"><Label>URL slug</Label><Input value={form.slug} onChange={e => setForm({ ...form, slug: e.target.value.toLowerCase().replace(/[^a-z0-9-]+/g, "-") })} placeholder="web-design-development" required /></div>
           <div className="md:col-span-2 space-y-2"><Label>Short description</Label><textarea className="w-full min-h-24 rounded-xl border border-input px-4 py-3 text-sm" value={form.description} onChange={e => setForm({ ...form, description: e.target.value })} required /></div>
           <div className="md:col-span-2 space-y-2"><Label>Detailed introduction</Label><textarea className="w-full min-h-36 rounded-xl border border-input px-4 py-3 text-sm" value={form.long_description} onChange={e => setForm({ ...form, long_description: e.target.value })} placeholder="Explain the service and the business problem it solves." /></div>
+        </CardContent></Card>
+
+        <Card className="rounded-[24px]"><CardHeader><CardTitle>Catalogue structure & pricing</CardTitle><p className="text-sm text-gray-500">Choose whether this entry is a parent family or an individual product. Product prices are displayed on their own pages.</p></CardHeader><CardContent className="grid md:grid-cols-2 gap-6">
+          <div className="space-y-2"><Label>Catalogue entry type</Label><select className="w-full h-11 rounded-xl border border-input bg-white px-3 text-sm" value={form.page_type} onChange={e => setForm({ ...form, page_type: e.target.value, parent_service_id: e.target.value === "family" ? "" : form.parent_service_id })}><option value="product">Individual product</option><option value="family">Parent product family</option></select></div>
+          <div className="space-y-2"><Label>Parent family</Label><select disabled={form.page_type === "family"} className="w-full h-11 rounded-xl border border-input bg-white px-3 text-sm disabled:opacity-50" value={form.parent_service_id} onChange={e => setForm({ ...form, parent_service_id: e.target.value })}><option value="">No parent (standalone)</option>{parentOptions.map(parent => <option key={parent.id} value={parent.id}>{parent.title}</option>)}</select></div>
+          <div className="space-y-2"><Label>Pricing model</Label><select disabled={form.page_type === "family"} className="w-full h-11 rounded-xl border border-input bg-white px-3 text-sm disabled:opacity-50" value={form.pricing_model} onChange={e => setForm({ ...form, pricing_model: e.target.value })}><option value="fixed">Fixed price</option><option value="starting_from">Starting from</option><option value="quote">Request a quote</option><option value="packages">Selectable packages</option></select></div>
+          <div className="grid grid-cols-2 gap-3">
+            <div className="space-y-2"><Label>Public price</Label><Input type="number" min="0" step="0.01" disabled={form.page_type === "family" || form.pricing_model === "quote" || form.pricing_model === "packages"} value={form.price_amount} onChange={e => setForm({ ...form, price_amount: e.target.value })} placeholder="e.g. 4500" /></div>
+            <div className="space-y-2"><Label>Currency</Label><select className="w-full h-11 rounded-xl border border-input bg-white px-3 text-sm" value={form.price_currency} onChange={e => setForm({ ...form, price_currency: e.target.value })}><option value="ZMW">ZMW (K)</option><option value="USD">USD ($)</option><option value="ZAR">ZAR (R)</option></select></div>
+          </div>
+          <div className="space-y-2"><Label>Price suffix</Label><Input value={form.price_suffix} onChange={e => setForm({ ...form, price_suffix: e.target.value })} placeholder="/project or /month" /></div>
+          <div className="md:col-span-2 space-y-2"><Label>Pricing note / exclusions</Label><textarea className="w-full min-h-20 rounded-xl border border-input px-4 py-3 text-sm" value={form.pricing_note} onChange={e => setForm({ ...form, pricing_note: e.target.value })} placeholder="Explain what is excluded or how the final quote is determined." /></div>
+          {form.pricing_model === "packages" && <p className="md:col-span-2 text-sm text-gray-500">Manage the package tiers in Admin → Pricing Packages and attach each tier to this product.</p>}
         </CardContent></Card>
 
         <Card className="rounded-[24px]"><CardHeader><CardTitle>Hero visual</CardTitle></CardHeader><CardContent className="space-y-4"><div className="flex gap-3"><Input value={form.hero_image_url} onChange={e => setForm({ ...form, hero_image_url: e.target.value })} placeholder="Image URL" /><label className="inline-flex items-center gap-2 px-4 rounded-xl bg-navy text-white font-semibold cursor-pointer whitespace-nowrap"><ImagePlus className="w-4 h-4" /> Upload<input type="file" accept="image/jpeg,image/png,image/webp,image/gif" className="hidden" disabled={uploading} onChange={e => e.target.files?.[0] && uploadImage(e.target.files[0])} /></label></div>{form.hero_image_url && <img src={form.hero_image_url} alt="Hero preview" className="w-full max-h-72 object-cover rounded-2xl border border-black/5" />}</CardContent></Card>
