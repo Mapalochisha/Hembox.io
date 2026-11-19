@@ -15,7 +15,7 @@ export function ServiceProjectCTA({ className = "", serviceName = "", context, l
   return (
     <button
       type="button"
-      onClick={() => openMockupModal("contact", inquiryContext)}
+      onClick={() => openMockupModal("quote", inquiryContext)}
       className={`inline-flex h-[52px] px-8 rounded-full bg-navy text-white font-bold items-center gap-2 hover:bg-navy/90 transition ${className}`}
     >
       {label} <ArrowRight className="w-4 h-4" />
