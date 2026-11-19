@@ -132,7 +132,7 @@ export default async function ServicePage({ params }: { params: Promise<{ slug: 
   const process = asArray<ProcessStep>(service.process_steps)
   const gallery = asArray<GalleryImage | string>(service.gallery_images)
   const faqs = asArray<FAQ>(service.faqs)
-  const productContext = { service: service.title, serviceId: service.id }
+  const productContext = { service: service.title, serviceId: service.id, priceSnapshot: formatPrice(service.price_amount, service.price_currency, service.price_suffix, service.pricing_model) }
   const activePackages = (packages || []) as PricingPackage[]
 
   return (
