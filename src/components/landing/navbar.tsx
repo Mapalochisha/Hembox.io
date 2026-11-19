@@ -45,10 +45,11 @@ export function Navbar() {
             />
           </Link>
 
-          <nav aria-label="Main navigation" className="hidden items-center gap-8 md:flex">
+          <nav aria-label="Main navigation" className="ml-auto mr-8 hidden items-center justify-end gap-8 md:flex">
             <a href="/#services" className="text-[14.5px] font-medium text-gray-600 transition hover:text-navy">Services</a>
             <a href="/#work" className="text-[14.5px] font-medium text-gray-600 transition hover:text-navy">Work</a>
             <Link href="/domains" className="text-[14.5px] font-medium text-gray-600 transition hover:text-navy">Domains</Link>
+            <a href="https://hosting.hembox.tech" className="text-[14.5px] font-medium text-gray-600 transition hover:text-navy">Hosting</a>
             <a href="/#contact" className="text-[14.5px] font-medium text-gray-600 transition hover:text-navy">Contact</a>
           </nav>
 
@@ -137,6 +138,7 @@ export function Navbar() {
             <a href="/#services" onClick={closeMobileMenu} className="rounded-xl px-3 py-3 text-[15px] font-medium text-gray-700 transition hover:bg-gray-50 hover:text-navy">Services</a>
             <a href="/#work" onClick={closeMobileMenu} className="rounded-xl px-3 py-3 text-[15px] font-medium text-gray-700 transition hover:bg-gray-50 hover:text-navy">Work</a>
             <Link href="/domains" onClick={closeMobileMenu} className="rounded-xl px-3 py-3 text-[15px] font-medium text-gray-700 transition hover:bg-gray-50 hover:text-navy">Domains</Link>
+            <a href="https://hosting.hembox.tech" onClick={closeMobileMenu} className="rounded-xl px-3 py-3 text-[15px] font-medium text-gray-700 transition hover:bg-gray-50 hover:text-navy">Hosting</a>
             <a href="/#contact" onClick={closeMobileMenu} className="rounded-xl px-3 py-3 text-[15px] font-medium text-gray-700 transition hover:bg-gray-50 hover:text-navy">Contact</a>
             {!user && (
               <div className="mt-2 grid grid-cols-2 gap-3 border-t border-gray-100 pt-4">
