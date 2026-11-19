@@ -1,34 +1,87 @@
 import test from "node:test"
 import assert from "node:assert/strict"
-import { parseDomainSearchRequest } from "../src/lib/domains/validation.ts"
+import {
+  buildDomainSearchCandidates,
+  chunkDomainNames,
+  parseDomainSearchQuery,
+  parseDomainSearchRequest,
+} from "../src/lib/domains/validation.ts"
 
-test("trims and lowercases domain names before provider calls", () => {
-  const result = parseDomainSearchRequest({ domains: ["  Example.COM  "] })
-  assert.deepEqual(result, { success: true, data: { domains: ["example.com"] } })
+test("accepts a bare name and normalizes case and whitespace", () => {
+  const result = parseDomainSearchQuery({ query: "  Hembox  " })
+  assert.deepEqual(result, {
+    success: true,
+    data: { query: "hembox", baseName: "hembox", exactDomain: null },
+  })
 })
 
-test("collapses duplicate domains after normalization", () => {
-  const result = parseDomainSearchRequest({ domains: ["Example.com", " example.COM ", "other.org"] })
-  assert.deepEqual(result, { success: true, data: { domains: ["example.com", "other.org"] } })
+test("accepts a fully-qualified domain with multi-label extensions", () => {
+  const result = parseDomainSearchQuery({ query: " HEMBOX.CO.ZM " })
+  assert.deepEqual(result, {
+    success: true,
+    data: { query: "hembox.co.zm", baseName: "hembox", exactDomain: "hembox.co.zm" },
+  })
 })
 
-test("rejects empty batches and batches above the limit", () => {
-  assert.equal(parseDomainSearchRequest({ domains: [] }).success, false)
-  assert.equal(parseDomainSearchRequest({ domains: Array.from({ length: 11 }, (_, i) => `domain${i}.com`) }).success, false)
-})
-
-test("rejects malformed domains and URL-like input", () => {
-  for (const domain of ["example", "-bad.com", "bad-.com", "bad..com", "https://example.com", "example.com/path"]) {
-    assert.equal(parseDomainSearchRequest({ domains: [domain] }).success, false, domain)
+test("rejects URLs, paths, malformed labels and unexpected properties", () => {
+  for (const query of ["", "https://example.com", "example.com/path", "bad..name", "-bad", "bad-", "bad name", ".com", "a".repeat(64)]) {
+    assert.equal(parseDomainSearchQuery({ query }).success, false, query)
   }
+  assert.equal(parseDomainSearchQuery({ query: "example", extra: true }).success, false)
 })
 
-test("rejects labels over 63 characters and names over 253 characters", () => {
-  assert.equal(parseDomainSearchRequest({ domains: [`${"a".repeat(64)}.com`] }).success, false)
-  const tooLong = [`${"a".repeat(63)}.${"b".repeat(63)}.${"c".repeat(63)}.${"d".repeat(62)}`]
-  assert.equal(parseDomainSearchRequest({ domains: tooLong }).success, false)
+test("builds candidates from enabled catalogue TLDs for a bare name", () => {
+  const parsed = parseDomainSearchQuery({ query: "Hembox" })
+  assert.equal(parsed.success, true)
+  if (!parsed.success) return
+
+  assert.deepEqual(
+    buildDomainSearchCandidates(parsed.data, [".com", ".net", ".org", ".co.zm"]),
+    {
+      exactSupported: null,
+      candidates: ["hembox.com", "hembox.net", "hembox.org", "hembox.co.zm"],
+    },
+  )
 })
 
-test("rejects extra request properties", () => {
-  assert.equal(parseDomainSearchRequest({ domains: ["example.com"], live: true }).success, false)
+test("puts the exact supported domain first before alternatives", () => {
+  const parsed = parseDomainSearchQuery({ query: "hembox.tech" })
+  assert.equal(parsed.success, true)
+  if (!parsed.success) return
+
+  assert.deepEqual(
+    buildDomainSearchCandidates(parsed.data, [".com", ".tech", ".net"]),
+    {
+      exactSupported: true,
+      candidates: ["hembox.tech", "hembox.com", "hembox.net"],
+    },
+  )
+})
+
+test("does not send unsupported exact extensions to the registrar", () => {
+  const parsed = parseDomainSearchQuery({ query: "hembox.xyz" })
+  assert.equal(parsed.success, true)
+  if (!parsed.success) return
+
+  assert.deepEqual(
+    buildDomainSearchCandidates(parsed.data, [".com", ".net"]),
+    { exactSupported: false, candidates: ["hembox.com", "hembox.net"] },
+  )
+})
+
+test("chunks candidate domains into batches of at most ten", () => {
+  const domains = Array.from({ length: 23 }, (_, index) => `domain${index}.com`)
+  const batches = chunkDomainNames(domains)
+  assert.deepEqual(batches.map((batch) => batch.length), [10, 10, 3])
+  assert.deepEqual(batches.flat(), domains)
+})
+
+test("rejects invalid batch sizes", () => {
+  assert.throws(() => chunkDomainNames(["example.com"], 0), /positive integer/)
+})
+
+test("legacy explicit-domain validator remains compatible", () => {
+  const result = parseDomainSearchRequest({ domains: ["  Example.COM  ", "example.com", "other.org"] })
+  assert.deepEqual(result, { success: true, data: { domains: ["example.com", "other.org"] } })
+  assert.equal(parseDomainSearchRequest({ domains: ["example"] }).success, false)
 })
