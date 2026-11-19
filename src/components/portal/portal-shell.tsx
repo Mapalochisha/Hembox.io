@@ -8,7 +8,7 @@ import { useAuth } from "@/components/providers/auth-provider"
 import { cn } from "@/lib/utils"
 import {
   Bell, BriefcaseBusiness, ChevronDown, CreditCard, Files, FolderKanban,
-  Globe2, LayoutDashboard, Menu, MessageSquare, Settings2, Sparkles,
+  Globe2, LayoutDashboard, Menu, MessageSquare, Settings2, PlusCircle,
   X, LogOut, ArrowUpRight
 } from "lucide-react"
 
@@ -201,7 +201,7 @@ export function PortalShell({ children, title, eyebrow = "CLIENT WORKSPACE" }: {
 
       <div className="border-t border-white/[0.08] p-3">
         <Link href="/portal/services/catalogue" onClick={() => setMobileOpen(false)} className="group flex items-center gap-3 rounded-xl border border-white/[0.09] bg-white/[0.04] p-3 transition hover:border-teal/40 hover:bg-white/[0.07]">
-          <span className="grid h-9 w-9 place-items-center rounded-xl bg-teal/10 text-teal"><Sparkles className="h-4 w-4"/></span>
+          <span className="grid h-9 w-9 place-items-center rounded-xl bg-teal/10 text-teal"><PlusCircle className="h-4 w-4"/></span>
           <span className="min-w-0 flex-1"><span className="block text-xs font-semibold text-white">Need something new?</span><span className="mt-0.5 block text-[11px] text-slate-400">Explore our services</span></span>
           <ArrowUpRight className="h-4 w-4 text-slate-500 transition group-hover:text-teal"/>
         </Link>

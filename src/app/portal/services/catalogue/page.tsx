@@ -4,11 +4,20 @@ import Link from "next/link"
 import { useEffect, useState } from "react"
 import { PortalShell } from "@/components/portal/portal-shell"
 import { createClient, isSupabaseConfigured } from "@/lib/supabase/client"
-import { ArrowRight, ArrowUpRight, CheckCircle2, Code, Globe, Layers, Palette, Smartphone, Sparkles, Wrench, Loader2 } from "lucide-react"
+import { ArrowRight, ArrowUpRight, BarChart, BriefcaseBusiness, Camera, CheckCircle2, Cloud, Code, Cpu, Database, Globe, GraduationCap, Heart, Layers, Layout, LifeBuoy, Lock, Megaphone, MessageSquare, MousePointer2, Palette, PenTool, Rocket, School, Search, Shield, ShoppingCart, Smartphone, Target, Zap, Loader2 } from "lucide-react"
 
 type Service = { id:string; title:string; description:string|null; icon_name:string|null; slug:string|null;  }
-const iconMap:Record<string,any>={Globe,Palette,Smartphone,Code,Layers,Wrench}
-function ServiceIcon({name}:{name:string|null}) { const Icon=iconMap[name||""]||Sparkles; return <Icon className="h-5 w-5"/> }
+const iconMap:Record<string,typeof Globe>={
+  globe:Globe,search:Search,palette:Palette,shoppingcart:ShoppingCart,megaphone:Megaphone,lifebuoy:LifeBuoy,
+  code:Code,smartphone:Smartphone,rocket:Rocket,shield:Shield,zap:Zap,layout:Layout,cpu:Cpu,heart:Heart,
+  layers:Layers,messagesquare:MessageSquare,database:Database,cloud:Cloud,lock:Lock,barchart:BarChart,target:Target,
+  pentool:PenTool,mousepointer2:MousePointer2,camera:Camera,graduationcap:GraduationCap,school:School
+}
+function ServiceIcon({name}:{name:string|null}) {
+  const key=(name||"").replace(/[^a-z0-9]/gi,"").toLowerCase()
+  const Icon=iconMap[key]||BriefcaseBusiness
+  return <Icon className="h-5 w-5"/>
+}
 
 export default function ServiceCataloguePage() {
   const [services,setServices]=useState<Service[]>([])
@@ -33,7 +42,7 @@ export default function ServiceCataloguePage() {
     <div className="mx-auto max-w-5xl">
       <div className="overflow-hidden rounded-3xl bg-[#111c2e] p-6 text-white sm:p-9">
         <div className="flex flex-col gap-6 md:flex-row md:items-end md:justify-between">
-          <div className="max-w-2xl"><span className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/[0.06] px-3 py-1.5 text-[10px] font-bold tracking-[0.14em] text-teal"><Sparkles className="h-3.5 w-3.5"/> MADE AROUND YOUR GOALS</span>
+          <div className="max-w-2xl"><span className="inline-flex items-center rounded-full border border-white/10 bg-white/[0.06] px-3 py-1.5 text-[10px] font-bold tracking-[0.14em] text-teal">MADE AROUND YOUR GOALS</span>
             <h2 className="mt-5 text-3xl font-extrabold tracking-[-0.04em] sm:text-4xl">What can we help you create?</h2>
             <p className="mt-3 max-w-xl text-sm leading-6 text-slate-300">Explore Hembox Tech services managed from our live service catalogue. The options shown here stay aligned with the services published on our website.</p>
           </div>
@@ -49,7 +58,7 @@ export default function ServiceCataloguePage() {
           <h4 className="mt-2 text-sm font-bold text-[#172338]">{service.title}</h4><p className="mt-2 min-h-10 flex-1 text-xs leading-5 text-slate-500">{service.description||"A Hembox Tech service tailored to your goals."}</p>
           <Link href={"/portal/services/request?service="+encodeURIComponent(service.title)+"&category="+encodeURIComponent("Published service")} className="mt-5 inline-flex items-center gap-1.5 border-t border-slate-100 pt-4 text-xs font-bold text-[#16867b] hover:text-[#105f58]">Request this service <ArrowUpRight className="h-3.5 w-3.5"/></Link>
         </article>)}
-      </div>:<div className="mt-6 rounded-2xl border border-dashed border-slate-300 bg-white px-6 py-14 text-center"><Sparkles className="mx-auto h-8 w-8 text-[#16867b]"/><h4 className="mt-3 text-sm font-bold text-slate-800">No services are currently published</h4><p className="mt-1 text-xs text-slate-500">Please check back later or contact our team.</p></div>}
+      </div>:<div className="mt-6 rounded-2xl border border-dashed border-slate-300 bg-white px-6 py-14 text-center"><BriefcaseBusiness className="mx-auto h-8 w-8 text-[#16867b]"/><h4 className="mt-3 text-sm font-bold text-slate-800">No services are currently published</h4><p className="mt-1 text-xs text-slate-500">Please check back later or contact our team.</p></div>}
       <div className="mt-6 flex flex-col gap-3 rounded-2xl border border-slate-200 bg-white p-5 sm:flex-row sm:items-center sm:justify-between sm:px-6"><div><p className="text-sm font-bold text-slate-800">Not sure where to start?</p><p className="mt-1 text-xs text-slate-500">Describe the outcome you need. We can help work out the right approach.</p></div><Link href="/portal/services/request" className="inline-flex h-10 items-center justify-center gap-2 rounded-xl bg-[#142239] px-4 text-xs font-semibold text-white hover:bg-[#203653]">Get started <ArrowRight className="h-3.5 w-3.5"/></Link></div>
     </div>
   </PortalShell>
