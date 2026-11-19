@@ -79,6 +79,67 @@ function availabilityTone(result: SearchResult) {
   return "bg-amber-50 text-amber-800"
 }
 
+function ResultCard({ result, onRegister }: { result: SearchResult; onRegister: (domain: string) => void }) {
+  const available = result.availability === "available" && result.supported
+  return (
+    <article className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm sm:p-6">
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+        <div className="min-w-0">
+          <div className="flex flex-wrap items-center gap-2">
+            <span className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-bold ${availabilityTone(result)}`}>
+              {available ? <CheckCircle2 className="h-3.5 w-3.5" /> : result.availability === "unknown" ? <CircleAlert className="h-3.5 w-3.5" /> : null}
+              {availabilityLabel(result)}
+            </span>
+            {result.isExact && <span className="text-xs font-semibold uppercase tracking-wider text-slate-400">Exact match</span>}
+          </div>
+          <h3 className="mt-2 break-all text-xl font-black tracking-tight text-navy sm:text-2xl">{result.domain}</h3>
+          {result.availability === "unsupported" ? (
+            <p className="mt-1 text-sm text-slate-500">We cannot register this extension at the moment.</p>
+          ) : result.availability === "unavailable" ? (
+            <p className="mt-1 text-sm text-slate-500">This name is already registered. Consider one of the alternatives.</p>
+          ) : result.availability === "unknown" ? (
+            <p className="mt-1 text-sm text-slate-500">{result.message || "The registrar could not confirm availability."}</p>
+          ) : (
+            <p className="mt-1 text-sm text-slate-500">Availability confirmed by our domain registrar.</p>
+          )}
+        </div>
+
+        {result.supported && (
+          <div className="grid shrink-0 grid-cols-2 gap-5 sm:min-w-[260px]">
+            <div>
+              <p className="text-[11px] font-bold uppercase tracking-wider text-slate-400">Registration</p>
+              <p className="mt-1 text-base font-extrabold text-navy">{formatPrice(result.registrationPriceMinor)}</p>
+            </div>
+            <div>
+              <p className="text-[11px] font-bold uppercase tracking-wider text-slate-400">Renewal / year</p>
+              <p className="mt-1 text-base font-extrabold text-navy">{formatPrice(result.renewalPriceMinor)}</p>
+            </div>
+          </div>
+        )}
+      </div>
+
+      {result.canRegister ? (
+        <div className="mt-5 flex flex-col gap-3 border-t border-slate-100 pt-4 sm:flex-row sm:items-center sm:justify-between">
+          <p className="text-xs leading-5 text-slate-500">Final availability and price are rechecked before registration.</p>
+          <button
+            type="button"
+            onClick={() => onRegister(result.domain)}
+            className="inline-flex h-11 items-center justify-center gap-2 rounded-xl bg-teal px-5 text-sm font-extrabold text-navy transition hover:bg-teal/90"
+          >
+            Register this domain <ArrowRight className="h-4 w-4" />
+          </button>
+        </div>
+      ) : available ? (
+        <p className="mt-4 border-t border-slate-100 pt-4 text-xs leading-5 text-slate-500">
+          {result.pricingCurrent
+            ? "Registration is not enabled in the current environment."
+            : "Registration is unavailable until current pricing has been verified."}
+        </p>
+      ) : null}
+    </article>
+  )
+}
+
 export default function DomainsPage() {
   const router = useRouter()
   const [query, setQuery] = useState("")
@@ -125,66 +186,7 @@ export default function DomainsPage() {
     router.push(`/register?next=${encodeURIComponent(targetUrl)}`)
   }
 
-  function ResultCard({ result }: { result: SearchResult }) {
-    const available = result.availability === "available" && result.supported
-    return (
-      <article className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm sm:p-6">
-        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-          <div className="min-w-0">
-            <div className="flex flex-wrap items-center gap-2">
-              <span className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-bold ${availabilityTone(result)}`}>
-                {available ? <CheckCircle2 className="h-3.5 w-3.5" /> : result.availability === "unknown" ? <CircleAlert className="h-3.5 w-3.5" /> : null}
-                {availabilityLabel(result)}
-              </span>
-              {result.isExact && <span className="text-xs font-semibold uppercase tracking-wider text-slate-400">Exact match</span>}
-            </div>
-            <h3 className="mt-2 break-all text-xl font-black tracking-tight text-navy sm:text-2xl">{result.domain}</h3>
-            {result.availability === "unsupported" ? (
-              <p className="mt-1 text-sm text-slate-500">We cannot register this extension at the moment.</p>
-            ) : result.availability === "unavailable" ? (
-              <p className="mt-1 text-sm text-slate-500">This name is already registered. Consider one of the alternatives.</p>
-            ) : result.availability === "unknown" ? (
-              <p className="mt-1 text-sm text-slate-500">{result.message || "The registrar could not confirm availability."}</p>
-            ) : (
-              <p className="mt-1 text-sm text-slate-500">Availability confirmed by our domain registrar.</p>
-            )}
-          </div>
 
-          {result.supported && (
-            <div className="grid shrink-0 grid-cols-2 gap-5 sm:min-w-[260px]">
-              <div>
-                <p className="text-[11px] font-bold uppercase tracking-wider text-slate-400">Registration</p>
-                <p className="mt-1 text-base font-extrabold text-navy">{formatPrice(result.registrationPriceMinor)}</p>
-              </div>
-              <div>
-                <p className="text-[11px] font-bold uppercase tracking-wider text-slate-400">Renewal / year</p>
-                <p className="mt-1 text-base font-extrabold text-navy">{formatPrice(result.renewalPriceMinor)}</p>
-              </div>
-            </div>
-          )}
-        </div>
-
-        {result.canRegister ? (
-          <div className="mt-5 flex flex-col gap-3 border-t border-slate-100 pt-4 sm:flex-row sm:items-center sm:justify-between">
-            <p className="text-xs leading-5 text-slate-500">Final availability and price are rechecked before registration.</p>
-            <button
-              type="button"
-              onClick={() => handleClaimDomain(result.domain)}
-              className="inline-flex h-11 items-center justify-center gap-2 rounded-xl bg-teal px-5 text-sm font-extrabold text-navy transition hover:bg-teal/90"
-            >
-              Register this domain <ArrowRight className="h-4 w-4" />
-            </button>
-          </div>
-        ) : available ? (
-          <p className="mt-4 border-t border-slate-100 pt-4 text-xs leading-5 text-slate-500">
-            {result.pricingCurrent
-              ? "Registration is not enabled in the current environment."
-              : "Registration is unavailable until current pricing has been verified."}
-          </p>
-        ) : null}
-      </article>
-    )
-  }
 
   return (
     <div className="min-h-screen bg-white text-navy selection:bg-teal selection:text-white">
@@ -266,7 +268,7 @@ export default function DomainsPage() {
                     {exactResult && (
                       <div>
                         <h2 className="mb-3 text-sm font-bold uppercase tracking-[0.14em] text-slate-500">Your requested domain</h2>
-                        <ResultCard result={exactResult} />
+                        <ResultCard result={exactResult} onRegister={handleClaimDomain} />
                       </div>
                     )}
                     {alternatives.length > 0 && (
@@ -275,7 +277,7 @@ export default function DomainsPage() {
                           {exactResult ? "Other extensions to consider" : "Matching domain extensions"}
                         </h2>
                         <div className="space-y-3">
-                          {alternatives.map((result) => <ResultCard key={result.domain} result={result} />)}
+                          {alternatives.map((result) => <ResultCard key={result.domain} result={result} onRegister={handleClaimDomain} />)}
                         </div>
                       </div>
                     )}
