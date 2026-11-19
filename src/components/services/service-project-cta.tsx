@@ -10,7 +10,7 @@ type Props = {
   label?: string
 }
 
-export function ServiceProjectCTA({ className = "", serviceName = "", context, label = "Request custom quote" }: Props) {
+export function ServiceProjectCTA({ className = "", serviceName = "", context, label = "Get started" }: Props) {
   const inquiryContext = context || (serviceName ? { service: serviceName } : undefined)
   return (
     <button
