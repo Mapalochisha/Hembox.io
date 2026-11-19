@@ -64,7 +64,7 @@ export default function ManageDomainPage() {
     if (!response.ok) throw new Error(body.error ?? "Domain management is unavailable.")
     setOrder(body.order)
     setRequests(body.requests ?? [])
-    setNameservers(body.order.nameservers?.join("\n") ?? "")
+    setNameservers("")
   }, [orderId])
 
   useEffect(() => {
@@ -139,7 +139,7 @@ export default function ManageDomainPage() {
             <section className="mt-6 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm sm:p-6">
               <div className="flex flex-wrap items-center justify-between gap-3">
                 <div><p className="text-xs font-semibold uppercase tracking-wide text-slate-500">Domain status</p><p className="mt-1 text-lg font-black text-navy">{statusLabel(order.status)}</p></div>
-                <span className="rounded-full bg-emerald-50 px-3 py-1.5 text-xs font-bold text-emerald-800">Registration confirmed</span>
+                {order.status === "registered" ? <span className="rounded-full bg-emerald-50 px-3 py-1.5 text-xs font-bold text-emerald-800">Registration confirmed</span> : null}
               </div>
               <div className="mt-5 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
                 <Metric label="Registered" value={dateLabel(order.registered_at)} />
