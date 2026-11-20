@@ -19,6 +19,7 @@
     "@radix-ui/react-select": "^2.0.0",
     "@radix-ui/react-tabs": "^1.0.4",
     "@radix-ui/react-toast": "^1.1.5",
+    "@sentry/nextjs": "^11.15.0",
     "@supabase/ssr": "0.12.7",
     "@supabase/supabase-js": "^2.43.0",
     "autoprefixer": "^10.4.0",
