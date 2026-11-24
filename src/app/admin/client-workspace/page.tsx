@@ -79,7 +79,7 @@ export default function AdminClientWorkspacePage(){
 
  return <div className="space-y-6">
   <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
-   <div><p className="text-[10px] font-bold tracking-[0.17em] text-teal">CLIENT DELIVERY OPERATIONS</p><h1 className="mt-2 text-2xl font-extrabold tracking-tight text-slate-900 sm:text-3xl">Client workspace</h1><p className="mt-2 text-sm leading-6 text-slate-500">A live view of each client’s projects, deliverables and upcoming commitments.</p></div>
+   <div>{clientId&&<><h1 className="text-2xl font-extrabold tracking-tight text-slate-900 sm:text-3xl">{data?.clients.find(item=>item.id===clientId)?.company_name||data?.clients.find(item=>item.id===clientId)?.profile?.full_name||"Client"}</h1>{data?.clients.find(item=>item.id===clientId)?.company_name&&data?.clients.find(item=>item.id===clientId)?.profile?.full_name&&<p className="mt-1 text-sm text-slate-500">{data.clients.find(item=>item.id===clientId)?.profile?.full_name}</p>}</>}</div>
    <button onClick={()=>void load()} className="inline-flex h-10 items-center gap-2 self-start rounded-xl border border-slate-200 bg-white px-3 text-xs font-semibold text-slate-600 hover:bg-slate-50"><RefreshCw className="h-3.5 w-3.5"/> Refresh data</button>
   </div>
   {error&&<p role="alert" className="rounded-xl border border-rose-200 bg-rose-50 p-3 text-sm text-rose-800">{error}</p>}
