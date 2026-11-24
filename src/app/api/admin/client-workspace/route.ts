@@ -10,6 +10,8 @@ const schema=z.discriminatedUnion("action",[
  z.object({action:z.literal("create_project"),clientId:z.string().uuid(),category:z.enum(["brand_identity","graphic_design","website","web_application","mobile_app","software","ui_ux","custom"]).default("custom"),name:z.string().trim().min(2).max(160),description:z.string().trim().max(4000).optional().default(""),status:z.enum(["draft","in_progress","review"]).default("draft"),deadline:z.string().datetime().nullable().optional()}).strict(),
  z.object({action:z.literal("create_service"),clientId:z.string().uuid(),projectId:z.string().uuid().nullable().optional(),serviceType:z.string().trim().min(2).max(80),name:z.string().trim().min(2).max(160),description:z.string().trim().max(2000).optional().default(""),status:z.enum(["pending","active","paused"]).default("active"),startsAt:z.string().datetime().nullable().optional(),renewsAt:z.string().datetime().nullable().optional(),currency:z.enum(["ZMW","USD"]).nullable().optional()}).strict(),
  z.object({action:z.literal("create_milestone"),projectId:z.string().uuid(),title:z.string().trim().min(2).max(180),description:z.string().trim().max(2000).optional().default(""),status:z.enum(["pending","in_progress","ready_for_review","blocked"]).default("pending"),dueAt:z.string().datetime().nullable().optional(),sortOrder:z.number().int().min(0).max(10000).default(0)}).strict(),
+ z.object({action:z.literal("update_project_timeline"),projectId:z.string().uuid(),deadline:z.string().datetime().nullable()}).strict(),
+ z.object({action:z.literal("update_milestone"),milestoneId:z.string().uuid(),title:z.string().trim().min(2).max(180),description:z.string().trim().max(2000).optional().default(""),status:z.enum(["pending","in_progress","ready_for_review","blocked","completed","approved"]),dueAt:z.string().datetime().nullable(),sortOrder:z.number().int().min(0).max(10000)}).strict(),
  z.object({action:z.literal("review_change_request"),changeRequestId:z.string().uuid(),status:z.enum(["under_review","approved","declined","completed"]),decisionNote:z.string().trim().max(2000).optional().default("")}).strict(),
 ])
 async function adminContext(){
@@ -31,7 +33,7 @@ export async function GET(){
    db.from("clients").select("id,user_id,company_name,status,created_at").order("created_at",{ascending:false}).limit(500),
    db.from("projects").select("id,client_id,name,description,status,deadline,created_at,updated_at").order("updated_at",{ascending:false}).limit(500),
    db.from("client_services").select("id,client_id,project_id,customer_id,service_type,name,status,renews_at,currency,created_at").order("created_at",{ascending:false}).limit(500),
-   db.from("project_milestones").select("id,project_id,title,status,due_at,sort_order").order("sort_order").limit(1000),
+   db.from("project_milestones").select("id,project_id,title,description,status,due_at,sort_order").order("sort_order").limit(1000),
    db.from("project_deliverables").select("id,project_id,milestone_id,title,status,filename,created_at").neq("status","draft").order("created_at",{ascending:false}).limit(1000),
    db.from("project_change_requests").select("id,project_id,customer_id,title,description,status,decision_note,created_at").order("created_at",{ascending:false}).limit(1000),
    db.from("profiles").select("id,email,full_name,role").neq("role","admin").order("email").limit(500),
@@ -60,6 +62,24 @@ export async function POST(request:Request){
  if(context.status!==200)return json({error:context.status===401?"Authentication required.":context.status===403?"Administrator access required.":"Unable to verify administrator access."},context.status)
  try{
   const db: any = createServiceClient()
+  if(parsed.data.action==="update_project_timeline"){
+   const {data:project,error:projectError}=await db.from("projects").select("id,client_id,name").eq("id",parsed.data.projectId).maybeSingle()
+   if(projectError)throw projectError
+   if(!project)return json({error:"Project not found."},404)
+   const {error:updateError}=await db.from("projects").update({deadline:parsed.data.deadline,updated_at:new Date().toISOString()}).eq("id",project.id)
+   if(updateError)throw updateError
+   try{await db.from("project_activity").insert({project_id:project.id,actor_id:context.user.id,actor_role:"admin",event_type:"project_timeline_updated",title:"Project timeline updated",details:{deadline:parsed.data.deadline}})}catch(activityError){console.error("[Admin client workspace] Timeline activity failed:",activityError)}
+   return json({success:true,message:"Project timeline updated."})
+  }
+  if(parsed.data.action==="update_milestone"){
+   const {data:milestone,error:milestoneError}=await db.from("project_milestones").select("id,project_id,title").eq("id",parsed.data.milestoneId).maybeSingle()
+   if(milestoneError)throw milestoneError
+   if(!milestone)return json({error:"Milestone not found."},404)
+   const {error:updateError}=await db.from("project_milestones").update({title:parsed.data.title,description:parsed.data.description||null,status:parsed.data.status,due_at:parsed.data.dueAt,sort_order:parsed.data.sortOrder,updated_at:new Date().toISOString()}).eq("id",milestone.id)
+   if(updateError)throw updateError
+   try{await db.from("project_activity").insert({project_id:milestone.project_id,actor_id:context.user.id,actor_role:"admin",event_type:"milestone_updated",title:"Milestone updated: "+parsed.data.title,details:{milestone_id:milestone.id,status:parsed.data.status,due_at:parsed.data.dueAt}})}catch(activityError){console.error("[Admin client workspace] Milestone activity failed:",activityError)}
+   return json({success:true,message:"Milestone updated."})
+  }
   if(parsed.data.action==="create_client"){
    const {data:account,error:accountError}=await db.from("profiles").select("id,role").eq("id",parsed.data.userId).maybeSingle()
    if(accountError)throw accountError
