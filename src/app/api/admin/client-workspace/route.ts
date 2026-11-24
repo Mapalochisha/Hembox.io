@@ -75,7 +75,7 @@ export async function POST(request:Request){
    const {data:milestone,error:milestoneError}=await db.from("project_milestones").select("id,project_id,title").eq("id",parsed.data.milestoneId).maybeSingle()
    if(milestoneError)throw milestoneError
    if(!milestone)return json({error:"Milestone not found."},404)
-   const {error:updateError}=await db.from("project_milestones").update({title:parsed.data.title,description:parsed.data.description||null,status:parsed.data.status,due_at:parsed.data.dueAt,sort_order:parsed.data.sortOrder,updated_at:new Date().toISOString()}).eq("id",milestone.id)
+   const {error:updateError}=await db.from("project_milestones").update({title:parsed.data.title,description:parsed.data.description||null,status:parsed.data.status,due_at:parsed.data.dueAt,sort_order:parsed.data.sortOrder}).eq("id",milestone.id)
    if(updateError)throw updateError
    try{await db.from("project_activity").insert({project_id:milestone.project_id,actor_id:context.user.id,actor_role:"admin",event_type:"milestone_updated",title:"Milestone updated: "+parsed.data.title,details:{milestone_id:milestone.id,status:parsed.data.status,due_at:parsed.data.dueAt}})}catch(activityError){console.error("[Admin client workspace] Milestone activity failed:",activityError)}
    return json({success:true,message:"Milestone updated."})
