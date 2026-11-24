@@ -32,7 +32,7 @@ export async function GET(){
    db.from("projects").select("id,client_id,name,description,status,deadline,created_at,updated_at").order("updated_at",{ascending:false}).limit(500),
    db.from("client_services").select("id,client_id,project_id,customer_id,service_type,name,status,renews_at,currency,created_at").order("created_at",{ascending:false}).limit(500),
    db.from("project_milestones").select("id,project_id,title,status,due_at,sort_order").order("sort_order").limit(1000),
-   db.from("project_deliverables").select("id,project_id,title,status,filename,created_at").neq("status","draft").order("created_at",{ascending:false}).limit(1000),
+   db.from("project_deliverables").select("id,project_id,milestone_id,title,status,filename,created_at").neq("status","draft").order("created_at",{ascending:false}).limit(1000),
    db.from("project_change_requests").select("id,project_id,customer_id,title,description,status,decision_note,created_at").order("created_at",{ascending:false}).limit(1000),
    db.from("profiles").select("id,email,full_name,role").neq("role","admin").order("email").limit(500),
   ])
